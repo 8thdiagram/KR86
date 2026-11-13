@@ -28,3 +28,17 @@ mtime_ms = 1794536362441
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/d66ca7a4-9ca5-4137-ad03-d6bf606a4ef7/8f1d56c0-e913-44ed-9e9a-d21ce649bc1c"
 storage_version_token = "1794536422562718"
 content_type = "text/html"
+
+[[outputs]]
+id = "b-A297ktDuR_3W-h10Opz"
+uri = "file://generated-artifacts/portrait-safe-area-fixed.png"
+type = "image"
+title = "Corrected portrait layout"
+description = "Browser-emulated iPhone safe area: the full scoreboard is below the status-bar region, with the field and controls visible. This is not a physical iPhone test."
+logical_id = "d91da543-e38b-473e-b2c9-d7393e6ef9c0"
+content_hash = "sha256:ff9d2345e15f5dd2e99d9490b93f15816e278008162a74893d1405c50dcd3541"
+size = 46067
+mtime_ms = 1794537066705
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/d91da543-e38b-473e-b2c9-d7393e6ef9c0/72330fe1-93e1-42c0-9a64-b57a68c96451"
+storage_version_token = "1794537120596503"
+content_type = "image/png"

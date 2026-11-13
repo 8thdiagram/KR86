@@ -1,0 +1,1 @@
+- [Temporary preview servers](temporary-preview-servers.md) — asset-check servers can replace the app's forwarded preview port; use file-based rendering where possible.
