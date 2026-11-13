@@ -22,7 +22,6 @@ Franchise and the earned Playoff mode use the frozen original game.
    Run with `pnpm run dev`. This builds and serves the release, including its service worker.
 4. In the new project's Publishing tool, publish a **Static** app with
    build command `pnpm run build` and public directory `dist/public`.
-   If dependency installation is not automatic, the supplied `.replit` build also runs it.
 5. Use the HTTPS URL actually returned by Publishing. Do not reuse or change trytry's
    production domain. An unadvertised, login-free address is public to anyone who knows it.
    `noindex` metadata discourages indexing; it is not access control.

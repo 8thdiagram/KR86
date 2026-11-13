@@ -17,4 +17,4 @@ Standalone React/TypeScript/Vite football PWA. Keep the existing project structu
 - `pnpm run test:engine`
 - `pnpm run game:check`
 
-The original static publishing configuration is preserved: build with `pnpm install --frozen-lockfile && pnpm run build`, serve `dist/public`. Running in Preview does not publish the app. See README.md and TESTING.md for local-save backup instructions and physical-iPhone verification limitations.
+Static publishing is configured with build command `pnpm run build` and public directory `dist/public`. Running in Preview does not publish the app. See README.md and TESTING.md for local-save backup instructions and physical-iPhone verification limitations.
