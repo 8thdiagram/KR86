@@ -188,6 +188,8 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
         l.mode === 'handoff' && l.play === 'draw');
       const assigned = protecting ? defenders.filter(d => d.role === 'DL')[offense.filter(o => o.role === 'OL').indexOf(a)] : undefined;
       const eligible = (d: Athlete) =>
+        !((l.mode === 'dropback' || l.mode === 'scramble' || l.mode === 'flight') &&
+          l.lineRush?.winners.some(w => w.defender === d.id)) &&
         // A beaten blocker may not instantly reacquire his slipping opponent.
         !(event?.defender === d.id && a.id === event.blocker &&
           (event.cleared === undefined || l.time < event.at + .8));
@@ -214,7 +216,8 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
         // during protection. Run-block leverage and genuine uncovered gaps keep
         // their existing contests; no second pressure lottery runs beside this.
         const protectedMatchup = a.role === 'OL' && nearest.role === 'DL' &&
-          (l.mode === 'dropback' && passProtection || l.mode === 'handoff' && l.play === 'draw');
+          ((l.mode === 'dropback' || l.mode === 'scramble') && p.kind === 'pass' ||
+            l.mode === 'handoff' && l.play === 'draw');
         const base = .64 + (l.play === 'sneak' ? .1 + (profile.qb - .7) * .08 : 0) + (profile.line - defenseProfile.rush) * .4 + l.advantage * .48;
         const block = clamp(base + interiorBlockBonus(g, a, base), .22, .86);
         // LB awards increase block-beating EXECUTION, not running speed.

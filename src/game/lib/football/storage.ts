@@ -141,6 +141,15 @@ export function isFootballGame(value: unknown): value is FootballGame {
         !l.athletes.every(a => validRamp(a as typeof a & { openFieldAge?: number }))) return false;
     if ([l.defensiveActionAt, l.cpuActionAt].some(t => t !== undefined && (!finite(t) || t < 0))) return false;
     if (!(DEFENSE_IDS as readonly string[]).includes(l.defense)) return false;
+    if (l.lineRush !== undefined) {
+      const r = l.lineRush;
+      if (!r || r.checked !== true || l.time < 3 || !Array.isArray(r.winners) || r.winners.length > 3 ||
+          new Set(r.winners.map(w => w?.defender)).size !== r.winners.length ||
+          !r.winners.every(w => w && Number.isInteger(w.defender) &&
+            l.athletes[w.defender]?.side === 'defense' && l.athletes[w.defender]?.role === 'DL' &&
+            finite(w.escapeY) && w.escapeY >= 25 && w.escapeY <= 167 &&
+            (w.cleared === undefined || typeof w.cleared === 'boolean'))) return false;
+    }
     if (l.penetration !== undefined) {
       const p = l.penetration, e = p?.event;
       if (!p || ![p.roll, p.selection, p.recognition].every(n => finite(n) && n >= 0 && n < 1)) return false;

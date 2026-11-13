@@ -1,6 +1,6 @@
 # Kick Return ’86
 
-Standalone React/TypeScript/Vite football PWA. Keep the existing project structure and frozen game engine; do not migrate it into a workspace or add account services.
+Standalone React/TypeScript/Vite football PWA. Keep the existing project structure and preserve the frozen game except for explicitly requested gameplay changes; do not migrate it into a workspace or add account services. Reviewed gameplay customizations are tracked separately in `game-source-lock.json`.
 
 ## Run on Replit
 

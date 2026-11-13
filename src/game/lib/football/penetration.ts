@@ -3,6 +3,7 @@ import { PLAYBOOK } from './playbook';
 import { clamp, other, type Athlete, type FootballGame, type LivePlay } from './types';
 import { chaosOpportunity } from './clutch';
 import { linebackerSkill } from './franchise-upgrades';
+import { lineRushTarget, stepLineRush } from './line-rush';
 
 /** Group CDFs, not per-athlete or per-frame probabilities. Time is live WORLD
  * seconds, just like routes and blocking, never the selection/play/quarter clock. */
@@ -41,6 +42,7 @@ export function pressureTicket(g: FootballGame, l: LivePlay): NonNullable<LivePl
 }
 export function stepPenetration(g: FootballGame) {
   const l = g.live!;
+  stepLineRush(g);
   // No new wins after release, a loose ball or the end of a scrimmage play.
   if (!['handoff', 'dropback', 'scramble', 'run', 'flight'].includes(l.mode)) return;
   const state = l.penetration ??= pressureTicket(g, l);
@@ -56,7 +58,8 @@ export function stepPenetration(g: FootballGame) {
   const blitzCall = l.defense === 'blitz' || l.defense === 'run-blitz' && PLAYBOOK[l.play].kind === 'run';
   // Same CDF outside clutch. Relative 25% eligible execution, not +25pp.
   const roll = state.roll / chaosOpportunity(g, 1, true, 1.25);
-  const lineDue = pressureDeadline(PENETRATION.line, roll);
+  const passPlay = PLAYBOOK[l.play].kind === 'pass';
+  const lineDue = passPlay ? Infinity : pressureDeadline(PENETRATION.line, roll);
   const blitzDue = blitzCall ? pressureDeadline(
     slowPressurePlay(l) ? PENETRATION.slowBlitz : PENETRATION.ordinaryBlitz, roll) : Infinity;
   const entryDue = Math.min(lineDue, blitzDue);
@@ -66,7 +69,7 @@ export function stepPenetration(g: FootballGame) {
   const profile = g.profiles[other(g.possession)], blocking = g.profiles[g.possession];
   const los = 100 + l.snapSpot * 10;
   const candidates = l.athletes.filter(d => d.side === 'defense' &&
-    (d.role === 'DL' || blitz && d.role === 'LB') && !d.dive && d.x >= los - 3 && d.x <= los + 60)
+    ((!passPlay && d.role === 'DL') || blitz && d.role === 'LB') && !d.dive && d.x >= los - 3 && d.x <= los + 60)
     .map(d => {
       const b = [...offense].sort((a, b) => Math.hypot(a.x - d.x, a.y - d.y) - Math.hypot(b.x - d.x, b.y - d.y))[0]!;
       const distance = Math.hypot(b.x - d.x, b.y - d.y);
@@ -121,6 +124,8 @@ export function stepPenetration(g: FootballGame) {
 /** Real sidestep/disengagement through the existing movement/acceleration system.
  * Blocker remains solid: go around its shoulder before turning into the pocket. */
 export function penetrationTarget(l: LivePlay, d: Athlete) {
+  const lineTarget = lineRushTarget(l, d);
+  if (lineTarget) return lineTarget;
   const e = l.penetration?.event;
   if (!e || e.defender !== d.id) return;
   if (e.cleared === undefined) return { x: e.stageX ?? e.escapeX, y: e.escapeY };
