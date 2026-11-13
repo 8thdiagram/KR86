@@ -1,0 +1,30 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "JpynWuXUyg6cTZJ5iGji-"
+uri = "file://generated-artifacts/kick-return-86-deck/kick-return-86-overview.pdf"
+type = "pdf"
+title = "Kick Return ’86 — Project Overview"
+description = "Eight-slide PDF covering the game modes, standalone architecture, offline play, local saves, Static deployment, verification, and limits."
+logical_id = "62f56be6-fa02-4c94-8905-25c1a175c187"
+content_hash = "sha256:584f77b720b9342175b07b20408eccc6c9e560f560c20fd15fef880f4a103879"
+size = 1959470
+mtime_ms = 1794536369301
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/62f56be6-fa02-4c94-8905-25c1a175c187/82264d97-6930-4477-8dd8-5940804ec045"
+storage_version_token = "1794536421910706"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "GYAtRIg_7hyYemwqqa2hC"
+uri = "file://generated-artifacts/kick-return-86-deck/kick-return-86-overview.html"
+type = "html"
+title = "Kick Return ’86 — Browser Slide Deck"
+description = "Self-contained presentation with keyboard and on-screen slide navigation. All images are embedded."
+logical_id = "d66ca7a4-9ca5-4137-ad03-d6bf606a4ef7"
+content_hash = "sha256:9d59553c5ff8f7bd6c8ca1cc7da26815b67415249587fac1c0e94a4aa0e17c19"
+size = 3547106
+mtime_ms = 1794536362441
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/d66ca7a4-9ca5-4137-ad03-d6bf606a4ef7/8f1d56c0-e913-44ed-9e9a-d21ce649bc1c"
+storage_version_token = "1794536422562718"
+content_type = "text/html"

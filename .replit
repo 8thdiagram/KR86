@@ -1,5 +1,5 @@
 run = "pnpm run dev"
-modules = ["nodejs-22"]
+modules = ["nodejs-22", "python-base-3.13"]
 
 [deployment]
 deploymentTarget = "static"
@@ -29,3 +29,7 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[ports]]
+localPort = 9000
+externalPort = 80
