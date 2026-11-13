@@ -1,0 +1,28 @@
+.krt{--ink:#0b1d36;--panel:#0f2747;--line:#2a6fb0;--cream:#f1e6d0;--gold:#f4d23c;--hot:#ee7848;--sky:#9ccfff;
+  max-width:560px;margin:14px auto 0;padding:0 10px calc(14px + env(safe-area-inset-bottom));color:var(--cream);
+  font-family:ui-monospace,'Space Mono',Menlo,monospace;font-size:12px;line-height:1.5;box-sizing:border-box}
+.krt *{box-sizing:border-box}
+.krt details{background:var(--panel);border:2px solid var(--line);border-radius:6px;box-shadow:3px 3px 0 #050d1a}
+.krt summary{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;list-style:none;font-weight:800;font-size:11px;letter-spacing:.1em;color:var(--gold)}
+.krt summary::-webkit-details-marker{display:none}
+.krt summary::after{content:'+';margin-left:auto;color:var(--sky)}
+.krt details[open] summary::after{content:'-'}
+.krt-status{font-weight:400;letter-spacing:0;color:var(--sky);font-size:10px}
+.krt-body{display:grid;gap:12px;padding:0 12px 12px}
+.krt-sec{display:grid;gap:6px;padding-top:10px;border-top:2px dashed #1e4a7a}
+.krt h3{margin:0;font-size:10px;letter-spacing:.12em;color:var(--gold)}
+.krt p,.krt ol{margin:0;color:#d9e6f5}
+.krt ol{padding-left:18px}
+.krt-row{display:flex;flex-wrap:wrap;gap:6px}
+.krt-btn{min-height:40px;padding:6px 12px;font:inherit;font-size:11px;font-weight:800;color:var(--cream);background:var(--ink);border:2px solid var(--line);border-radius:6px;cursor:pointer}
+.krt-btn:hover,.krt-btn:focus-visible{border-color:var(--cream)}
+.krt-btn:disabled{opacity:.45;cursor:default}
+.krt-btn--go{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.krt-btn--danger{background:var(--hot);color:var(--ink);border-color:var(--hot)}
+.krt-msg{padding:6px 8px;border-radius:4px;border:2px solid var(--line);background:var(--ink)}
+.krt-msg--err{border-color:var(--hot);color:#ffd2bf}
+.krt-msg--ok{border-color:#3fa45a}
+.krt-preview{padding:8px;border:2px solid var(--gold);border-radius:4px;background:var(--ink);display:grid;gap:8px}
+.krt-preview pre{margin:0;white-space:pre-wrap;font:inherit;color:var(--cream)}
+.krt-hint{font-size:11px;color:var(--sky)}
+.krt input[type=file]{display:none}

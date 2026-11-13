@@ -1,0 +1,32 @@
+.gm-screen{position:fixed;inset:0;z-index:10000;width:100vw;height:100vh;height:100dvh;display:flex;flex-direction:column;background:#101321;color:#f8fafc;overflow:hidden;isolation:isolate;overscroll-behavior:none;touch-action:auto;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.gm-screen[hidden],.gm-slot[hidden]{display:none!important}
+.gm-layout-anchor{height:100vh;height:100dvh;pointer-events:none}
+.gm-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 4px) max(10px,env(safe-area-inset-right,0px)) 4px max(8px,env(safe-area-inset-left,0px));background:rgba(10,13,23,.85);z-index:5}
+.gm-back{min-width:76px;min-height:44px;padding:8px 12px;border:1px solid #ffffff40;border-radius:10px;background:#ffffff14;color:#fff;font:700 13px system-ui;letter-spacing:.04em;cursor:pointer;touch-action:none}
+.gm-back:focus-visible,.gm-interrupt button:focus-visible{outline:3px solid #9ccfff;outline-offset:2px}
+.gm-status{font:600 10px system-ui;letter-spacing:.14em;color:#c1c6d5}
+.gm-content{flex:1;min-height:0;min-width:0;position:relative;overflow:hidden;padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);container-type:size}
+.gm-slot{height:100%;width:100%;min-height:0;min-width:0;overflow:clip}
+/* Direct game components need the same definite flex height as standalone page wrappers.
+   Otherwise size-contained cabinets collapse and absolute canvases get a zero-height row. */
+.gm-slot.gm-contained-slot{display:flex;flex-direction:column}
+.gm-screen canvas,.gm-screen svg,.gm-screen img{-webkit-user-drag:none;user-select:none;-webkit-user-select:none}
+.gm-screen button{touch-action:pan-y}
+.gm-screen input,.gm-screen textarea{-webkit-user-select:text;user-select:text;touch-action:manipulation}
+.gm-interrupt{position:absolute;inset:calc(env(safe-area-inset-top,0px) + 52px) 0 0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#101321ed;text-align:center;padding:24px;touch-action:none}
+.gm-interrupt h2{font:700 30px system-ui;margin:0 0 10px}.gm-interrupt p{color:#ccd3e0}
+.gm-interrupt button{min-height:48px;border:0;border-radius:10px;padding:10px 24px;background:#fff;color:#101321;font:700 16px system-ui;cursor:pointer}
+.gm-screen[data-paused=true] .gm-content *{animation-play-state:paused!important}
+.gm-loading{padding:24px;text-align:center}
+@media (orientation:landscape) and (max-height:600px){
+ .gm-screen[data-game="kick-return"] .gm-bar{position:absolute;top:0;left:0;right:auto;width:auto;padding:calc(env(safe-area-inset-top,0px) + 4px) 0 0 max(6px,env(safe-area-inset-left,0px));background:none;pointer-events:none}
+ .gm-screen[data-game="kick-return"] .gm-back{pointer-events:auto;min-width:44px;min-height:44px;width:clamp(68px,9vw,84px);padding:6px;background:#0b1d36;font-size:12px}
+ .gm-screen[data-game="kick-return"] .gm-status{display:none}
+ .gm-screen[data-game="kick-return"] .gm-content{padding-top:env(safe-area-inset-top,0px)}
+}
+@media (orientation:landscape) and (max-height:600px){
+ .gm-screen[data-game="double-ninjas"] .gm-bar{position:absolute;top:0;left:0;right:auto;width:auto;padding:calc(env(safe-area-inset-top,0px) + 2px) 0 0 max(8px,env(safe-area-inset-left,0px));background:none;pointer-events:none}
+ .gm-screen[data-game="double-ninjas"] .gm-back{pointer-events:auto;min-width:44px;min-height:44px;width:clamp(80px,14vw,124px);padding:6px;background:#141232;font-size:12px}
+ .gm-screen[data-game="double-ninjas"] .gm-status{display:none}
+ .gm-screen[data-game="double-ninjas"] .gm-content{padding-top:env(safe-area-inset-top,0px)}
+}

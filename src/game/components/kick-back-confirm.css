@@ -1,0 +1,9 @@
+.kbm-btn{min-height:44px;min-width:120px;padding:4px 14px;font:800 12px/1.1 ui-monospace,'Space Mono',monospace;letter-spacing:.06em;color:#fff;background:#0f2747;border:3px solid #2a6fb0;border-radius:4px;cursor:pointer;box-shadow:inset -3px -3px 0 #0b1d36}
+.kbm-btn:active{transform:translateY(1px);box-shadow:none}
+.kbm-btn:focus-visible{outline:3px solid #f4d23c;outline-offset:2px}
+.kbm-leave{background:#ee7848;color:#0b1d36;border-color:#fff}
+.kbm-confirm{display:grid;gap:6px;justify-items:center;text-align:center;padding:8px 12px;max-width:360px;color:#fff;background:#0b1d36;border:3px solid #f4d23c;border-radius:4px;font-family:ui-monospace,'Space Mono',monospace}
+.kbm-confirm strong{font-size:13px;letter-spacing:.1em;color:#f4d23c}
+.kbm-confirm span{font-size:10px;line-height:1.4;color:#d4e7fa}
+.kbm-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.kbm-chooser{position:absolute;left:max(8px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 8px)}

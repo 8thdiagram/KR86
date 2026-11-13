@@ -1,0 +1,120 @@
+/* Kick Return 86 play-call overlay: compact chalk cards ON the live field. Field, HUD and controls never move. */
+/* Penalty board keeps the full-area style. */
+.fbp-root{position:absolute;inset:0;z-index:20;container-type:size;container-name:fbp;display:grid;grid-template-rows:auto minmax(0,1fr);gap:6px;
+  padding:6px;box-sizing:border-box;color:#fff;font-family:ui-monospace,'Space Mono',monospace;
+  background:linear-gradient(#0b1d36f7,#123c68f7);animation:fbp-in .16s ease-out;overflow:hidden}
+.fbp-top{display:flex;align-items:center;gap:6px;min-width:0}
+.fbp-ctx{flex:1;min-width:0;display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap;padding:3px 8px;background:#0b1d36;border:2px solid #75829f;border-radius:6px;font-size:11px;color:#9ccfff}
+.fbp-ctx strong{color:#f4d23c;letter-spacing:.12em;font-size:12px}
+.fbp-ctx span{color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fbp-ctx .fbp-score{color:#f4d23c}
+
+/* Overlay lives inside .fb-screen. Top clears the HUD strip; bottom clears clock + pause row (56px). */
+.fbp-overlay{position:absolute;z-index:6;left:6px;right:6px;top:var(--fbp-top,6px);bottom:56px;container-type:size;container-name:fbp;
+  display:grid;grid-template-rows:auto minmax(0,1fr);align-content:center;gap:4px;pointer-events:none;
+  font-family:ui-monospace,'Space Mono',monospace;color:#fff;animation:fbp-in .14s ease-out}
+.fbp-head{justify-self:center;margin:0;display:flex;gap:10px;align-items:baseline;padding:2px 10px;background:#0b1d36e0;border:2px solid #f1e6d0;font-size:10px;letter-spacing:.1em;color:#9ccfff;box-shadow:3px 3px 0 #0b1d3699}
+.fbp-head b{color:#f4d23c;letter-spacing:.14em}
+.fbp-grid{display:grid;gap:6px;min-height:0;max-height:100%;pointer-events:auto}
+/* Landscape: one row of tall narrow cards, field visible above and below. */
+.fbp-off,.fbp-def{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));height:min(100%,300px);align-self:center}
+.fbp-card{position:relative;display:grid;grid-template-rows:auto minmax(0,1fr);gap:3px;min-height:44px;min-width:0;padding:4px;text-align:left;font:inherit;color:#fff;
+  background:#0b1d36d6;border:2px solid #f1e6d0;border-radius:0;box-shadow:inset 0 0 0 2px #0b1d36,3px 3px 0 #0b1d3699;cursor:pointer;overflow:hidden;transition:transform .08s}
+.fbp-card::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--fbp-k,#2a6fb0)}
+.fbp-card:active{transform:translateY(2px);box-shadow:inset 0 0 0 2px #0b1d36}
+.fbp-card:hover,.fbp-card:focus-visible{outline:none;border-color:#f4d23c;background:#123c68e6}
+.fbp-card[data-recommended=true]::before{background:#f4d23c}
+.fbp-card[data-recommended=true] .fbp-name small{color:#f4d23c}
+.fbp-run{--fbp-k:#58c46a}.fbp-pass{--fbp-k:#7fc8ff}.fbp-kick{--fbp-k:#f4d23c}.fbp-dcard{--fbp-k:#ee7848}
+.fbp-name{display:grid;gap:0;min-width:0;padding-top:2px}
+.fbp-name b{font-size:11px;line-height:1.15;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+.fbp-name small{font-size:8px;letter-spacing:.08em;color:#9ccfff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fbp-dia{width:100%;height:100%;min-height:0;display:block;background:#1d5e2bcc;border:1px solid #2f8a43}
+.fbp-los{stroke:#f1e6d0;stroke-width:2;stroke-dasharray:5 4;opacity:.7}
+.fbp-r polyline{fill:none;stroke:#9ccfff;stroke-width:3;stroke-dasharray:7 4;stroke-linecap:square;stroke-linejoin:miter}
+.fbp-primary polyline{stroke:#f4d23c;stroke-width:4.4;stroke-dasharray:none}
+.fbp-x{stroke:#ee7848;stroke-width:3;stroke-linecap:square}
+.fbp-o{fill:#0b1d36;stroke:#fff;stroke-width:2.2}
+.fbp-primary .fbp-o{fill:#f4d23c;stroke:#f4d23c}
+.fbp-lbl{font:700 11px ui-monospace,monospace;fill:#f1e6d0;text-anchor:middle}
+.fbp-read{fill:#0b1d36;stroke:#9ccfff;stroke-width:1.8}
+.fbp-primary .fbp-read{stroke:#f4d23c;fill:#f4d23c}
+.fbp-num{font:800 11px ui-monospace,monospace;fill:#fff;text-anchor:middle}
+.fbp-primary .fbp-num{fill:#0b1d36}
+.fbp-called{position:absolute;z-index:6;left:50%;top:var(--fbp-top,6px);transform:translateX(-50%);padding:3px 10px;background:#0b1d36dd;color:#f4d23c;border:2px solid #f1e6d0;font:800 10px ui-monospace,monospace;letter-spacing:.1em;white-space:nowrap;pointer-events:none}
+/* Keep the same 3x2 menu in both orientations; wider landscape cards allow larger names. */
+@container fbp (min-aspect-ratio:5/4){
+  .fbp-name b{font-size:13px}
+}
+@container fbp (max-height:240px){ .fbp-head{display:none} .fbp-name small{display:none} }
+
+/* Play clock + Pause share the field's lower-right HUD row; ACTION and arrows live outside the field. */
+.fbp-clock{position:absolute;right:56px;bottom:6px;z-index:40;width:48px;height:44px;box-sizing:border-box;display:grid;place-content:center;justify-items:center;
+  font-family:ui-monospace,'Space Mono',monospace;color:#f4d23c;background:#0b1d36;border:3px solid #75829f;border-radius:2px;pointer-events:none}
+.fbp-clock small{font-size:7px;letter-spacing:.14em;color:#9ccfff}
+.fbp-clock strong{font-size:20px;line-height:1;font-variant-numeric:tabular-nums}
+.fbp-clock[data-level=warn]{border-color:#ee7848;color:#ee7848}
+.fbp-clock[data-level=warn] strong{animation:fbp-tick .35s ease-out}
+.fbp-clock[data-level=strong]{background:#ee7848;border-color:#fff;color:#0b1d36}
+.fbp-clock[data-level=strong] small{color:#0b1d36}
+.fbp-clock[data-level=strong] strong{animation:fbp-tick .4s ease-out}
+.fbp-clock[data-running=false]{opacity:.85}
+.fb-snap-prompt{position:absolute;bottom:58px;left:50%;transform:translateX(-50%);padding:4px 8px;max-width:90%;
+  background:#0b1d36dd;color:#f4d23c;border:1px solid #75829f;border-radius:2px;font:bold 11px ui-monospace,monospace;
+  text-align:center;white-space:nowrap;pointer-events:none;z-index:4}
+
+/* Delay of game */
+.fbp-pen{background:linear-gradient(#0b1d36f2,#3a1d14f2)}
+.fbp-pen-body{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;justify-content:center;gap:16px;min-height:0;padding-bottom:56px}
+.fbp-ref{height:min(100%,220px);width:auto;max-width:40cqw;image-rendering:pixelated;animation:fbp-in .2s ease-out}
+.fbp-arm{transform-box:fill-box;animation:fbp-signal .5s ease-out .15s both}
+.fbp-arm-l{transform-origin:left top}.fbp-arm-r{transform-origin:right top}
+.fbp-flag{animation:fbp-flag .5s ease-out both}
+.fbp-pen-text{display:grid;gap:4px;min-width:0}
+.fbp-pen-text small{font-size:10px;letter-spacing:.14em;color:#9ccfff}
+.fbp-pen-text strong{font-size:clamp(20px,6cqw,34px);letter-spacing:.06em;color:#f4d23c;line-height:1.05}
+.fbp-pen-text b{font-size:16px;color:#fff;padding:3px 8px;background:#ee7848;color:#0b1d36;border-radius:4px;justify-self:start}
+.fbp-pen-text span{font-size:12px;color:#d4e7fa}
+@container fbp (max-aspect-ratio:1/1){
+  .fbp-pen-body{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center;padding:0 0 78px}
+  .fbp-ref{height:min(42cqh,220px);max-width:70cqw}
+  .fbp-pen-text b{justify-self:center}
+}
+@keyframes fbp-in{from{opacity:0;transform:translateY(6px)}}
+@keyframes fbp-tick{from{transform:scale(1.25)}}
+@keyframes fbp-signal{from{transform:translateY(-14px) rotate(-12deg);opacity:.3}}
+@keyframes fbp-flag{from{transform:translate(10px,-40px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.fbp-root,.fbp-overlay,.fbp-ref,.fbp-arm,.fbp-flag,.fbp-clock strong{animation:none!important}}
+/* Diagram conventions */
+.fbp-dash{fill:none!important;stroke:#9ccfff;stroke-width:2.4!important;stroke-dasharray:4 4!important;opacity:.85}
+.fbp-primary .fbp-dash{stroke:#f4d23c}
+.fbp-fake .fbp-dash{stroke:#f1e6d0;opacity:.6}
+.fbp-r polyline{stroke-dasharray:none;stroke-width:2.6}
+.fbp-primary polyline{stroke-width:4.4}
+.fbp-kink{fill:#0b1d36;stroke:#f4d23c;stroke-width:1.6}
+.fbp-block{fill:none;stroke:#f1e6d0;stroke-width:2;opacity:.75}
+.fbp-kick{fill:none;stroke:#f4d23c;stroke-width:3;stroke-dasharray:2 5;stroke-linecap:round}
+.fbp-post{fill:none;stroke:#f4d23c;stroke-width:2.4}
+.fbp-zone{fill:#9ccfff22;stroke:#9ccfff;stroke-width:1.4;stroke-dasharray:3 3}
+.fbp-zone-deep{fill:#f4d23c1f;stroke:#f4d23c}
+.fbp-man{stroke:#ee7848;stroke-width:1.6;stroke-dasharray:2 3;opacity:.9}
+.fbp-def-r polyline{stroke:#ee7848}
+.fbp-rush{stroke-width:3.2!important}
+.fbp-primary .fbp-read{stroke:#0b1d36;stroke-width:2.4}
+/* Defense: four cards + compact pager */
+.fbp-defwrap{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:4px;min-height:0;pointer-events:auto}
+.fbp-def{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container fbp (min-aspect-ratio:5/4){ .fbp-def{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:minmax(0,1fr)} }
+.fbp-more{justify-self:center;display:flex;gap:8px;align-items:baseline;padding:3px 10px;min-height:28px;font:inherit;font-size:10px;color:#9ccfff;
+  background:#0b1d36e0;border:2px solid #f1e6d0;box-shadow:3px 3px 0 #0b1d3699;cursor:pointer;letter-spacing:.08em}
+.fbp-more b{color:#f4d23c}.fbp-more span{color:#fff}
+.fbp-more:hover,.fbp-more:focus-visible{outline:none;border-color:#f4d23c}
+.fbp-more:active{transform:translateY(2px)}
+.fbp-pitch{fill:none!important;stroke:#f4d23c!important;stroke-width:2.8!important;stroke-dasharray:6 4!important;stroke-linecap:butt}
+/* Give the six cards the full existing display area. Paging sits below it instead of
+ * taking a grid row away from the recommended plays, especially in landscape. */
+.fbp-offwrap{position:static;grid-template-rows:minmax(0,1fr);height:100%;align-self:center}
+.fbp-offwrap>.fbp-off{height:100%;align-self:stretch}
+.fbp-offwrap>.fbp-more{position:absolute;top:auto;bottom:-27px;left:50%;transform:translateX(-50%);
+  min-height:24px;padding:1px 6px;gap:6px;font-size:9px;white-space:nowrap;box-sizing:border-box}
+.fbp-offwrap>.fbp-more:active{transform:translate(-50%,2px)}

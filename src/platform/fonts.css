@@ -1,0 +1,8 @@
+@font-face{font-family:'Space Mono';font-style:normal;font-weight:400;font-display:swap;src:url('../game/assets/fonts/spacemono/latin-b978e4a38f40.woff2') format('woff2')}
+@font-face{font-family:'Space Mono';font-style:normal;font-weight:700;font-display:swap;src:url('../game/assets/fonts/spacemono/latin-ca181a34b6a2.woff2') format('woff2')}
+/* Same locally bundled font used by the trytry game; no remote font dependency. */
+.ga-scope .kr-ranking{display:none}
+.startup{max-width:650px;margin:auto;padding:32px;font-family:'Space Mono',monospace}
+.startup button,.device-save-error button{min-height:44px;background:#ffd25a;border:0;padding:8px 16px;color:#10213a;font:700 14px monospace}
+.device-save-error{padding:10px;background:#5b1f19;color:#fff;position:relative;z-index:20}
+.gm-slot:has([data-testid="kick-mode-chooser"]){overflow-y:auto}

@@ -1,0 +1,350 @@
+/* Universal Game Mode: in-game presentation only. Every rule is scoped under .gm-screen.
+   Container = .gm-slot (named gm); cqw/cqh resolve against the slot (~390x792 portrait, ~844x340 landscape). */
+.gm-screen .gm-slot{container-type:size;container-name:gm}
+.gm-screen .gm-content *{-webkit-tap-highlight-color:transparent}
+
+/* ---- page chrome (Header = header.site-header, Footer = footer.footer-outer) ---- */
+.gm-screen .gm-slot .page{min-height:0;height:100%;display:flex;flex-direction:column;padding:0;margin:0;background:none}
+.gm-screen .gm-slot .page>header,.gm-screen .gm-slot .page>footer,.gm-screen .gm-slot .site-header,
+.gm-screen .gm-slot .footer-outer,.gm-screen .gm-slot .ga-report-footer,
+.gm-screen .gm-slot .signal-eyebrow,.gm-screen .gm-slot .signal-title,.gm-screen .gm-slot .signal-note,
+.gm-screen .gm-slot main.shell>p,.gm-screen .gm-slot main.shell>h1,.gm-screen .gm-slot main.shell>nav,.gm-screen .gm-slot main.shell>details,
+.gm-screen .gm-slot .kr-heading,
+.gm-screen .gm-slot [data-testid="kick-return-skip"],.gm-screen .gm-slot [data-testid="kick-return-continue"],
+.gm-screen .gm-slot [data-testid="duck-hunt-continue"],.gm-screen .gm-slot [data-testid="button-clutch-skip"],
+.gm-screen .gm-slot [data-testid="link-back-games"],.gm-screen .gm-slot [data-testid="link-art-attack-continue"],
+.gm-screen .gm-slot .bank-shot-continue,.gm-screen .gm-slot a[href="/games"],
+.gm-screen .gm-slot a[href="/creator/activities"],.gm-screen .gm-slot a[href="/my-business"]{display:none!important}
+.gm-screen .gm-slot main.shell{flex:1;min-height:0;display:flex;flex-direction:column;width:100%;max-width:none;margin:0;padding:0!important;overflow:hidden}
+.gm-screen .gm-slot main.ga-wrap{flex:1;min-height:0;display:flex;flex-direction:column;width:100%;max-width:none;margin:0;padding:0;overflow:hidden;container-type:size}
+.gm-screen .gm-slot main.ga-wrap>h1,.gm-screen .gm-slot main.ga-wrap>p{display:none!important}
+.gm-screen .gm-slot main.ga-wrap>.ga-panel:has([data-testid="arcade-player"]){flex:1;min-height:0;padding:0;margin:0;border:0;border-radius:0;display:flex;flex-direction:column}
+.gm-screen .gm-slot main.ga-wrap>.ga-panel:has([data-testid="arcade-player"])>p{display:none}
+.gm-screen .gm-slot main.ga-wrap>a[href*="/games/leaderboard/"]{flex:none;min-height:44px;align-self:center;margin:2px;color:#fff;background:#192744;border-color:#75829f}
+.gm-screen .gm-slot .ga-scope,.gm-screen .gm-slot .ga-scope>div{flex:1;min-height:0;display:flex;flex-direction:column;margin:0;padding:0;max-width:none}
+
+/* shared: game roots fill the slot and scroll internally only when results/stats overflow */
+.gm-screen .gm-slot :is(.dn-root,.pp-root,.dh-game,.kr-game,.bank-shot,.nv-root){flex:1;min-height:0;width:100%;max-width:none;margin:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box}
+.gm-screen .gm-slot :is(.dn-canvas,.pp-canvas,.dh-canvas,.kr-canvas,.nv-canvas,.bank-shot-board,.ct-board){touch-action:none}
+
+/* ================= Double Ninjas (canvas 960x540) ================= */
+.dn-root .dn-menu-toggle{display:none}
+.dn-root .dn-utility-more{display:contents}
+.dn-root .dn-playfield{display:contents}
+.gm-screen .gm-slot .dn-root{display:flex;flex-direction:column}
+.gm-screen .gm-slot .dn-cab{flex:1;min-height:0;min-width:0;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:4px;margin:0;max-width:none;border-radius:0;border-width:0;box-shadow:none;container-type:size;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y}
+.gm-screen .gm-slot .dn-cab>*{flex-shrink:0;min-width:0;box-sizing:border-box}
+/* Native overlay-style scrolling without a phase-dependent width reservation.
+   The cabinet still scrolls; result/taunt overflow cannot shrink the arena. */
+.gm-screen .gm-slot .dn-cab{scrollbar-width:none}
+.gm-screen .gm-slot .dn-cab::-webkit-scrollbar{display:none}
+.gm-screen .gm-slot .dn-playfield>*{flex-shrink:0;min-width:0;box-sizing:border-box}
+.gm-screen .gm-slot .dn-hud{padding:0 2px 2px}
+/* Root cause of portrait off-centre: 3px stage border was content-box on top of width:100%. Border-box keeps it centred. */
+.gm-screen .gm-slot .dn-stage{box-sizing:border-box;flex:none;aspect-ratio:16/9;align-self:center;width:min(100%,calc((100cqh - 250px)*16/9));min-width:0}
+.gm-screen .gm-slot .dn-canvas{display:block;width:100%;height:auto;aspect-ratio:960/540;border:0}
+.gm-screen .gm-slot .dn-pad{margin-top:2px;box-sizing:border-box;width:100%}
+.gm-screen .gm-slot .dn-pad[hidden]{display:none}
+.gm-screen .gm-slot .dn-pad .dn-btn{min-height:68px;min-width:0;touch-action:none;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+.gm-screen .gm-slot .dn-utility{margin-top:0;gap:4px}
+.gm-screen .gm-slot .dn-select{overflow:visible;touch-action:pan-y}
+.gm-screen .gm-slot .dn-help{flex:none;max-height:44px;overflow:auto;overscroll-behavior:contain;font-size:13px;text-align:left;color:#ddd4ed;margin:4px 8px}
+.gm-screen .gm-slot .dn-cab:not(:has(.dn-stage)){overflow:auto;overscroll-behavior:contain}
+@container gm (min-aspect-ratio:3/2){
+ /* Only the four permanent playfield children participate in this fixed-height
+    grid. Taunts/results remain scrollable siblings and cannot create implicit
+    tracks that steal height from the arena during a phase transition. */
+ .gm-screen .gm-slot .dn-cab:has(.dn-stage){padding:0 4px 4px}
+ .gm-screen .gm-slot .dn-playfield{--dn-rail:clamp(88px,15cqw,132px);display:grid;flex:none;height:100cqh;min-height:0;grid-template-columns:var(--dn-rail) minmax(0,1fr) var(--dn-rail);grid-template-rows:minmax(44px,auto) minmax(0,1fr) minmax(0,1fr);column-gap:6px;row-gap:4px;align-content:stretch}
+ .gm-screen .gm-slot .dn-playfield>*{min-width:0;box-sizing:border-box}
+ .gm-screen .gm-slot .dn-playfield>.dn-hud{grid-column:2;grid-row:1;align-self:center;padding:2px 0}
+ .gm-screen .gm-slot .dn-playfield>.dn-stage{grid-column:2;grid-row:2/4;width:100%;height:100%;min-height:0;aspect-ratio:auto;border-width:2px;justify-self:stretch;align-self:stretch}
+ .gm-screen .gm-slot .dn-stage .dn-canvas{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;object-fit:contain}
+ .gm-screen .gm-slot .dn-playfield>.dn-pad:not([hidden]){display:contents}
+ .gm-screen .gm-slot .dn-pad .dn-btn{min-height:0;height:100%;font-size:clamp(10px,1.8vw,13px)}
+ .gm-screen .gm-slot .dn-pad .punch{grid-column:1;grid-row:2}
+ .gm-screen .gm-slot .dn-pad .kick{grid-column:1;grid-row:3}
+ .gm-screen .gm-slot .dn-pad .block{grid-column:3;grid-row:2}
+ .gm-screen .gm-slot .dn-pad .special{grid-column:3;grid-row:3}
+ .gm-screen .gm-slot .dn-playfield>.dn-utility{position:relative;grid-column:3;grid-row:1;flex-wrap:nowrap;justify-content:flex-end;align-content:center;align-self:start;gap:4px;margin:2px 0 0;z-index:4}
+ .gm-screen .gm-slot .dn-utility .dn-btn{min-width:0;min-height:44px;font-size:clamp(7px,1cqw,9px);padding:4px 3px;border-width:2px}
+ .gm-screen .gm-slot .dn-utility .dn-menu-toggle{display:inline-flex}
+ .gm-screen .gm-slot .dn-utility-more{display:none}
+ .gm-screen .gm-slot .dn-utility[data-tools-open=true] .dn-utility-more{position:absolute;top:calc(100% + 6px);right:0;display:flex;flex-direction:column;gap:8px;min-width:150px;max-height:calc(100cqh - 64px);overflow:auto;padding:8px;background:#141232;border:2px solid #ffc83a;box-shadow:0 4px 12px #0009}
+ .gm-screen .gm-slot .dn-root:has(.dn-stage)>.dn-help{display:none}
+}
+
+/* ================= Paper Paper (canvas 480x620) ================= */
+.gm-screen .gm-slot .pp-root{display:flex;flex-direction:column;font-size:18px}
+.gm-screen .gm-slot .pp-cab{flex:1;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;border-radius:0;border-width:0;padding:0;box-shadow:none;gap:4px}
+.gm-screen .gm-slot .pp-hud{padding:0 4px 4px}
+.gm-screen .gm-slot .pp-stage{align-self:stretch;min-height:0;min-width:0;width:100%;height:100%;overflow:hidden}
+.gm-screen .gm-slot .pp-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;aspect-ratio:auto;border:0}
+.gm-screen .gm-slot .pp-overlay{touch-action:pan-y;overscroll-behavior:contain}
+.gm-screen .gm-slot .pp-pad{margin-top:4px}
+.gm-screen .gm-slot .pp-pad .pp-btn{min-height:60px}
+.gm-screen .gm-slot .pp-tools{margin-top:4px;gap:4px}
+.gm-screen .gm-slot .pp-tools .pp-btn{min-height:36px}
+.gm-screen .gm-slot .pp-help{display:none}
+@container gm (min-aspect-ratio:3/2){
+ .gm-screen .gm-slot .pp-cab{grid-template-columns:minmax(0,1fr) 188px;grid-template-rows:auto minmax(0,1fr) auto;column-gap:6px}
+ .gm-screen .gm-slot .pp-cab>*{grid-column:2}
+ .gm-screen .gm-slot .pp-cab>.pp-stage{grid-column:1;grid-row:1/span 3;width:100%;height:100%;align-self:stretch}
+ .gm-screen .gm-slot .pp-cab>.pp-pad{grid-column:2;grid-row:2;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;margin:0;min-height:0;gap:6px}
+ .gm-screen .gm-slot .pp-pad .throw{grid-column:1/3;grid-row:2}
+ .gm-screen .gm-slot .pp-pad .pp-btn{min-height:0}
+ .gm-screen .gm-slot .pp-overlay{gap:6px;padding:8px;justify-content:safe center}
+ .gm-screen .gm-slot .pp-overlay h2{font-size:16px;margin:0}
+ .gm-screen .gm-slot .pp-overlay p{font-size:15px;line-height:1.1;margin:3px 0}
+ .gm-screen .gm-slot .pp-overlay .pp-btn{font-size:11px;min-height:44px;padding:8px}
+}
+
+/* ================= Duck Huntin' (canvas 640x400) ================= */
+.gm-screen .gm-slot .dh-game{display:grid;align-content:start;gap:6px;padding:6px;border:0;border-radius:0;box-shadow:none}
+.gm-screen .gm-slot .dh-screen{width:min(100%,calc((100cqh - 200px)*1.6));min-width:0;border:0;border-radius:6px;aspect-ratio:640/400}
+.gm-screen .gm-slot .dh-canvas{width:100%;height:100%}
+.gm-screen .gm-slot .dh-status{margin:0}
+.gm-screen .gm-slot .dh-stats-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.gm-screen .gm-slot .dh-stats-row>div{height:auto;min-height:44px;padding:4px;align-content:center}
+.gm-screen .gm-slot .dh-stats-row small{font-size:9px}
+.gm-screen .gm-slot .dh-stats-row strong{font-size:12px}
+.gm-screen .gm-slot .dh-overlay{touch-action:pan-y;overflow:auto;overscroll-behavior:contain}
+@container gm (min-aspect-ratio:3/2){
+ .gm-screen .gm-slot .dh-game{grid-template-columns:minmax(0,1fr) 210px;column-gap:8px;grid-auto-rows:min-content}
+ .gm-screen .gm-slot .dh-game>*{grid-column:2}
+ .gm-screen .gm-slot .dh-game>.dh-screen{grid-column:1;grid-row:1/span 8;width:min(100%,calc((100cqh - 12px)*1.6));align-self:start;justify-self:center}
+}
+
+/* ================= Kick Return '86: handheld layout. Stage fills the grid cell; canvas backing is sized by the renderer. ================= */
+.gm-screen .gm-slot .kr-game{--kr-pad:#0f2747;--kr-pad-hi:#2a6fb0;--kr-gap:6px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto auto 162px;gap:var(--kr-gap);padding:6px;border:0;border-radius:0;box-shadow:none;align-content:stretch;min-height:0!important;height:100%;container-type:size;overflow-x:hidden;overflow-y:auto;background:linear-gradient(#0b1d36,#123c68)}
+.gm-screen .gm-slot .kr-game>*{grid-column:1/3}
+.gm-screen .gm-slot .kr-controls{grid-row:6;position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;min-height:0;border:3px solid var(--kr-pad-hi);border-radius:14px;overflow:hidden;background:var(--kr-pad)}
+.gm-screen .gm-slot .kr-juke-column{display:contents}
+.gm-screen .gm-slot .kr-scoreboard{grid-row:1;gap:4px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.gm-screen .gm-slot .kr-scoreboard>div{display:flex;align-items:baseline;justify-content:space-between;gap:4px;padding:3px 8px;background:#0b1d36;border:2px solid #75829f;border-radius:6px}
+.gm-screen .gm-slot .kr-scoreboard small{font-size:9px;color:#9ccfff}
+.gm-screen .gm-slot .kr-scoreboard strong{font-size:13px;color:#fff;white-space:nowrap}
+.gm-screen .gm-slot .kr-matchup{grid-row:2;height:30px;gap:4px}
+.gm-screen .gm-slot .kr-team{padding:2px 6px;gap:6px;border-radius:6px;background:#0b1d36;border:2px solid #3b5f8a;color:#fff}
+.gm-screen .gm-slot .kr-swatch{width:14px;height:20px;border-width:2px;border-radius:3px}
+.gm-screen .gm-slot .kr-team-text{grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:6px}
+.gm-screen .gm-slot .kr-team-text small{color:#9ccfff;font-size:8px}
+.gm-screen .gm-slot .kr-team-text strong{font-size:11px;color:#fff}
+.gm-screen .gm-slot .kr-team-text em{display:none}
+.gm-screen .gm-slot .kr-screen{grid-row:3;width:100%;height:100%;min-width:0;min-height:0;aspect-ratio:auto;border:3px solid #75829f;border-radius:8px;box-shadow:0 0 0 3px #0b1d36}
+.gm-screen .gm-slot .kr-canvas{width:100%;height:100%}
+.gm-screen .gm-slot .kr-status-space{grid-row:4;height:20px;overflow:hidden}
+.gm-screen .gm-slot .kr-status-reserve{display:none}
+.gm-screen .gm-slot .kr-status{font-size:12px;line-height:20px;margin:0;color:#fff;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gm-screen .gm-slot .kr-direction{min-height:0;height:100%;padding:4px;font-size:17px;color:#fff;background:var(--kr-pad);border:0;border-radius:0;box-shadow:none}
+.gm-screen .gm-slot .kr-direction[data-pressed=true]{background:#2a6fb0;transform:none;box-shadow:none}
+.gm-screen .gm-slot .kr-direction:disabled{opacity:.55}
+.gm-screen .gm-slot .kr-juke{grid-column:1;grid-row:1;margin:0;height:100%;min-height:0;align-self:stretch}
+.gm-screen .gm-slot .kr-juke-hint{position:absolute;left:0;bottom:0;width:33.333%;height:auto;z-index:1;pointer-events:none;font-size:9px;line-height:11px;color:#9ccfff;padding-bottom:5px;text-align:center}
+.gm-screen .gm-slot .kr-steering{grid-column:2/4;grid-row:1;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr));gap:0;min-height:0;border:0}
+.gm-screen .gm-slot .kr-steering .kr-direction{border-left:2px solid var(--kr-pad-hi)}
+.gm-screen .gm-slot .kr-steering .kr-direction+.kr-direction{border-top:2px solid var(--kr-pad-hi)}
+.gm-screen .gm-slot .kr-steering .kr-direction{min-height:0}
+.gm-screen .gm-slot .kr-game>.kr-main-actions{grid-column:1;grid-row:5;display:grid;grid-template-columns:minmax(0,1fr);gap:4px;min-height:0}
+.gm-screen .gm-slot .kr-main-actions .kr-action-slot,.gm-screen .gm-slot .kr-primary,.gm-screen .gm-slot [data-testid="kick-return-sound"]{height:44px;min-height:44px;padding:4px 8px;font-size:12px;line-height:1.1;border-radius:10px;border:3px solid var(--kr-pad-hi);background:var(--kr-pad);color:#fff;text-decoration:none;text-align:center;font-weight:800;letter-spacing:.04em}
+.gm-screen .gm-slot [data-testid="kick-return-sound"]{grid-column:2;grid-row:5;font-size:10px}
+.gm-screen .gm-slot .kr-main-actions:has(.kr-action-slot[disabled]+.kr-action-slot[disabled]){visibility:hidden}
+.gm-screen .gm-slot .kr-main-actions .kr-action-slot:not([disabled]){background:#ee7848;border-color:#fff;color:#0b1d36}
+.gm-screen .gm-slot .kr-game>.kr-footer{display:none}
+.gm-screen .gm-slot .kr-result-summary{grid-row:5;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:max-content;gap:6px;min-height:0;overflow:auto;align-content:start;padding:8px;border:1px solid #75829f;border-radius:10px;background:#0b1d36;color:#f8fafc;touch-action:pan-y;overscroll-behavior:contain}
+.gm-screen .gm-slot .kr-result-summary>h3{font-size:12px;color:#fff;line-height:16px}
+.gm-screen .gm-slot .kr-result-summary>div{padding:6px;background:#0b1d36;border:2px solid #75829f;color:#fff}
+.gm-screen .gm-slot .kr-result-summary small{font-size:9px;color:#9ccfff}
+.gm-screen .gm-slot .kr-result-summary strong{font-size:12px;min-height:0;color:#fff}
+.gm-screen .gm-slot .kr-return-history{color:#f8fafc;line-height:1.5;min-width:0;overflow-wrap:anywhere}
+.gm-screen .gm-slot .kr-return-history summary{padding:6px 0;font-weight:700;color:#b9ddff;cursor:pointer}
+.gm-screen .gm-slot .kr-return-history ol{margin:6px 0;padding-left:20px}
+.gm-screen .gm-slot .kr-return-history li{padding:3px 0}
+.gm-screen .gm-slot .kr-return-history p{color:#d4e7fa}
+.gm-screen .gm-slot .kr-return-history .kr-skip{color:#b9ddff}
+.gm-screen .gm-slot .kr-game>.kr-note{color:#d4e7fa}
+.gm-screen .gm-slot .kr-game[data-outcome=""]>.kr-result-summary{display:none}
+.gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-controls{display:none}
+.gm-screen .gm-slot .kr-game:not([data-outcome=""]){grid-template-rows:auto auto minmax(0,1fr) auto 190px auto}
+.gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-main-actions,.gm-screen .gm-slot .kr-game:not([data-outcome=""])>[data-testid="kick-return-sound"]{grid-row:6}
+.gm-screen .gm-slot .kr-game>.kr-ranking,.gm-screen .gm-slot .kr-game>.kr-note,.gm-screen .gm-slot .kr-game>.kr-error,.gm-screen .gm-slot .kr-game>.kr-save-retry{grid-row:auto;grid-column:1/3}
+.gm-screen .gm-slot .kr-overlay{touch-action:pan-y;overflow:auto;overscroll-behavior:contain;color:#fff}
+@container gm (max-height:600px) and (max-aspect-ratio:3/2){
+ .gm-screen .gm-slot .kr-game[data-outcome=""]{grid-template-rows:auto auto minmax(0,1fr) auto auto 150px}
+ .gm-screen .gm-slot .kr-matchup{display:none}
+}
+/* Landscape handheld: keep the tall touch targets beside, not below, the field.
+   The fixed action row also keeps both thumb positions stable through START. */
+@container gm (min-aspect-ratio:3/2){
+ .gm-screen .gm-slot .kr-game{position:relative;grid-template-columns:clamp(112px,18cqw,160px) minmax(0,1fr) clamp(112px,18cqw,160px);grid-template-rows:auto minmax(0,1fr) 38px;column-gap:8px;row-gap:4px;padding:4px 6px}
+ .gm-screen .gm-slot .kr-game>*{grid-column:2}
+ .gm-screen .gm-slot .kr-scoreboard{grid-column:2;grid-row:1}
+   .gm-screen .gm-slot .kr-matchup{grid-column:1;grid-row:1;display:grid;height:40px;align-self:start;grid-template-columns:1fr;gap:2px}
+   .gm-screen .gm-slot .kr-team{padding:0 4px;gap:4px}
+   .gm-screen .gm-slot .kr-swatch{height:14px}
+  .gm-screen .gm-slot .kr-team-text{column-gap:3px}
+  .gm-screen .gm-slot .kr-team-text small{font-size:7px}
+  .gm-screen .gm-slot .kr-team-text strong{font-size:10px}
+ .gm-screen .gm-slot .kr-game>.kr-screen{grid-column:2;grid-row:2/4}
+ .gm-screen .gm-slot .kr-status-space{position:static;grid-column:3;grid-row:3;width:auto;height:38px;align-content:center;pointer-events:none}
+ .gm-screen .gm-slot .kr-status{line-height:12px;font-size:10px;white-space:normal}
+ .gm-screen .gm-slot .kr-controls{display:contents}
+ .gm-screen .gm-slot .kr-juke{grid-column:1;grid-row:2;height:144px;align-self:end;border:3px solid var(--kr-pad-hi);border-radius:14px;touch-action:none}
+ .gm-screen .gm-slot .kr-juke-hint{left:6px;bottom:52px;width:clamp(112px,18cqw,160px);padding-bottom:0}
+ .gm-screen .gm-slot .kr-steering{grid-column:3;grid-row:2;height:144px;align-self:end;border:0;border-radius:14px;overflow:hidden;touch-action:none}
+ .gm-screen .gm-slot .kr-steering .kr-direction{border-left:3px solid var(--kr-pad-hi);border-right:3px solid var(--kr-pad-hi)}
+ .gm-screen .gm-slot .kr-steering .kr-direction:first-child{border-top:3px solid var(--kr-pad-hi);border-radius:14px 14px 0 0}
+ .gm-screen .gm-slot .kr-steering .kr-direction:last-child{border-bottom:3px solid var(--kr-pad-hi);border-radius:0 0 14px 14px}
+ .gm-screen .gm-slot .kr-game>.kr-main-actions{grid-column:1;grid-row:3;grid-template-columns:minmax(0,1fr)}
+ .gm-screen .gm-slot [data-testid="kick-return-sound"]{grid-column:3;grid-row:1;align-self:center;height:34px;min-height:34px;font-size:9px;padding:2px 4px}
+ .gm-screen .gm-slot .kr-main-actions .kr-action-slot{height:38px;min-height:38px}
+ .gm-screen .gm-slot .kr-game:has(> .kr-main-actions > [data-testid="kick-return-action-placeholder"]){grid-template-rows:auto minmax(0,1fr) 38px}
+ .gm-screen .gm-slot .kr-main-actions:has(> [data-testid="kick-return-action-placeholder"]){display:grid}
+ /* Finished games get separate field/results columns, never an overlay.
+    Long timing history scrolls inside its own high-contrast panel. */
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""]){grid-template-columns:minmax(0,1.6fr) minmax(240px,1fr);grid-template-rows:auto minmax(0,1fr) 38px}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-matchup{display:none}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-scoreboard{grid-column:1}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-screen{grid-column:1;grid-row:2/4}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-result-summary{grid-column:2;grid-row:2;grid-template-columns:repeat(2,minmax(0,1fr));height:100%;align-self:stretch}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-main-actions{grid-column:2;grid-row:3}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>[data-testid="kick-return-sound"]{grid-column:2;grid-row:1}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-status-space{display:none}
+}
+.gm-screen[data-game="kick-return"] .gm-slot main.ga-wrap>a[href*="/games/leaderboard/"]{display:none}
+
+/* ================= Ball Maze / Bank + Clutch Time (SVG 400x260) ================= */
+.gm-screen .gm-slot .bank-shot{display:flex;flex-direction:column;gap:6px;padding:6px;border:0;border-radius:0;box-shadow:none}
+.gm-screen .gm-slot .bank-shot-board-wrap,.gm-screen .gm-slot .ct-board{align-self:center;width:min(100%,calc((100cqh - 190px)*400/260))}
+.gm-screen .gm-slot .bank-shot-board,.gm-screen .gm-slot .ct-board{display:block;width:100%;height:auto;aspect-ratio:400/260}
+.gm-screen .gm-slot .bank-shot-instruction{margin:0}
+.gm-screen .gm-slot .bank-shot-press,.gm-screen .gm-slot .ct-shoot{min-height:56px}
+.gm-screen .gm-slot .ct-result{overflow:auto;overscroll-behavior:contain}
+@container gm (min-aspect-ratio:3/2){
+ .gm-screen .gm-slot .bank-shot{display:grid;grid-template-columns:minmax(0,1fr) 220px;column-gap:8px;grid-auto-rows:min-content;align-content:start}
+ .gm-screen .gm-slot .bank-shot>*{grid-column:2}
+ .gm-screen .gm-slot .bank-shot>.bank-shot-board-wrap,.gm-screen .gm-slot .bank-shot>.ct-board{grid-column:1;grid-row:1/span 8;width:min(100%,calc((100cqh - 12px)*400/260));align-self:start;justify-self:center}
+}
+
+/* ================= Art Attack: bright gallery, 4 complete images, contain ================= */
+.gm-screen[data-game="art-attack"] .gm-slot main.shell,.gm-screen[data-game="art-attack"] .gm-slot .page{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;background:#faf7f0}
+.gm-screen[data-game="art-attack"] .gm-slot main.shell>.aa-playwrap{display:block}
+.gm-screen[data-game="art-attack"] .gm-slot main.shell>.aa-open{display:grid}
+.gm-screen[data-game="art-attack"] .gm-slot main.shell.aa{padding:4px 10px 14px!important;width:100%;box-sizing:border-box;flex:1;min-height:0;display:block}
+.gm-screen[data-game="art-attack"] .gm-slot .aa-hero{padding:8px 0}
+.gm-screen[data-game="art-attack"] .gm-slot .aa-title{font-size:clamp(30px,10cqw,56px);margin:6px 0}
+.gm-screen[data-game="art-attack"] .gm-slot .aa-lead{font-size:15px;margin-bottom:10px}
+.gm-screen[data-game="art-attack"] .gm-slot .aa-activity-card{display:none}
+.gm-screen[data-game="art-attack"] .gm-slot .aa-h2{font-size:clamp(20px,6cqw,30px);margin:0 0 4px}
+.gm-screen[data-game="art-attack"] .gm-slot .aa-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}
+.gm-screen[data-game="art-attack"] .gm-slot .aa-frame{aspect-ratio:1/1.1;max-height:calc((100cqh - 250px)/2);min-height:110px;width:100%}
+.gm-screen[data-game="art-attack"] .gm-slot .aa-result img{max-height:calc(100cqh - 40px);object-fit:contain}
+@container gm (min-aspect-ratio:3/2){
+ .gm-screen[data-game="art-attack"] .gm-slot .aa-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .gm-screen[data-game="art-attack"] .gm-slot .aa-frame{max-height:calc(100cqh - 190px);min-height:90px}
+ .gm-screen[data-game="art-attack"] .gm-slot .aa-result{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:14px}
+}
+
+/* ================= Neptune's Voyage (canvas 600x480) ================= */
+.gm-screen .gm-slot .nv-root{display:flex;flex-direction:column;padding:4px;gap:4px;background:#eee8ff}
+.gm-screen .gm-slot .nv-stage{align-self:center;width:min(100%,calc((100cqh - 270px)*600/480));min-width:min(100%,300px)}
+.gm-screen .gm-slot .nv-canvas{aspect-ratio:600/480;height:auto}
+.gm-screen .gm-slot .nv-shopbar{padding:4px;border-radius:14px}
+.gm-screen .gm-slot .nv-row1{margin-bottom:2px}
+.gm-screen .gm-slot .nv-cards{overscroll-behavior:contain;touch-action:pan-x pan-y}
+.gm-screen .gm-slot .nv-controls{padding:0 2px 4px}
+.gm-screen .gm-slot .nv-joy{width:min(30cqw,112px);height:min(30cqw,112px)}
+@container gm (max-height:600px) and (max-aspect-ratio:3/2){
+ .gm-screen .gm-slot .nv-joy{width:128px!important;height:128px!important}
+}
+@container gm (min-aspect-ratio:3/2){
+ .gm-screen .gm-slot .nv-root{display:grid;grid-template-columns:auto minmax(0,1fr);grid-auto-rows:min-content;column-gap:8px;align-content:start}
+ .gm-screen .gm-slot .nv-root>*{grid-column:2}
+ .gm-screen .gm-slot .nv-root>.nv-stage{grid-column:1;grid-row:1/span 8;width:min(calc(100cqw - 330px),calc((100cqh - 8px)*600/480));align-self:start}
+ .gm-screen .gm-slot .nv-panel{max-height:64%}
+ .gm-screen .gm-slot .nv-tab{min-height:40px}
+ .gm-screen .gm-slot .nv-joy{width:min(30cqh,104px)!important;height:min(30cqh,104px)!important}
+ .gm-screen .gm-slot .nv-keys{display:none}
+}
+
+/* ================= Generated arcade games: iframe is a document (own HUD/controls), fill the region ================= */
+.gm-screen .gm-slot .ga[data-testid="arcade-player"]{flex:1;min-height:0;height:100%;width:100%;max-width:none;display:flex;flex-direction:column;gap:4px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+.gm-screen .gm-slot .ga[data-testid="arcade-player"]>.ga-frame{flex:1 1 auto;min-height:55%;width:100%;max-width:none;max-height:none;height:auto;aspect-ratio:auto;border-radius:0;touch-action:pan-y}
+.gm-screen .gm-slot .ga[data-testid="arcade-player"]>:not(.ga-frame){flex:0 1 auto;max-height:45%;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;margin:0 6px 4px}
+.gm-screen .gm-slot .ga[data-testid="arcade-player"]>.ga-skel{flex:1;max-height:none;aspect-ratio:auto!important}
+.gm-screen .gm-slot .ga-panel{overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:12px}
+@container gm (min-aspect-ratio:3/2){
+ .gm-screen .gm-slot .ga[data-testid="arcade-player"]{display:grid;grid-template-columns:minmax(0,1fr) 240px;grid-auto-rows:min-content;column-gap:6px;align-content:start}
+ .gm-screen .gm-slot .ga[data-testid="arcade-player"]>*{grid-column:2;max-height:none}
+ .gm-screen .gm-slot .ga[data-testid="arcade-player"]>.ga-frame,.gm-screen .gm-slot .ga[data-testid="arcade-player"]>.ga-skel{grid-column:1;grid-row:1/span 8;height:100cqh;min-height:0}
+ .gm-screen .gm-slot .ga[data-testid="arcade-player"]{overflow-y:auto}
+}
+@media (prefers-reduced-motion:reduce){.gm-screen .gm-content *{scroll-behavior:auto!important}}
+
+/* ===== Kick Return '86 landscape handheld v2: full-height stage, side rails, no top stats ===== */
+.gm-screen .gm-slot .kr-pause-tool,.gm-screen .gm-slot .kr-between-stats,.gm-screen .gm-slot .kr-pause-metrics{display:none}
+.gm-screen .gm-slot .kr-screen{position:relative}
+@container gm (min-aspect-ratio:3/2){
+ .gm-screen .gm-slot .kr-game{--kr-rail:clamp(68px,9cqw,84px);grid-template-columns:var(--kr-rail) minmax(0,1fr) var(--kr-rail);grid-template-rows:minmax(0,1fr) 48px;column-gap:6px;row-gap:4px;padding:0 4px 4px;overflow:hidden}
+ .gm-screen .gm-slot .kr-game>.kr-scoreboard,.gm-screen .gm-slot .kr-game>.kr-matchup,.gm-screen .gm-slot .kr-game>.kr-footer{display:none!important}
+ .gm-screen .gm-slot .kr-game>.kr-screen{grid-column:2;grid-row:1/3;border-width:2px;box-shadow:none}
+ .gm-screen .gm-slot .kr-juke{grid-column:1;grid-row:1;height:min(46%,170px);min-height:88px;align-self:end}
+ .gm-screen .gm-slot .kr-juke-hint{left:4px;bottom:60px;width:var(--kr-rail)}
+ .gm-screen .gm-slot .kr-steering{grid-column:3;grid-row:1;height:100%;align-self:stretch;min-height:96px}
+ .gm-screen .gm-slot .kr-direction{min-height:44px}
+ .gm-screen .gm-slot .kr-juke{font-size:14px;letter-spacing:0}
+ .gm-screen .gm-slot .kr-game>.kr-main-actions{grid-column:1;grid-row:2}
+ .gm-screen .gm-slot .kr-main-actions .kr-action-slot,.gm-screen .gm-slot .kr-primary{height:44px;min-height:44px;font-size:11px}
+ .gm-screen .gm-slot .kr-status-space{grid-column:3;grid-row:2;height:44px;display:flex;align-items:flex-end;justify-content:flex-end}
+ .gm-screen .gm-slot .kr-status{font-size:9px;line-height:11px;text-align:right}
+ .gm-screen .gm-slot [data-testid="kick-return-sound"]{display:none}
+ .gm-screen .gm-slot .kr-pause-tool{display:block;grid-column:1;grid-row:2;align-self:end;margin-top:0;min-width:44px;min-height:44px;width:100%;padding:4px;font-size:11px;font-weight:800;letter-spacing:.04em;color:#fff;background:var(--kr-pad);border:3px solid var(--kr-pad-hi);border-radius:10px}
+ .gm-screen .gm-slot .kr-overlay{max-height:100%;align-content:safe center;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+ .gm-screen .gm-slot .kr-overlay-tools{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+ .gm-screen .gm-slot .kr-overlay-tools button{min-height:44px;min-width:44px}
+ .gm-screen .gm-slot .kr-pause-sound{display:block}
+ .gm-screen .gm-slot .kr-pause-metrics{display:grid;width:100%;max-width:640px;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0;font-size:11px;color:#fff}
+ .gm-screen .gm-slot .kr-pause-metrics dd{margin:2px 0;font-weight:800;font-variant-numeric:tabular-nums}
+ .gm-screen .gm-slot .kr-between-stats>.kr-pause-metrics{grid-column:1/-1}
+ .gm-screen .gm-slot .kr-game:has(> .kr-main-actions > [data-testid="kick-return-action-placeholder"]){grid-template-rows:minmax(0,1fr) 48px}
+ .gm-screen .gm-slot .kr-between-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:4px;position:absolute;left:6px;right:6px;bottom:6px;max-height:45%;overflow-y:auto;overscroll-behavior:contain;padding:6px;font-size:10px;color:#fff;background:#0b1d36e6;border:2px solid #75829f;border-radius:8px;z-index:2}
+ .gm-screen .gm-slot .kr-game:is([data-phase="returning"],[data-phase="kickoff"]) .kr-between-stats{display:none}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""]) .kr-pause-tool{display:none}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""]){grid-template-columns:minmax(0,1.6fr) minmax(240px,1fr);grid-template-rows:minmax(0,1fr) 48px}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-screen{grid-column:1;grid-row:1/3}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-result-summary{grid-column:2;grid-row:1;overflow-y:auto;max-height:100%}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-main-actions{grid-column:2;grid-row:2}
+}
+
+/* ===== Kick Return '86 control swap (amendment 1): UP/DOWN left, ACTION right, both orientations. Field bounds unchanged. ===== */
+.gm-screen .gm-slot .kr-controls .kr-steering{grid-column:1/3;grid-row:1}
+.gm-screen .gm-slot .kr-controls .kr-juke{grid-column:3;grid-row:1}
+.gm-screen .gm-slot .kr-controls .kr-steering .kr-direction{border-left:0;border-right:2px solid var(--kr-pad-hi)}
+.gm-screen .gm-slot .kr-controls .kr-juke-hint{left:auto;right:0}
+@container gm (min-aspect-ratio:3/2){
+ /* left rail: UP/DOWN at the top, with pause in the bottom row */
+ .gm-screen .gm-slot .kr-controls .kr-steering{grid-column:1;grid-row:1;align-self:stretch;height:100%;min-height:96px}
+ .gm-screen .gm-slot .kr-controls .kr-steering .kr-direction{border-left:3px solid var(--kr-pad-hi);border-right:3px solid var(--kr-pad-hi)}
+ /* right rail: ACTION lower-right, START/main action beneath it, status at the top */
+ .gm-screen .gm-slot .kr-controls .kr-juke{grid-column:3;grid-row:1;align-self:end}
+ .gm-screen .gm-slot .kr-controls .kr-juke-hint{left:auto;right:4px;bottom:60px;width:var(--kr-rail)}
+ .gm-screen .gm-slot .kr-game>.kr-main-actions{grid-column:3;grid-row:2}
+ .gm-screen .gm-slot .kr-game>.kr-status-space{grid-column:3;grid-row:1;align-self:start;height:auto;max-height:calc(54% - 8px);overflow:hidden;align-items:flex-start;margin-top:4px}
+ .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-main-actions{grid-column:2;grid-row:2}
+}
+
+/* Kick Return amendment 2 (Classic): no app top bar; small lower-right Pause inside the field, Back lives in its menu. */
+.gm-screen[data-game="kick-return"] .gm-interrupt{inset:0}
+.kr-screen{position:relative}
+.kr-screen>.kr-pause-tool,.gm-screen .gm-slot .kr-screen>.kr-pause-tool{position:absolute;right:6px;bottom:6px;z-index:6;display:grid;place-items:center;
+  width:44px;min-width:44px;height:44px;min-height:44px;margin:0;padding:0;font:900 20px/1 ui-monospace,'Space Mono',monospace;color:#fff;
+  background:#0b1d36e6;border:3px solid #f1e6d0;border-radius:0;box-shadow:inset -3px -3px 0 #0f2747;cursor:pointer;grid-column:auto;grid-row:auto}
+.kr-screen>.kr-pause-tool[aria-pressed=true]{background:#f4d23c;color:#0b1d36}
+.kr-screen>.kr-pause-tool:focus-visible{outline:3px solid #f4d23c;outline-offset:1px}
+.gm-screen .gm-slot .kr-game:not([data-outcome=""]) .kr-screen>.kr-pause-tool{display:none}
+.kr-arrow{display:block;font-size:34px;line-height:1;font-weight:900}
+.kr-overlay .kbm-btn,.kr-overlay .kbm-confirm{margin-top:8px}
+.kr-menu-exit{justify-content:center}
+@container gm (min-aspect-ratio:3/2){
+  .gm-screen .gm-slot .kr-steering{grid-row:1/3}
+}

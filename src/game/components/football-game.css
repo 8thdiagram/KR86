@@ -1,0 +1,197 @@
+.fb-play-result.fb-play-result--field-goal{top:50%;bottom:auto;transform:translate(-50%,-50%)}
+.fb-play-result.fb-play-result--touchdown{width:min(90%,var(--fb-touchdown-width,520px));max-width:calc(100% - 20px);padding:0;background:none;border:0;box-shadow:none;text-shadow:none;border-radius:0}
+/* Kick Return 86 full football: same handheld palette as the classic cabinet. */
+.fb-game{position:relative}
+.fb-game>.fbp-root,.fb-game>.fbp-clock,
+.gm-screen .gm-slot .fb-game>.fbp-root,.gm-screen .gm-slot .fb-game>.fbp-clock{grid-column:auto;grid-row:auto}
+.fb-game{--fb-pad:#0f2747;--fb-hi:#2a6fb0;--fb-ink:#0b1d36;--fb-lace:#f1e6d0;--fb-gold:#f4d23c;--fb-orange:#ee7848;
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(220px,1fr) auto 180px;gap:6px;padding:6px;
+  background:linear-gradient(#0b1d36,#123c68);color:#fff;font-family:ui-monospace,'Space Mono',monospace;border-radius:12px;box-sizing:border-box;min-height:560px}
+.fb-game>*{grid-column:1/3;min-width:0}
+.fb-skeleton{grid-column:1/3;display:grid;gap:8px;padding:12px}
+.fb-skeleton span{height:40px;border-radius:8px;background:#1a3a63;animation:fb-pulse 1.2s ease-in-out infinite}
+.fb-skeleton span:nth-child(2){height:200px}
+@keyframes fb-pulse{50%{opacity:.5}}
+.fb-hud{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px;align-items:stretch}
+.fb-team{display:flex;align-items:center;gap:6px;padding:3px 8px;background:var(--fb-ink);border:2px solid #3b5f8a;border-radius:6px;min-width:0}
+.fb-team i{width:10px;height:18px;border-radius:2px;background:var(--kit);box-shadow:inset 0 -5px 0 var(--trim);flex:none}
+.fb-team span{font-size:10px;color:#9ccfff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.fb-team strong{font-size:18px;font-variant-numeric:tabular-nums}
+.fb-team em{font-style:normal;color:var(--fb-gold);font-size:10px;letter-spacing:1px;font-weight:800;white-space:nowrap;flex:none}
+.fb-away{justify-content:flex-end}.fb-away span{text-align:right}
+.fb-has-ball{border-color:var(--fb-gold)}
+.fb-clock{display:grid;place-items:center;padding:2px 10px;background:var(--fb-ink);border:2px solid #75829f;border-radius:6px}
+.fb-clock strong{font-size:14px;font-variant-numeric:tabular-nums}
+.fb-clock small{font-size:9px;color:var(--fb-gold);white-space:nowrap}
+.fb-tools{display:flex;gap:4px;justify-content:flex-end}
+.fb-tool{min-height:34px;padding:2px 10px;font:inherit;font-size:10px;font-weight:800;color:#fff;background:var(--fb-pad);border:2px solid var(--fb-hi);border-radius:8px;cursor:pointer}
+.fb-tool:disabled{opacity:.45;cursor:default}
+.fb-screen{position:relative;min-height:0;border:3px solid #75829f;border-radius:8px;overflow:hidden;background:#277a37}
+.fb-canvas{display:block;width:100%;height:100%;image-rendering:pixelated;touch-action:none}
+.fb-calls,.fb-banner,.fb-final{position:absolute;z-index:2;color:#fff}
+.fb-calls{inset:auto 4px 4px 4px;max-height:calc(100% - 8px);overflow:auto;overscroll-behavior:contain;padding:6px;background:#0b1d36e8;border:2px solid #75829f;border-radius:8px;animation:fb-rise .18s ease-out}
+.fb-calls-head{margin:0 0 4px;font-size:10px;letter-spacing:.08em;color:var(--fb-gold)}
+.fb-cards{display:grid;gap:4px}
+.fb-six{grid-template-columns:repeat(3,minmax(0,1fr))}
+.fb-four{grid-template-columns:repeat(2,minmax(0,1fr))}
+.fb-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.fb-card{display:grid;gap:1px;text-align:left;min-height:44px;padding:5px 6px;font:inherit;color:#fff;background:var(--fb-pad);border:2px solid var(--fb-hi);border-left-width:5px;border-radius:6px;cursor:pointer;transition:transform .08s}
+.fb-card:active{transform:translateY(1px)}
+.fb-card:hover,.fb-card:focus-visible{border-color:var(--fb-lace)}
+.fb-card small{font-size:8px;color:#9ccfff;letter-spacing:.05em}
+.fb-card strong{font-size:12px}
+.fb-card span{font-size:9px;line-height:1.2;color:#d4e7fa}
+.fb-run{border-left-color:#58c46a}.fb-pass{border-left-color:#7fc8ff}.fb-kick{border-left-color:var(--fb-gold)}.fb-def{border-left-color:var(--fb-orange)}
+.fb-banner{left:50%;bottom:8px;transform:translateX(-50%);width:min(92%,420px);display:grid;gap:4px;justify-items:center;text-align:center;padding:8px 10px;background:#0b1d36ee;border:3px solid var(--fb-lace);border-radius:6px;animation:fb-rise .2s ease-out}
+.fb-banner small,.fb-final small{font-size:10px;letter-spacing:.14em;color:var(--fb-gold)}
+.fb-banner strong{font-size:13px;line-height:1.25}
+.fb-banner span{font-size:11px;color:#9ccfff}
+.fb-go{min-height:40px;min-width:120px;padding:4px 14px;font:inherit;font-weight:800;font-size:12px;letter-spacing:.06em;color:var(--fb-ink);background:var(--fb-orange);border:3px solid #fff;border-radius:10px;cursor:pointer}
+.fb-ghost{background:var(--fb-pad);color:#fff;border-color:var(--fb-hi)}
+.fb-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.fb-final{inset:0;display:grid;align-content:safe center;justify-items:center;gap:6px;padding:10px;text-align:center;background:#0b1d36;overflow:auto;overscroll-behavior:contain}
+.fb-final h3{margin:0;font-size:22px;letter-spacing:.08em}
+.fb-paused h3{font-size:14px}
+.fb-final-score{display:grid;grid-template-columns:1fr auto auto 1fr;gap:8px;align-items:center;margin:0;font-size:11px;color:#9ccfff;width:min(100%,380px)}
+.fb-final-score span:first-child{text-align:right}.fb-final-score span:last-child{text-align:left}
+.fb-final-score b{font-size:26px;color:#fff;font-variant-numeric:tabular-nums}
+.fb-final dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:0;width:min(100%,420px)}
+.fb-final dl div{padding:4px;border:2px solid #75829f;border-radius:4px}
+.fb-final dt{font-size:8px;color:#9ccfff}.fb-final dd{margin:0;font-size:12px;font-weight:800}.fb-final dd i{color:#9ccfff;font-weight:400;font-style:normal}
+.fb-log{margin:0;padding:0;list-style:none;font-size:10px;color:#d4e7fa;max-width:420px;text-align:left}
+.fb-profile-note{max-width:460px;margin:0;font-size:10px;line-height:1.4;color:#d4e7fa}
+.fb-status{margin:0;min-height:18px;font-size:11px;line-height:18px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fb-controls{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:3px solid var(--fb-hi);border-radius:14px;overflow:hidden;background:var(--fb-pad);user-select:none;-webkit-user-select:none}
+.fb-juke-col{position:relative;display:grid}
+.fb-pad{min-height:0;height:100%;padding:4px;font:inherit;font-size:16px;font-weight:800;color:#fff;background:var(--fb-pad);border:0;touch-action:none;-webkit-touch-callout:none;cursor:pointer}
+.fb-pad[data-pressed=true]{background:var(--fb-hi)}
+.fb-pad:disabled{opacity:.55;cursor:default}
+.fb-hint{position:absolute;left:0;right:0;bottom:6px;font-size:9px;line-height:11px;color:#9ccfff;text-align:center;pointer-events:none;padding:0 4px}
+.fb-qb-help{position:absolute;top:calc(100% + 5px);left:0;right:0;margin:0;padding:0 4px;
+  font-size:9px;line-height:11px;color:#9ccfff;text-align:center;pointer-events:none}
+.fb-controls{height:180px;align-self:start;overflow:visible}
+.fb-steer{grid-column:2/4;display:grid;grid-template-rows:1fr 1fr}
+.fb-steer .fb-pad{border-left:2px solid var(--fb-hi)}
+.fb-steer .fb-pad+.fb-pad{border-top:2px solid var(--fb-hi)}
+@keyframes fb-rise{from{opacity:0;transform:translateY(8px)}}
+.fb-banner{animation-name:fb-rise-c}
+@keyframes fb-rise-c{from{opacity:0;transform:translate(-50%,8px)}}
+
+/* Mode chooser: shown once per mount, gone after selection. */
+.fb-choose{flex:1;min-height:100%;display:grid;align-content:center;justify-items:center;gap:14px;padding:16px;box-sizing:border-box;
+  background:linear-gradient(#0b1d36,#123c68);color:#fff;font-family:ui-monospace,'Space Mono',monospace;border-radius:12px}
+.fb-choose-brand{margin:0;font-size:22px;font-weight:800;letter-spacing:.14em;color:#f4d23c}
+.fb-choose-row{display:grid;grid-template-columns:repeat(2,minmax(0,240px));gap:10px;width:100%;justify-content:center}
+.fb-choose-card{display:grid;gap:6px;min-height:110px;padding:12px;text-align:left;font:inherit;color:#fff;background:#0f2747;border:3px solid #2a6fb0;border-radius:14px;cursor:pointer;transition:transform .08s}
+.fb-choose-card:active{transform:translateY(2px)}
+.fb-choose-card:hover,.fb-choose-card:focus-visible{border-color:#f1e6d0}
+.fb-choose-card strong{font-size:16px;letter-spacing:.08em}
+.fb-choose-card span{font-size:11px;line-height:1.35;color:#d4e7fa}
+.fb-choose-full{background:#ee7848;color:#0b1d36;border-color:#fff}.fb-choose-full span{color:#0b1d36}
+.gm-screen .gm-slot .fb-choose{border-radius:0;height:100%}
+
+/* Universal game mode (host slot). */
+.gm-screen .gm-slot .fb-game{flex:1;min-height:0!important;height:100%;border-radius:0;grid-template-rows:auto minmax(0,1fr) auto 180px;overflow:hidden}
+.fb-game,.gm-screen .gm-slot .fb-game{grid-template-rows:auto minmax(0,1fr) auto 208px}
+/* Landscape: mirrors the EFFECTIVE Classic .kr-game rules (game-mode-layouts.css v2 block, lines 287-300,
+   which override 178-206): rails clamp(68px,9cqw,84px), gap 6/4, padding 0 4px 4px, rows minmax(0,1fr) 48px,
+   screen col2 rows1-2 full height. Later overrides swap control sides; ACTION stays bottom-aligned with a taller target. */
+@container gm (min-aspect-ratio:3/2){
+  .gm-screen .gm-slot .fb-game{--fb-rail:clamp(88px,13cqw,128px);grid-template-columns:var(--fb-rail) minmax(0,1fr) var(--fb-rail);grid-template-rows:minmax(0,1fr) 48px;column-gap:6px;row-gap:4px;padding:0 4px 4px}
+  .gm-screen .gm-slot .fb-game>*{grid-column:2}
+  .gm-screen .gm-slot .fb-screen{grid-column:2;grid-row:1/3;border-width:2px}
+  /* HUD overlays the crowd stripe at the top of the field; takes no track. */
+  .gm-screen .gm-slot .fb-hud{grid-column:2;grid-row:1;align-self:start;z-index:3;margin:4px 6px 0;pointer-events:none;opacity:.94}
+  .gm-screen .gm-slot .fb-team{padding:1px 6px;border-width:1px;background:#0b1d36d9}
+  .gm-screen .gm-slot .fb-team i{height:12px;width:8px}
+  .gm-screen .gm-slot .fb-team span{font-size:8px}
+  .gm-screen .gm-slot .fb-team strong{font-size:13px}
+  .gm-screen .gm-slot .fb-clock{padding:0 8px;border-width:1px;background:#0b1d36d9}
+  .gm-screen .gm-slot .fb-clock strong{font-size:11px}.gm-screen .gm-slot .fb-clock small{font-size:8px}
+   /* Pause sits beneath the movement controls in the left rail. */
+   .gm-screen .gm-slot .fb-tools{display:flex;grid-column:1;grid-row:2;align-self:end;margin-top:0;height:44px;padding:0}
+  .gm-screen .gm-slot .fb-tool{flex:1;min-height:44px;padding:2px;font-size:11px;border-width:3px;border-radius:10px}
+  .gm-screen .gm-slot .fb-controls{display:contents}
+  .gm-screen .gm-slot .fb-juke-col{grid-column:1;grid-row:1;align-self:end;height:min(70%,240px);min-height:112px;border:3px solid var(--fb-hi);border-radius:14px;overflow:hidden}
+  .gm-screen .gm-slot .fb-juke{font-size:14px;letter-spacing:0}
+  .gm-screen .gm-slot .fb-steer{grid-column:3;grid-row:1;align-self:stretch;height:100%;min-height:96px;border:3px solid var(--fb-hi);border-radius:14px;overflow:hidden}
+  .gm-screen .gm-slot .fb-steer .fb-pad{border-left:0;min-height:44px}
+  .gm-screen .gm-slot .fb-status{grid-column:3;grid-row:2;height:44px;font-size:9px;line-height:11px;white-space:normal;text-align:right;align-self:end;display:flex;align-items:flex-end;justify-content:flex-end}
+  .gm-screen .gm-slot .fb-card{min-height:38px;padding:3px 5px}
+  .gm-screen .gm-slot .fb-card span{display:none}
+  .gm-screen .gm-slot .fb-choose-card{min-height:96px}
+}
+@media (prefers-reduced-motion:reduce){.fb-calls,.fb-banner,.fb-skeleton span{animation:none}}
+/* Landscape control borders; no additional live controls. */
+@container gm (min-aspect-ratio:3/2){
+  .gm-screen .gm-slot .fb-juke-col{border:0}
+  .gm-screen .gm-slot .fb-juke{border:3px solid var(--fb-hi);border-radius:14px}
+  .gm-screen .gm-slot .fb-steer{border:0}
+  .gm-screen .gm-slot .fb-steer .fb-pad{border-left:3px solid var(--fb-hi);border-right:3px solid var(--fb-hi)}
+  .gm-screen .gm-slot .fb-steer .fb-pad:first-child{border-top:3px solid var(--fb-hi);border-radius:14px 14px 0 0}
+  .gm-screen .gm-slot .fb-steer .fb-pad:last-child{border-bottom:3px solid var(--fb-hi);border-radius:0 0 14px 14px}
+}
+
+/* Control swap (amendment 1): UP/DOWN left, ACTION right, both orientations. Field bounds unchanged. */
+.fb-controls>.fb-steer{grid-column:1/3;grid-row:1}
+.fb-controls>.fb-juke-col{grid-column:3;grid-row:1}
+.fb-controls>.fb-steer .fb-pad{border-left:0;border-right:2px solid var(--fb-hi)}
+@container gm (min-aspect-ratio:3/2){
+   .gm-screen .gm-slot .fb-controls>.fb-steer{grid-column:1;grid-row:1;align-self:stretch;height:100%;min-height:96px}
+  .gm-screen .gm-slot .fb-controls>.fb-steer .fb-pad{border-left:3px solid var(--fb-hi);border-right:3px solid var(--fb-hi)}
+  .gm-screen .gm-slot .fb-controls>.fb-juke-col{grid-column:3;grid-row:1;align-self:end}
+  .gm-screen .gm-slot .fb-game>.fb-status{grid-column:3;grid-row:1;align-self:start;height:auto;max-height:calc(30% - 8px);overflow:hidden;align-items:flex-start;margin-top:4px}
+  .gm-screen .gm-slot .fb-game>.fb-status{display:block;min-width:0;width:100%;max-width:100%;box-sizing:border-box;padding-inline:4px;overflow-wrap:anywhere}
+}
+
+/* Refinement: maximize landscape field. Thinner frame and gutters; rails/control positions unchanged. */
+@container gm (min-aspect-ratio:3/2){
+  .gm-screen .gm-slot .fb-qb-help{position:static;grid-column:3;grid-row:2;align-self:start;
+    font-size:8px;line-height:9px;padding:2px 0;overflow-wrap:normal}
+  .gm-screen .gm-slot .fb-game{column-gap:4px;row-gap:2px;padding:0 2px 2px}
+  .gm-screen .gm-slot .fb-screen{border-width:1px;border-radius:4px}
+  .gm-screen .gm-slot .fb-hud{margin:2px 4px 0;opacity:.9}
+  .gm-screen .gm-slot .fb-team{padding:0 5px}
+}
+.fb-game{gap:4px;padding:4px}
+.fb-screen{border-width:2px}
+.fb-play-result{position:absolute;z-index:4;left:50%;bottom:12%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 20px);box-sizing:border-box;padding:6px 10px;background:#0b1d36c9;color:var(--fb-gold);font:900 clamp(12px,2.5cqw,20px)/1.35 ui-monospace,'Space Mono',monospace;letter-spacing:.05em;text-align:center;text-transform:uppercase;text-shadow:2px 2px 0 #000;pointer-events:none;border-radius:2px}
+.fb-screen>.fbp-pen-inline{inset:auto 8px 6px auto;z-index:3;width:54px;height:72px;min-height:0;padding:0;border:0;background:transparent;display:block;overflow:visible;pointer-events:none}
+.fbp-pen-inline .fbp-pen-body{display:block;padding:0;height:100%}
+.fbp-pen-inline .fbp-ref{width:54px;height:72px;max-width:none;max-height:none}
+.fbp-pen-inline .fbp-pen-text{display:none}
+
+/* Interface amendment 2: no app top bar; Pause is a small lower-right field button beside the play clock. */
+.fb-screen{--fbp-top:6px}
+.fb-pause-btn{position:absolute;right:6px;bottom:6px;z-index:45;width:44px;height:44px;padding:0;display:grid;place-items:center;
+  font:900 20px/1 ui-monospace,'Space Mono',monospace;color:#fff;background:#0b1d36e6;border:3px solid #f1e6d0;border-radius:0;
+  box-shadow:inset -3px -3px 0 #0f2747;cursor:pointer;touch-action:manipulation}
+.fb-pause-btn:active{transform:translateY(1px);box-shadow:none}
+.fb-pause-btn:focus-visible{outline:3px solid #f4d23c;outline-offset:1px}
+.fb-pause-btn[aria-pressed=true]{background:#f4d23c;color:#0b1d36}
+.fb-arrow{display:block;font-size:34px;line-height:1;font-weight:900}
+.fb-pad[data-pressed=true] .fb-arrow{transform:translateY(1px)}
+.fb-calls{bottom:56px;max-height:calc(100% - 64px)}
+.fb-banner{bottom:56px}
+.fb-screen>.fbp-pen-inline{right:112px;bottom:4px}
+.fb-final .kbm-btn,.fb-final .kbm-confirm{margin-top:2px}
+@container gm (min-aspect-ratio:3/2){
+  .gm-screen .gm-slot .fb-screen{--fbp-top:30px}
+  /* The old left-rail Pause slot is gone; ↑/↓ claim the full rail height. */
+  .gm-screen .gm-slot .fb-controls>.fb-steer{grid-row:1/3}
+  .gm-screen .gm-slot .fb-arrow{font-size:38px}
+}
+
+/* End of game: one opaque scoreboard that scrolls as a whole; no static graphic above small stats. */
+.fb-final-stats{width:min(100%,420px);border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.fb-final-stats th,.fb-final-stats td{padding:3px 6px;border-bottom:1px solid #75829f66}
+.fb-final-stats thead th{font-size:10px;color:#9ccfff;letter-spacing:.06em;font-weight:700;text-align:right}
+.fb-final-stats tbody th{font-size:11px;color:#9ccfff;text-align:left;font-weight:600}
+.fb-final-stats td{font-weight:800;text-align:right;width:28%}
+@container gm (min-aspect-ratio:3/2){
+  .gm-screen .gm-slot .fb-final[data-testid=panel-final]{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-content:safe center;column-gap:18px;text-align:center}
+  .gm-screen .gm-slot .fb-final[data-testid=panel-final]>.fb-final-stats{grid-column:2;grid-row:1/6;width:100%}
+  .gm-screen .gm-slot .fb-final[data-testid=panel-final]>:not(.fb-final-stats){grid-column:1}
+  .gm-screen .gm-slot .fb-final-stats{font-size:12px}
+  .gm-screen .gm-slot .fb-final-stats th,.gm-screen .gm-slot .fb-final-stats td{padding:2px 6px}
+}
