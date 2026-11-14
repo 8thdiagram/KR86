@@ -15,10 +15,41 @@ test('defensive tap is responsive on release, never fires on initial press or re
     const c = createFootballControls(), g = fixture();
     c.enter('action', 'juke', 0, g);
     assert.equal(c.sample(0).action, false);
+    assert.equal(c.sample(0).defensePressed, true);
     c.release('action', duration);
     assert.equal(c.sample(duration).action, true);
+    assert.equal(c.sample(duration).defensePressed, false);
     assert.equal(c.sample(duration + 1).action, false);
     assert.equal(c.sample(duration + 1).defenseHold, false);
+  }
+});
+test('rapid holds, direction reversals and partial releases cannot stick or synthesize taps', () => {
+  const c = createFootballControls(), g = fixture();
+  for (let cycle = 0; cycle < 50; cycle++) {
+    const now = cycle * 500;
+    c.enter('action', 'juke', now, g);
+    assert.equal(c.sample(now).defensePressed, true);
+    assert.equal(c.sample(now).defenseHold, false);
+    c.enter('up', 'up', now + 20, g);
+    c.enter('down', 'down', now + 210, g);
+    let s = c.sample(now + 220);
+    assert.equal(s.defenseHold, true); assert.equal(s.defenseDirection, 1); assert.equal(s.action, false);
+    c.release('down', now + 240); s = c.sample(now + 240);
+    assert.equal(s.defenseDirection, -1, 'remaining pressed arrow retains ownership');
+    if (cycle % 2) {
+      c.release('up', now + 260);
+      s = c.sample(now + 260);
+      assert.equal(s.defenseDirection, 0); assert.equal(s.defenseHold, true);
+      c.release('action', now + 280);
+    } else {
+      c.release('action', now + 260);
+      s = c.sample(now + 260);
+      assert.equal(s.defenseDirection, -1); assert.equal(s.defensePressed, false);
+      c.release('up', now + 280);
+    }
+    s = c.sample(now + 300);
+    assert.equal(s.defensePressed, false); assert.equal(s.defenseHold, false);
+    assert.equal(s.defenseDirection, 0); assert.equal(s.action, false);
   }
 });
 test('200 ms sustained ACTION starts pursuit without an initial dive or release tap', () => {

@@ -91,6 +91,7 @@ export function createFootballControls() {
       const startScramble = scramble || !!owner && !owner.scrambled && now - owner.since >= QB_SCRAMBLE_MS;
       if (consume && startScramble && owner) owner.scrambled = true;
       const result = { ...s, action: kick || s.juke || defenseTap, passPress: press, passTarget: target, passRelease: release, passCancel: cancel,
+        defensePressed: !!defenseOwner,
         defenseHold: !!defenseOwner && now - defenseOwner.since >= DEFENSE_HOLD_MS,
         defenseDirection,
         qbScramble: startScramble,

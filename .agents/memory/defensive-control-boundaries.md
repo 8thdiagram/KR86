@@ -9,13 +9,13 @@ Quick defensive ACTION taps must retain the original nearest-eligible-defender b
 
 **How to apply:** Keep tap selection separate from selected-player pursuit and eligible held actions. Do not simplify both paths into one highlighted-player action.
 
-Manual defense is a temporary override of movement intentions, not a rewrite of defensive assignments or an enhancement of physical abilities. With no input, the selected player must retain ordinary AI behavior. Releasing all controls restores the original responsibility without teleporting.
+Manual defense fully overrides assignment-based movement, not defensive assignments or physical abilities. Arrows move the defender directly; ACTION pursues the actual ball carrier for every selected position. Do not use arrows to select receivers, assist coverage or follow receiver progression. With no input, retain ordinary AI behavior. Releasing all controls restores the original responsibility at its current location without teleporting.
 
-**Why:** The user explicitly prioritized existing gameplay, AI, physical limits, ratings, animations, defensive-line pressure schedules, playbooks and Franchise saves over a redesigned defensive engine.
+**Why:** The user explicitly corrected defenders fighting directional input and removed coverage-control complexity, while prioritizing existing gameplay, physical limits, ratings, animations, pressure schedules, playbooks and Franchise saves.
 
-**How to apply:** Select the highlighted defender from defensive personnel and assignments only, never the hidden offensive call or quarterback receiver highlight. Keep identity consistent between diagrams and the live play. Reuse existing action admission, contact rules, probabilities, cooldowns and animations.
+**How to apply:** Select from defensive personnel and assignments only, never hidden offensive information. While manually controlled, neither coverage targets nor lane-spacing or assignment-based steering may pull the player against input. Preserve physical blocking and committed animations. Give arrows steering priority during pursuit, keeping existing speed/acceleration/diagonal limits. Partial releases remain manual until all controls are released. Reuse existing action admission, contact rules, probabilities, cooldowns and animations.
 
-Use the original offense-style white targeting highlight for the selected defender, not a red circle. Turn it yellow whenever ACTION or an arrow is pressed, and back to white on release.
+Use the exact original offense targeting symbol on defensive diagrams and the live selected defender: identical shape, proportions, outline and pixel styling, not a different dashed variation or red circle. White indicates automatic mode; yellow indicates ACTION and/or an arrow pressed. Only color changes during manual input.
 
 **Why:** The user explicitly replaced the red indicator with the existing offense targeting system and wants immediate feedback for every manual press, not just a sustained hold.
 

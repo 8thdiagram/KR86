@@ -4,6 +4,7 @@ import { isFootballReady } from '../lib/football/engine';
 import { defensiveMenuChoices, offensiveMenuChoices, PLAYBOOK, DEFENSES } from '../lib/football/playbook';
 import type { Defense, FootballGame, PlayId } from '../lib/football/types';
 import { coachingAdvice } from '../lib/football/coaching-advice';
+import { PLAYER_TARGET_CENTER, PLAYER_TARGET_PIXELS, PLAYER_TARGET_WHITE } from '../lib/football/player-target';
 import './football-preplay.css';
 
 const ORD = ['', '1ST', '2ND', '3RD', '4TH'];
@@ -15,6 +16,8 @@ const downText = (g: FootballGame) => {
   return `${ORD[g.down] ?? `${g.down}TH`} & ${g.target >= 100 ? 'GOAL' : togo}`;
 };
 const LOS = 190;
+// Uniform enlargement keeps the exact live icon readable on compact phone cards.
+const DIAGRAM_TARGET_SCALE = 1.5;
 
 /** Vertical chalk diagram: offense always advances UP; left/right follows the quarterback's perspective.
  * Conventions: solid = committed path, dashed = feint/delay, T = block, ellipse = zone, thin link = man, orange arrow = rush. */
@@ -66,8 +69,12 @@ function Diagram({ routes, label }: { routes: DiagramRoute[]; label: string }) {
         {moving && !r.kick && !r.pitch && !r.fake && !split && <polyline points={line(r.points)} markerEnd={marker} className={defender ? 'fbp-rush' : undefined} />}
         {defender ? <path transform={`translate(${s.x} ${s.y})`} d="M-5 -5L5 5M5 -5L-5 5" className="fbp-x" />
           : !r.pitch && <circle cx={s.x} cy={s.y} r="5.5" className="fbp-o" />}
-        {r.controlled && <path transform={`translate(${s.x} ${s.y})`}
-          d="M-9 -5V-9H-5M5 -9H9V-5M9 5V9H5M-5 9H-9V5" className="fbp-controlled" />}
+        {r.controlled && defender && <g
+          transform={`translate(${s.x - PLAYER_TARGET_CENTER.x * DIAGRAM_TARGET_SCALE} ${s.y - PLAYER_TARGET_CENTER.y * DIAGRAM_TARGET_SCALE}) scale(${DIAGRAM_TARGET_SCALE})`}
+          className="fbp-controlled" shapeRendering="crispEdges">
+          {PLAYER_TARGET_PIXELS.map(([x, y, width, height], i) =>
+            <rect key={i} x={x} y={y} width={width} height={height} fill={PLAYER_TARGET_WHITE} />)}
+        </g>}
         {r.label && <text x={s.x} y={defender ? s.y - 9 : s.y + 17} className="fbp-lbl">{r.label}</text>}
         {r.read && moving && <g transform={`translate(${e.x + (e.x > 96 ? 11 : -11)} ${e.y + 2})`}><circle r={r.read === 1 ? 9 : 7.5} className="fbp-read" /><text y="3.5" className="fbp-num">{r.read}</text></g>}
       </g>;

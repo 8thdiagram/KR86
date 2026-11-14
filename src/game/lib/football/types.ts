@@ -115,7 +115,7 @@ export type FootballGame = {
 };
 export type FootballInput = { direction?: KickDirection; action?: boolean; hesitate?: boolean; juke?: boolean; passPress?: boolean; passTarget?: number; passRelease?: PassType; passCancel?: boolean; qbScramble?: boolean;
   /** Temporary human defensive intentions; never change original assignments. */
-  defenseHold?: boolean; defenseDirection?: KickDirection };
+  defensePressed?: boolean; defenseHold?: boolean; defenseDirection?: KickDirection };
 export type FootballMove = KickMoveInput;
 export const other = (side: Side): Side => side === 'home' ? 'away' : 'home';
 export const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));

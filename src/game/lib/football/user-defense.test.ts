@@ -4,7 +4,7 @@ import { createFootball } from './engine';
 import { startField, stepField } from './field';
 import { stepDefense } from './pursuit';
 import { DEFENSE_IDS, type Defense, type PlayId } from './types';
-import { controlledDefenderId, prepareUserDefense, userDefenseTarget } from './user-defense';
+import { consumeDefenseRelease, controlledDefenderId, manualDefender, prepareUserDefense, userDefenseTarget, userDefenseVelocity } from './user-defense';
 import { diagramForDefense } from './diagrams';
 import { manAssignment } from './coverage';
 import { eligiblePassDefenders, PASS_DEFENSE, resolvePassDefense } from './pass-defense';
@@ -64,7 +64,7 @@ test('CPU defense ignores every new input; original offense and its random outco
   base.live!.offense = controlled.live!.offense = 'home';
   for (let i = 0; i < 120; i++) {
     const a = stepField(base, {}, 1 / 60);
-    const b = stepField(controlled, { defenseHold: true, defenseDirection: i % 2 ? 1 : -1 }, 1 / 60);
+    const b = stepField(controlled, { defensePressed: true, defenseHold: true, defenseDirection: i % 2 ? 1 : -1 }, 1 / 60);
     assert.deepEqual(a, b); assert.deepEqual(base, controlled);
     if (a) break;
   }
@@ -85,27 +85,123 @@ test('steering affects only the selected athlete on the same frame, respects exi
     assert(Math.hypot(d.vx, d.vy) < 12, 'existing turn/acceleration cap applies from rest');
   }
 });
-test('linebacker tracks the actual QB, handoff recipient and scrambling QB; arrows override pursuit angle', () => {
-  const g = fixture(), l = g.live!, d = selected(g);
+test('arrows-only suppress every assignment, blocker-avoidance and lane-spacing movement vector', () => {
+  for (const call of DEFENSE_IDS) for (const direction of [-1, 1] as const) {
+    const g = fixture(call), l = g.live!, d = selected(g);
+    isolate(g); d.x = 700; d.y = 96; d.vx = 0; d.vy = 0;
+    const mate = defenders(g).find(a => a.id !== d.id)!;
+    mate.x = 696; mate.y = 96 + direction * 5;
+    // Deliberately cached assignment and nearby bodies oppose the pressed direction.
+    d.pursuit = { x: 850, y: direction === 1 ? 25 : 167, until: 100,
+      role: 'cover', seenX: 850, seenY: 25, seenVx: 0, seenVy: 0 };
+    const block = l.athletes[0]!;
+    block.x = 705; block.y = 96 + direction * 8;
+    const originalAssignment = structuredClone(d.pursuit);
+    for (let frame = 0; frame < 15; frame++) {
+      prepareUserDefense(g, { defenseDirection: direction });
+      stepDefense(g, 1 / 60); l.time += 1 / 60;
+      assert.equal(d.x, 700, `${call}: arrows must not advance along the AI's x target`);
+      assert.equal(d.vx, 0);
+      assert(d.vy * direction > 0, `${call}: selected player must follow the arrow`);
+    }
+    assert.deepEqual(d.pursuit, originalAssignment, 'manual arrows never rewrite coverage assignments');
+  }
+});
+test('ACTION pursues the carrier directly even for a corner/safety assigned elsewhere', () => {
+  for (const call of DEFENSE_IDS) {
+    const g = fixture(call), l = g.live!, d = selected(g);
+    isolate(g); d.x = 700; d.y = 96; d.vx = d.vy = 0;
+    const qb = l.athletes[l.carrier]!;
+    qb.x = 450; qb.y = 60;
+    d.pursuit = { x: 1000, y: 160, until: 100, role: 'deep',
+      seenX: 1000, seenY: 160, seenVx: 0, seenVy: 0 };
+    prepareUserDefense(g, { defenseHold: true });
+    stepDefense(g, 1 / 60);
+    assert(d.vx < 0 && d.vy < 0, `${call}: no coverage pull away from the carrier`);
+  }
+});
+test('manual input uses existing axis and diagonal speed budgets, giving arrows full authority', () => {
+  const d = { x: 700, y: 96 };
+  for (const independent of [false, true]) for (const direction of [-1, 1] as const) {
+    const steering = userDefenseVelocity(d, { x: 700, y: 96 + direction * 42, direction }, 80, 64, independent, 1 / 60);
+    assert.equal(steering.x, 0); assert.equal(steering.y, direction * 64);
+    const combined = userDefenseVelocity(d, { x: 200, y: 96 + direction * 42, direction }, 80, 64, independent, 1 / 60);
+    assert(combined.x < 0); assert.equal(combined.y, direction * 64, 'pursuit cannot dilute or reverse steering');
+    assert(Math.abs(combined.x) <= 80 && Math.abs(combined.y) <= 64);
+    if (!independent) assert(Math.hypot(combined.x, combined.y) <= 80 + 1e-9);
+    const pursuit = userDefenseVelocity(d, { x: 200, y: 20, direction: 0 }, 80, 64, independent, 1 / 60);
+    assert(pursuit.x < 0 && pursuit.y < 0);
+    if (!independent) assert(Math.hypot(pursuit.x, pursuit.y) <= 80 + 1e-9);
+  }
+});
+test('ACTION pending its hold threshold owns movement without starting a sprint or automatic dive', () => {
+  const g = fixture('man'), d = selected(g);
+  prepareUserDefense(g, { defensePressed: true });
+  assert.deepEqual(userDefenseTarget(g, d), { x: d.x, y: d.y, direction: 0 });
+  assert.equal(manualDefender(g, { defensePressed: true }), undefined);
+  prepareUserDefense(g, {});
+  assert.equal(userDefenseTarget(g, d), undefined);
+});
+test('partial releases stay manual; only releasing all controls refreshes the original assignment', () => {
+  const g = fixture('man'), l = g.live!, d = selected(g);
+  const originalMan = manAssignment(l, d)!.id;
+  prepareUserDefense(g, { defenseHold: true, defenseDirection: -1 });
+  prepareUserDefense(g, { defenseDirection: -1 });
+  assert.equal(userDefenseTarget(g, d)!.x, d.x);
+  assert.equal(consumeDefenseRelease(g, d), false);
+  prepareUserDefense(g, { defenseHold: true, defenseDirection: -1 });
+  prepareUserDefense(g, { defenseHold: true });
+  assert.equal(userDefenseTarget(g, d)!.x, l.athletes[l.carrier]!.x);
+  assert.equal(consumeDefenseRelease(g, d), false);
+  prepareUserDefense(g, {});
+  assert.equal(userDefenseTarget(g, d), undefined);
+  assert.equal(consumeDefenseRelease(g, d), true);
+  assert.equal(consumeDefenseRelease(g, d), false);
+  assert.equal(manAssignment(l, d)!.id, originalMan);
+});
+test('releasing a manually moved corner immediately re-reads its original receiver current location', () => {
+  const g = fixture('man'), l = g.live!, d = selected(g);
+  const receiver = manAssignment(l, d)!;
+  d.x = 700; d.y = 110; d.vx = d.vy = 0;
+  d.pursuit = { x: 620, y: 160, until: 100, role: 'cover',
+    seenX: 616, seenY: 160, seenVx: 0, seenVy: 0 };
+  prepareUserDefense(g, { defenseDirection: 1 }); stepDefense(g, 1 / 60);
+  receiver.x = 830; receiver.y = 35;
+  const before = { x: d.x, y: d.y };
+  prepareUserDefense(g, {}); stepDefense(g, 1 / 60);
+  assert.equal(manAssignment(l, d)!.id, receiver.id);
+  assert.equal(d.pursuit.seenX, receiver.x);
+  assert.equal(d.pursuit.seenY, receiver.y);
+  assert(d.pursuit.y < before.y && d.pursuit.x > before.x, 'current coverage, not the old target or start coordinates');
+  assert(Math.hypot(d.x - before.x, d.y - before.y) < 3, 'bounded physical return, no teleport');
+});
+test('every selected role pursues the actual QB, handoff recipient, scrambling QB and receiver after a catch', () => {
+ for (const call of DEFENSE_IDS) {
+  const g = fixture(call), l = g.live!, d = selected(g);
   for (const mode of ['dropback', 'handoff', 'run', 'scramble'] as const) {
     l.mode = mode; l.carrier = mode === 'run' ? 6 : 5;
     const carrier = l.athletes[l.carrier]!;
     carrier.x = 440; carrier.y = 80; carrier.vx = 10; carrier.vy = 0;
     prepareUserDefense(g, { defenseHold: true });
-    const target = userDefenseTarget(g, d, { x: 800, y: 130 })!;
-    assert.equal(target.x, 441.8); assert.equal(target.y, 80);
+    const target = userDefenseTarget(g, d)!;
+    assert.equal(target.x, 440); assert.equal(target.y, 80);
     prepareUserDefense(g, { defenseHold: true, defenseDirection: 1 });
-    assert(userDefenseTarget(g, d, { x: 800, y: 130 })!.y > d.y);
+    assert(userDefenseTarget(g, d)!.y > d.y);
   }
+  l.mode = 'run'; l.passCaught = true; l.carrier = 3;
+  prepareUserDefense(g, { defenseHold: true });
+  assert.equal(userDefenseTarget(g, d)!.x, l.athletes[3]!.x);
+  assert.equal(userDefenseTarget(g, d)!.y, l.athletes[3]!.y);
+ }
 });
 test('release resumes the original dynamically updated assignment without moving or rewriting it', () => {
   for (const call of ['pass', 'man', 'prevent', 'blitz', 'contain'] as const) {
     const g = fixture(call), l = g.live!, d = selected(g);
     const before = structuredClone(d), assignment = manAssignment(l, d)?.id;
     prepareUserDefense(g, { defenseHold: true, defenseDirection: 1 });
-    assert(userDefenseTarget(g, d, { x: 700, y: 110 }));
+    assert(userDefenseTarget(g, d));
     prepareUserDefense(g, {});
-    assert.equal(userDefenseTarget(g, d, { x: 710, y: 115 }), undefined);
+    assert.equal(userDefenseTarget(g, d), undefined);
     assert.deepEqual(d, before, 'intentions never mutate athletes, assignments or cached AI pursuit');
     assert.equal(manAssignment(l, d)?.id, assignment);
     const resumed = structuredClone(g);
@@ -113,34 +209,35 @@ test('release resumes the original dynamically updated assignment without moving
     assert.deepEqual(g, resumed, 'AI resumes smoothly from current physical position');
   }
 });
-test('DB coverage can be directed toward another visible threat without reading offensive highlighted progression', () => {
+test('arrows move a DB directly without selecting receivers or reading offensive progression', () => {
   const g = fixture('man'), l = g.live!, d = selected(g);
-  const assigned = manAssignment(l, d)!;
+  const assigned = manAssignment(l, d)!.id;
   l.athletes[4]!.x = 750; l.athletes[4]!.y = 80;
   l.athletes[6]!.x = 1000; l.athletes[6]!.y = 160;
   prepareUserDefense(g, { defenseDirection: 1 });
-  const target = userDefenseTarget(g, d, { x: assigned.x, y: assigned.y })!;
-  assert.equal(target.x, 754);
+  const target = userDefenseTarget(g, d)!;
+  assert.deepEqual(target, { x: d.x, y: d.y + 42, direction: 1 });
   const clone = structuredClone(g);
   clone.live!.lockedReceiver = 6; clone.live!.holdingPass = true;
+  clone.live!.athletes[4]!.x += 100; clone.live!.athletes[6]!.y -= 100;
   prepareUserDefense(clone, { defenseDirection: 1 });
-  assert.deepEqual(userDefenseTarget(clone, selected(clone), { x: assigned.x, y: assigned.y }), target);
+  assert.deepEqual(userDefenseTarget(clone, selected(clone)), target);
+  assert.equal(manAssignment(l, d)!.id, assigned);
   prepareUserDefense(g, { defenseHold: true });
-  assert.equal(userDefenseTarget(g, d, { x: assigned.x, y: assigned.y })!.x, 750,
-    'hold keeps closing on the user-directed threat until all controls are released');
+  assert.equal(userDefenseTarget(g, d)!.x, l.athletes[l.carrier]!.x,
+    'ACTION pursues the ball carrier, never a receiver chosen by an arrow');
 });
-test('held DB reacts only to an actual released ball after existing reaction time', () => {
+test('held DB follows only the visible airborne ball, not its intended receiver or hidden endpoint', () => {
   const g = fixture('man'), l = g.live!, d = selected(g);
-  const original = { x: 650, y: 30 };
   l.mode = 'flight';
   l.flight = { x: 450, y: 80, z: 1, fromX: 400, fromY: 80, toX: 800, toY: 80,
     age: 0, duration: 1, receiver: 3, accuracy: 1, type: 'normal' };
   prepareUserDefense(g, { defenseHold: true });
-  const before = userDefenseTarget(g, d, original);
-  l.flight.age = PASS_DEFENSE.reactionSeconds;
-  const after = userDefenseTarget(g, d, original)!;
-  assert.notDeepEqual(before, after);
-  assert.equal(after.x, 520);
+  assert.deepEqual(userDefenseTarget(g, d), { x: 450, y: 80, direction: 0 });
+  l.flight.toX = 900; l.flight.toY = 150; l.flight.receiver = 6;
+  assert.deepEqual(userDefenseTarget(g, d), { x: 450, y: 80, direction: 0 });
+  l.flight.x = 470; l.flight.y = 82;
+  assert.deepEqual(userDefenseTarget(g, d), { x: 470, y: 82, direction: 0 });
 });
 test('quick ACTION still dives with the nearest eligible DL at a QB, even though a distant LB is selected', () => {
   const g = fixture(), l = g.live!;
@@ -165,6 +262,16 @@ test('a held selected defender automatically attempts a legal dive once and resp
   for (let i = 0; i < 5; i++) stepField(g, { defenseHold: true }, 1 / 60);
   assert.equal(d.defensiveAttempt!.at, attempt, 'a hold does not replant a dive every frame');
   assert.equal(g.stats.away.sacks, 0, 'an attempt alone never awards a sack');
+});
+test('arrow-only manual movement retains automatic eligible actions and their cooldown', () => {
+  const g = fixture(), l = g.live!, d = selected(g);
+  isolate(g);
+  l.athletes[5]!.x = 460; l.athletes[5]!.y = 96; d.x = 490; d.y = 110;
+  stepField(g, { defenseDirection: -1 }, 1 / 60);
+  assert(d.dive); assert.equal(d.defensiveAttempt?.kind, 'tackle');
+  const at = d.defensiveAttempt!.at;
+  for (let i = 0; i < 5; i++) stepField(g, { defenseDirection: -1 }, 1 / 60);
+  assert.equal(d.defensiveAttempt!.at, at, 'arrows cannot spam a new dive every frame');
 });
 test('actual contact, not holding ACTION at a distance, creates automatic sacks and runner tackles', () => {
   for (const mode of ['dropback', 'scramble', 'run'] as const) {
@@ -196,8 +303,8 @@ test('sustained pursuit physically closes on a QB and attempts a sack without an
   assert(d.defensiveAttempt, 'holding automatically used the existing close-range action');
   assert.equal(result?.reason, 'sack');
 });
-test('pass taps still choose the original nearest eligible defender; holds use the highlighted one with identical eligibility', () => {
-  for (const hold of [false, true]) {
+test('pass taps keep nearest eligibility; held and arrow-only actions use the selected defender with the same rules', () => {
+  for (const kind of ['tap', 'hold', 'arrow'] as const) {
     const g = fixture('man'), l = g.live!;
     isolate(g); l.mode = 'flight';
     l.flight = { x: 580, y: 96, z: 1, fromX: 400, fromY: 96, toX: 600, toY: 96,
@@ -205,11 +312,22 @@ test('pass taps still choose the original nearest eligible defender; holds use t
     const d = selected(g), closer = l.athletes[12]!;
     d.x = 610; d.y = 96; closer.x = 600; closer.y = 96;
     const nearest = eligiblePassDefenders(g)[0]!.d.id;
-    stepField(g, hold ? { defenseHold: true } : { action: true }, 1 / 60);
+    stepField(g, kind === 'hold' ? { defenseHold: true } : kind === 'arrow' ? { defenseDirection: 1 } : { action: true }, 1 / 60);
     const diving = defenders(g).filter(a => a.defensiveAttempt?.kind === 'intercept');
     assert.equal(diving.length, 1);
-    assert.equal(diving[0]!.id, hold ? d.id : nearest);
+    assert.equal(diving[0]!.id, kind === 'tap' ? nearest : d.id);
     assert.equal(l.flight?.attempted?.length, 1);
+  }
+});
+test('manual pass defense still respects the original ball-release reaction time', () => {
+  for (const input of [{ defenseHold: true }, { defenseDirection: 1 as const }]) {
+    const g = fixture('man'), l = g.live!, d = selected(g);
+    isolate(g); d.x = 590; d.y = 96; l.mode = 'flight';
+    l.flight = { x: 580, y: 96, z: 1, fromX: 580, fromY: 96, toX: 800, toY: 96,
+      duration: 1, age: 0, receiver: 3, accuracy: 1, type: 'normal' };
+    stepField(g, input, 1 / 60);
+    assert.equal(d.dive, undefined, 'manual movement cannot preempt the normal interception reaction delay');
+    assert.equal(l.defensiveActionAt, undefined);
   }
 });
 test('holding cannot create interceptions outside range or bypass pass-defense probabilities and actual ball contact', () => {
@@ -238,7 +356,7 @@ test('holding cannot create interceptions outside range or bypass pass-defense p
 test('transient control state never enters Franchise save payloads and valid existing matches still load', () => {
   const g = fixture(), before = JSON.stringify(g);
   prepareUserDefense(g, { defenseHold: true, defenseDirection: 1 });
-  userDefenseTarget(g, selected(g), { x: 400, y: 100 });
+  userDefenseTarget(g, selected(g));
   assert.equal(JSON.stringify(g), before);
   assert(isFootballGame(JSON.parse(before)));
 });

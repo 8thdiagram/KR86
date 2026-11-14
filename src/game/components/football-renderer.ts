@@ -15,6 +15,7 @@ import { isTackleActor } from '../lib/football/tackle-scene';
 import { drawTackle } from './football-tackle';
 import { attackDirection, playTravelDirection, worldX } from '../lib/football/direction';
 import { drawRegularSeasonMidfield } from '../../platform/midfield-logo';
+import { PLAYER_TARGET_PIXELS, PLAYER_TARGET_WHITE, PLAYER_TARGET_YELLOW } from '../lib/football/player-target';
 
 /** Presentation only. Reads the engine state; never mutates it and never samples randomness. */
 const { field, moveSprite, prone, referee, football, crowd } = kickFootballArt;
@@ -194,14 +195,10 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   }
 }
 
-/** The existing offense target: four separated pixel corners, shared by defense. */
+/** The exact shared eight-rectangle targeting symbol. */
 function playerTarget(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
-  for (const side of [-1, 1]) {
-    const edge = x + side * 8;
-    R(ctx, color, edge, y - 16, 1, 5); R(ctx, color, edge, y + 2, 1, 5);
-    R(ctx, color, side < 0 ? edge : edge - 3, y - 16, 4, 1);
-    R(ctx, color, side < 0 ? edge : edge - 3, y + 6, 4, 1);
-  }
+  for (const [dx, dy, width, height] of PLAYER_TARGET_PIXELS)
+    R(ctx, color, x + dx, y + dy, width, height);
 }
 
 function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number, manualDefense: boolean) {
@@ -257,14 +254,14 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
     else if (snap && a.role === 'QB') slim(ctx, a.x, a.y, kit, { hold: true });
     else slim(ctx, a.x, a.y, { ...kit, dir: facing }, { step: moving ? t + a.id : 0, ball: hasBall, engaged, lean: engaged ? facing : 0, crouch: snap });
     if (g.phase === 'live' && a.id === read && g.possession === 'home' && !ic) {
-      playerTarget(ctx, a.x, a.y, live.holdingPass ? FIRST : LACE);
+      playerTarget(ctx, a.x, a.y, live.holdingPass ? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE);
     }
     // Small ground tick links the primary diagram to the opening assignment,
     // then disappears. No live labels, arrows, halos or permanent HUD additions.
     if (g.phase === 'live' && !ic && !snap && a.id === primary && a.id !== read &&
         live.time < PLAYBOOK[live.play].develop + .55) R(ctx, LACE, a.x - 3, a.y + 7, 6, 1);
     if (a.id === controlled) {
-      playerTarget(ctx, a.x, a.y, manualDefense ? FIRST : LACE);
+      playerTarget(ctx, a.x, a.y, manualDefense ? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE);
     }
     ctx.restore();
     if (hasBall) carrierAt = holding && ic ? { x: ic.catchX, y: ic.catchY } : a;

@@ -11,7 +11,7 @@ import { FOOTBALL_SIDELINES } from './sidelines';
 import { pursuitPoint } from '../open-field-pursuit';
 import { coachingAssignment } from './coaching-execution';
 import { containmentTarget } from './containment';
-import { userDefenseTarget } from './user-defense';
+import { consumeDefenseRelease, userDefenseTarget, userDefenseVelocity } from './user-defense';
 
 type Role = NonNullable<Athlete['pursuit']>['role'];
 /** Bounded interception horizon from observed motion, never from the next control input. */
@@ -85,7 +85,8 @@ export function stepDefense(g: FootballGame, dt: number) {
     if (!openField && l.time < .28 && l.defense !== 'run' && !goal) speed *= .35;
     // Repair a resumed pre-crossing scramble's cached run target as well.
     if (holdCoverage && d.pursuit && !['cover', 'deep'].includes(d.pursuit.role)) delete d.pursuit;
-    if (!d.pursuit || d.pursuit.until <= l.time) {
+    const released = consumeDefenseRelease(g, d);
+    if (!d.pursuit || d.pursuit.until <= l.time || released) {
       let x: number, y: number, role: Role;
       let observed = carrying ? carrier : qb;
       const contain=containmentTarget(g,d);
@@ -186,8 +187,7 @@ export function stepDefense(g: FootballGame, dt: number) {
     let tx = d.pursuit.x, ty = d.pursuit.y;
     const escape = openField ? undefined : penetrationTarget(l, d);
     if (escape) { tx = escape.x; ty = escape.y; }
-    const userTarget = userDefenseTarget(g, d, { x: tx, y: ty });
-    if (userTarget) { tx = userTarget.x; ty = userTarget.y; }
+    const userTarget = userDefenseTarget(g, d);
     // Work around actual blockers, rather than ghosting through them or choosing a random gap.
     const pathX = tx - d.x, pathY = ty - d.y, pathLen = Math.max(1, Math.hypot(pathX, pathY));
     for (const block of offense) {
@@ -224,8 +224,11 @@ export function stepDefense(g: FootballGame, dt: number) {
     const lateral = speed * ELITE.lateral / ELITE.forward;
     const arrival = Math.max(dt, Math.abs(dx) / speed, Math.abs(dy) / lateral);
     const independentAxes = elite || runPursuit;
-    const wantedX = independentAxes ? clamp(dx / arrival + (space ? sx * spacing : 0), -speed, speed) : intentX * cap;
-    const wantedY = independentAxes ? clamp(dy / arrival + (space ? sy * spacing : 0), -lateral, lateral) : intentY * cap;
+    // Manual movement replaces the entire assignment/avoidance/spacing vector,
+    // not just its initial destination. Physical blocking and dives still apply.
+    const manual = userTarget ? userDefenseVelocity(d, userTarget, speed, lateral, independentAxes, dt) : undefined;
+    const wantedX = manual ? manual.x : independentAxes ? clamp(dx / arrival + (space ? sx * spacing : 0), -speed, speed) : intentX * cap;
+    const wantedY = manual ? manual.y : independentAxes ? clamp(dy / arrival + (space ? sy * spacing : 0), -lateral, lateral) : intentY * cap;
     const close = carrying && Math.hypot(d.x - carrier.x, d.y - carrier.y) < 48;
     const acceleration = elite ? close ? ELITE.closeAcceleration : ELITE.acceleration
        : (close ? 650 : 180 + (coverage ? profile.coverage : profile.rush) * 130) * EXECUTION.defenseAcceleration;
