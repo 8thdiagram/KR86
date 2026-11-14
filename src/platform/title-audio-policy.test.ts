@@ -14,8 +14,22 @@ test('intro has no music, skip or mute control; music belongs to the menu lifecy
   assert.match(title, /if \(stage !== 'menu'\) return;[\s\S]*startMenuMusic\(\)/);
   assert.match(title, /return \(\) => \{[\s\S]*stopMenuMusic\(\)/);
   assert.match(title, /autoPlay muted playsInline/);
-  assert.match(title, /startup-sound-gate/);
+  assert.doesNotMatch(title, /startup-sound-gate|button-start-with-sound|START WITH SOUND|awaitingSound|audioAttempt/);
   assert.match(read('./retro-theme.css'), /\[data-testid="button-football-sound"\],[\s\S]*\[data-testid="kick-return-sound"\],[\s\S]*\.kr-pause-sound\s*\{\s*display: none !important/);
+});
+
+test('startup attempts sound automatically and ordinary gestures unlock audio without blocking or restarting the intro', () => {
+  const title = read('./TitleExperience.tsx'), host = read('./GameHost.tsx');
+  assert.match(host, /setRetroSoundEnabled\(true\)/);
+  assert.match(title, /const activateAudio = \(\) => \{ void unlockRetroAudio\(\); \}/);
+  assert.match(title, /\['pointerdown', 'touchend', 'keydown'\]/);
+  assert.match(title, /addEventListener\(gesture, activateAudio, \{ capture: true, passive: true \}\)/);
+  assert.match(title, /activateAudio\(\);/);
+  assert.match(title, /removeEventListener\(gesture, activateAudio, true\)/);
+  assert.doesNotMatch(title, /unlockRetroAudio\(\) === 'blocked'/);
+  assert.match(title, /if \(stingerPlayed \|\| !activeRun\.current/);
+  assert.match(title, /removeEventListener\('kick-return-retro-audio-ready', playStingerWhenReady\)/);
+  assert.match(title, /\[playIntro, replayToken, finishIntro\]/);
 });
 
 test('menu victory theme is upbeat, bass-forward, nine seconds, resolved and never loops', () => {
