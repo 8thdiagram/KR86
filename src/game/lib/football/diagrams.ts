@@ -6,11 +6,12 @@ import { eligibleReceivers, manAssignment } from './coverage';
 import { PLAYBOOK } from './playbook';
 import { attackDirection, type FieldDirection } from './direction';
 import type { Athlete, Defense, FootballGame, LivePlay, PlayId } from './types';
+import { controlledDefenderId } from './user-defense';
 
 export type DiagramPoint = { x: number; y: number };
 export type DiagramZone = { x: number; y: number; rx: number; ry: number; deep?: boolean };
 export type DiagramRoute = {
-  id: number; label: string; primary: boolean; read?: number; points: DiagramPoint[];
+  id: number; label: string; primary: boolean; read?: number; controlled?: boolean; points: DiagramPoint[];
   /** Points before this index are drawn dashed (feint / delayed movement); a marker sits at the change. */
   delay?: number;
   /** Small restrained block "T" at this point (offensive blocking assignment). */
@@ -155,6 +156,7 @@ function manPairs(game: FootballGame, defense: Defense) {
 export function diagramForDefense(game: FootballGame, defense: Defense): DiagramRoute[] {
   const l = startField({ ...game, spot: 40 }, 'power', defense);
   const direction = attackDirection(game);
+  const controlled = controlledDefenderId(l);
   const frontY = 190 - Math.max(24, (l.athletes.find(a => a.role === 'DL')!.x - 500) * .72 * 1.65);
   const point = (a: Athlete, x = a.x, y = a.y) => {
     const p = diagramPoint(x, y, direction);
@@ -172,7 +174,7 @@ export function diagramForDefense(game: FootballGame, defense: Defense): Diagram
   const man = defense === 'man' || defense === 'blitz' ? manPairs(game, defense) : new Map<number, number>();
   return l.athletes.map(a => {
     const points = [point(a)];
-    const r: DiagramRoute = { id: a.id, label: '', primary: false, points };
+    const r: DiagramRoute = { id: a.id, label: '', primary: false, controlled: a.side === 'defense' && a.id === controlled, points };
     if (a.side === 'offense') { r.label = a.role === 'OL' ? '' : label(a.role); return r; }
     r.label = a.role === 'DL' ? 'D' : a.role === 'LB' ? 'L' : defense === 'man' || defense === 'blitz' ? 'M' : defense === 'pass' || defense === 'prevent' ? 'Z' : 'S';
     if(defense==='contain') {

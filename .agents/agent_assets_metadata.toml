@@ -190,3 +190,17 @@ mtime_ms = 1794675090079
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/ef2e0271-8eac-47f5-bda8-ef0ee4a7bd96/ad60b9a8-3e66-4483-ada5-e32ac197d1be"
 storage_version_token = "1794675128911558"
 content_type = "image/png"
+
+[[outputs]]
+id = "Ca9hf-NI3K_PlaNGDXnws"
+uri = "file://generated-artifacts/defense-live-selection.png"
+type = "image"
+title = "Red-highlighted defender in live play"
+description = "Mobile browser capture showing the selected defender and the existing ACTION and triangle controls."
+logical_id = "cecf1f4d-d831-49cb-aab8-0cf25ceb5f93"
+content_hash = "sha256:bfea8de55b15013f21b4e4674b82a0b292d4ed6def39fa4fa84435c83c31212c"
+size = 81667
+mtime_ms = 1794678915298
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/cecf1f4d-d831-49cb-aab8-0cf25ceb5f93/f6c32c03-9bc8-4134-95ca-39f9ca7171cd"
+storage_version_token = "1794679007380579"
+content_type = "image/png"

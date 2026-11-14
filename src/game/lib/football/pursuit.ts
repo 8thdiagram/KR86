@@ -11,6 +11,7 @@ import { FOOTBALL_SIDELINES } from './sidelines';
 import { pursuitPoint } from '../open-field-pursuit';
 import { coachingAssignment } from './coaching-execution';
 import { containmentTarget } from './containment';
+import { userDefenseTarget } from './user-defense';
 
 type Role = NonNullable<Athlete['pursuit']>['role'];
 /** Bounded interception horizon from observed motion, never from the next control input. */
@@ -185,6 +186,8 @@ export function stepDefense(g: FootballGame, dt: number) {
     let tx = d.pursuit.x, ty = d.pursuit.y;
     const escape = openField ? undefined : penetrationTarget(l, d);
     if (escape) { tx = escape.x; ty = escape.y; }
+    const userTarget = userDefenseTarget(g, d, { x: tx, y: ty });
+    if (userTarget) { tx = userTarget.x; ty = userTarget.y; }
     // Work around actual blockers, rather than ghosting through them or choosing a random gap.
     const pathX = tx - d.x, pathY = ty - d.y, pathLen = Math.max(1, Math.hypot(pathX, pathY));
     for (const block of offense) {
@@ -235,6 +238,6 @@ export function stepDefense(g: FootballGame, dt: number) {
     const fraction = change > maxTurn ? maxTurn / change : 1;
     d.vx += changeX * fraction; d.vy += changeY * fraction;
     d.x = clamp(d.x + d.vx * dt, 8, 1180); d.y = clamp(d.y + d.vy * dt, openField ? FOOTBALL_SIDELINES.minY : 24, 168);
-    if (pressureGap && d.x < los + 4) { d.x = los + 4; d.vx = Math.max(0, d.vx); }
+    if (pressureGap && !userTarget && d.x < los + 4) { d.x = los + 4; d.vx = Math.max(0, d.vx); }
   }
 }

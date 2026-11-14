@@ -6,6 +6,7 @@ import type { Athlete, FootballGame, LivePlay, SpecialTeams } from '../lib/footb
 import { fieldGoalDistance, fieldGoalAllowed, PLAYBOOK } from '../lib/football/playbook';
 import { highlightedReceiver } from '../lib/football/passing';
 import { primaryPlayer } from '../lib/football/execution';
+import { controlledDefenderId } from '../lib/football/user-defense';
 import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
 import { slim, carrierMark, airBall, landingMark, goalPosts, heldBall, R, type Kit } from './football-sprites';
 import { uniformKit } from './football-art';
@@ -216,6 +217,8 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
   const ic = live.interception, holding = !!ic && ic.age < CATCH_HOLD;
   const read = highlightedReceiver(live);
   const primary = primaryPlayer(live);
+  const controlled = g.phase === 'live' && (live.offense ?? g.possession) === 'away' &&
+    !['return', 'kick', 'loose'].includes(live.mode) ? controlledDefenderId(live) : undefined;
   const sorted = [...live.athletes].sort((a, b) => a.y - b.y);
   let carrierAt: { x: number; y: number } | undefined;
   for (const a of sorted) {
@@ -256,6 +259,13 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
     // then disappears. No live labels, arrows, halos or permanent HUD additions.
     if (g.phase === 'live' && !ic && !snap && a.id === primary && a.id !== read &&
         live.time < PLAYBOOK[live.play].develop + .55) R(ctx, LACE, a.x - 3, a.y + 7, 6, 1);
+    if (a.id === controlled) {
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, 8.5, 0, Math.PI * 2);
+      ctx.strokeStyle = '#f0443e';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
     ctx.restore();
     if (hasBall) carrierAt = holding && ic ? { x: ic.catchX, y: ic.catchY } : a;
   }

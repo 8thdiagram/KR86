@@ -1,2 +1,3 @@
 - [Temporary preview servers](temporary-preview-servers.md) — asset-check servers can replace the app's forwarded preview port; use file-based rendering where possible.
-- [NES presentation direction](presentation-direction.md) — late-NES stadium presentation, preserved gameplay and saves, finite intro music with no idle menu music.
+- [NES presentation direction](presentation-direction.md) — late-NES presentation, effects-only intro, quiet sports menu music, subtle TV overlay, preserved gameplay and saves.
+- [Defensive control boundaries](defensive-control-boundaries.md) — quick taps must retain nearest-defender actions; held control is a temporary intention, never a physical bonus.

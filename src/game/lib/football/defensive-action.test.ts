@@ -14,7 +14,7 @@ const setup = () => {
   g.live.mode = 'run'; g.live.carrier = 6; g.live.time = 2;
   return g;
 };
-test('defensive ACTION fires once on press, chooses the closest defender and never controls the CPU runner', () => {
+test('a quick defensive ACTION tap chooses the closest defender and never controls the CPU runner', () => {
   const g = setup(), l = g.live!, controls = createFootballControls();
   const runner = l.athletes[6]!;
   runner.x = l.movement.player.x = 500; runner.y = l.movement.player.y = 96;
@@ -23,7 +23,9 @@ test('defensive ACTION fires once on press, chooses the closest defender and nev
   const nearest = defenders[3]!; nearest.x = 545; nearest.y = 110;
   assert(canDefensiveAction(g));
   controls.enter('defense', 'juke', 0, g);
-  stepFootball(g, controls.sample(0));
+  assert(!controls.sample(0).action, 'press must not accidentally dive before distinguishing a hold');
+  controls.release('defense', 80);
+  stepFootball(g, controls.sample(80));
   assert(nearest.dive); assert.equal(defenders.filter(d => d.dive).length, 1);
   assert.equal(nearest.dive.phase, 'windup');
   assert(!l.movement.moves?.active, 'defensive action does not juke the opposing runner');

@@ -31,7 +31,10 @@ test('two-minute regulation constants leave real play clock and world pace indep
 test('context priority routes one gesture to pass or loose ball, without steering or evasion', () => {
   const g = flight(), l = g.live!, c = createFootballControls();
   assert(canDefensiveAction(g)); assert.equal(defensiveActionKind(g), 'intercept');
-  c.enter('test', 'juke', 0, g); const sample = c.sample(0);
+  c.enter('test', 'juke', 0, g);
+  assert(!c.sample(0).action, 'live defensive presses wait to distinguish a hold');
+  c.release('test', 80);
+  const sample = c.sample(80);
   assert(sample.action); assert(!sample.passPress && !sample.passRelease && !sample.juke);
   c.release('test', 500); assert(!c.sample(500).action);
   l.mode = 'loose'; l.loose = { x: 650, y: 96, time: 0 };
