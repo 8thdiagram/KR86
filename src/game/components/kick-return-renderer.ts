@@ -460,7 +460,7 @@ export function kickRenderCamera(attempt: KickAttempt | null, viewWidth: number 
 }
 
 export function drawKickReturn(ctx: CanvasRenderingContext2D, attempt: KickAttempt | null, celebrationSeconds = 0, exhausted = false,
-  viewport?: KickViewport, matchup?: KickAttempt['teams']): void {
+  viewport?: KickViewport, matchup?: KickAttempt['teams'], fieldOverlay?: (ctx: CanvasRenderingContext2D) => void): void {
   const viewWidth = viewport?.width ?? KR.width;
   const viewHeight = viewport?.height ?? KR.height;
   ctx.save();
@@ -472,6 +472,7 @@ export function drawKickReturn(ctx: CanvasRenderingContext2D, attempt: KickAttem
   ctx.setTransform(scale, 0, 0, scale, -camX * scale, offY - camY * scale);
   ctx.beginPath(); ctx.rect(0, 0, KR.worldWidth, KR.height); ctx.clip();
   field(ctx, camX, camX + viewWidth / scale + 1, attempt?.teams ?? matchup);
+  fieldOverlay?.(ctx);
   crowd(ctx, camX, camX + viewWidth / scale + 1, attempt?.phase === 'touchdown', celebrationSeconds);
   if (attempt) world(ctx, attempt, celebrationSeconds);
   ctx.setTransform(1, 0, 0, 1, 0, 0);

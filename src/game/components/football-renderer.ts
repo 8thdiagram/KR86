@@ -13,6 +13,7 @@ import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
 import { isTackleActor } from '../lib/football/tackle-scene';
 import { drawTackle } from './football-tackle';
 import { attackDirection, playTravelDirection, worldX } from '../lib/football/direction';
+import { drawRegularSeasonMidfield } from '../../platform/midfield-logo';
 
 /** Presentation only. Reads the engine state; never mutates it and never samples randomness. */
 const { field, moveSprite, prone, referee, football, crowd } = kickFootballArt;
@@ -102,7 +103,8 @@ function kits(g: FootballGame) {
 
 export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, view: KickViewport | undefined, seconds: number) {
   if (g.phase === 'kickoff' && g.returnAttempt && !g.special) {
-    drawKickReturn(ctx, g.returnAttempt, 0, false, view, g.returnAttempt.teams);
+    drawKickReturn(ctx, g.returnAttempt, 0, false, view, g.returnAttempt.teams,
+      fieldContext => drawRegularSeasonMidfield(fieldContext, g));
     return;
   }
   const viewW = view?.width ?? KR.width, viewH = view?.height ?? KR.height;
@@ -122,6 +124,7 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   // Stadium ends belong to teams throughout a quarter, not current possession.
   const leftSide = attackDirection(g, 'home') === 1 ? 'home' : 'away';
   field(ctx, camX, camX + visibleW + 1, leftSide === 'home' ? g.teams : { player: g.teams.opponent, opponent: g.teams.player });
+  drawRegularSeasonMidfield(ctx, g);
   if (g.franchise?.playoff) {
     // Painted midfield emblem, behind players and ball; it never affects play.
     ctx.save(); ctx.globalAlpha = .68;

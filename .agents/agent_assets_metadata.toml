@@ -42,3 +42,17 @@ mtime_ms = 1794537066705
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/d91da543-e38b-473e-b2c9-d7393e6ef9c0/72330fe1-93e1-42c0-9a64-b57a68c96451"
 storage_version_token = "1794537120596503"
 content_type = "image/png"
+
+[[outputs]]
+id = "rGV7eUAvB1YN92M5LoM0j"
+uri = "file://generated-artifacts/midfield-comparison.png"
+type = "image"
+title = "Midfield logo verification"
+description = "Rendered game fields: the red logo appears in Franchise regular season, the existing playoff emblem is unchanged, and standalone Full Game has no added logo."
+logical_id = "ff93c07f-1a2d-48e8-ad15-1b6c883e129d"
+content_hash = "sha256:57cd5896dfbc0d183a14175cb398e7104681957a5a184c15bd30f073e8c37ba9"
+size = 212433
+mtime_ms = 1794665477928
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/ff93c07f-1a2d-48e8-ad15-1b6c883e129d/9fbaff4c-16eb-4101-8947-5f2bb9d1c062"
+storage_version_token = "1794665499703890"
+content_type = "image/png"
