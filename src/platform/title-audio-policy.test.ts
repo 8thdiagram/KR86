@@ -18,19 +18,19 @@ test('intro has no music, skip or mute control; music belongs to the menu lifecy
   assert.match(read('./retro-theme.css'), /\[data-testid="button-football-sound"\],[\s\S]*\[data-testid="kick-return-sound"\],[\s\S]*\.kr-pause-sound\s*\{\s*display: none !important/);
 });
 
-test('title fanfare is local, low-register, bass-forward, resolved, 5–6 seconds and never loops', () => {
+test('menu victory theme is upbeat, bass-forward, nine seconds, resolved and never loops', () => {
   const audio = read('./retro-audio.ts');
   const composer = read('../../scripts/compose-menu-music.mts');
   const wav = fs.readFileSync(new URL('./assets/menu-sports.wav', import.meta.url));
   assert.equal(wav.toString('ascii', 0, 4), 'RIFF');
   assert.equal(wav.readUInt32LE(24), 16000);
   const duration = (wav.length - 44) / (16000 * 2);
-  assert(duration >= 5 && duration <= 6); assert.equal(duration, 5.6);
+  assert.equal(duration, 9);
   let peak = 0;
   for (let i = 44; i < wav.length; i += 2) peak = Math.max(peak, Math.abs(wav.readInt16LE(i) / 32768));
   assert(peak > .05 && peak * .18 < .08, 'fanfare has quiet headroom below game effects');
   assert.match(audio, /gain\.gain\.value = \.18/);
-  assert.match(composer, /bpm = 100/);
+  assert.match(composer, /bpm = 120/);
   assert.match(composer, /'pulse' \| 'triangle'/);
   assert.match(composer, /'kick' \| 'snare' \| 'hat' \| 'tom'/);
   assert.match(composer, /\.28, 'triangle'/);
@@ -40,7 +40,8 @@ test('title fanfare is local, low-register, bass-forward, resolved, 5–6 second
   assert.match(audio, /menuStarted = true/);
   const melody = composer.slice(composer.indexOf('const melody:'), composer.indexOf('for (const [midi, at, length] of melody)'));
   const notes = [...melody.matchAll(/\[(\d+), [\d.]+, [\d.]+\]/g)].map(m => Number(m[1]));
-  assert.equal(notes.length, 7); assert(Math.max(...notes) <= 64);
+  assert.equal(notes.length, 21); assert(Math.max(...notes) <= 67);
+  assert.equal(notes.at(-1), 60, 'the celebratory phrases resolve to C');
   let bassEnergy = 0, totalEnergy = 0, smooth = 0;
   for (let i = 44; i < wav.length; i += 2) {
     const sample = wav.readInt16LE(i) / 32768;

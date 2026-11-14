@@ -209,14 +209,14 @@ content_type = "image/png"
 id = "OrYNfEXHjRvLub65ZEp21"
 uri = "file://src/platform/assets/menu-sports.wav"
 type = "audio"
-title = "New 8-bit championship menu theme"
-description = "Original 26.7-second sports theme with two contrasting sections, pulse melodies, triangle bass, kick/snare drums and turnaround fills. Loops in the menu only."
+title = "Upbeat 8-bit menu theme"
+description = "The new 9-second celebratory menu song: 120 BPM, pulse melody, triangle bass, drums and a resolved ending."
 logical_id = "ab450090-5d90-44fd-a73e-3e6c5d4e5ebd"
-content_hash = "sha256:ee50396ceb0634913841a9a53038a00a69dea5a597f7253694f6d0b11ff5fad4"
-size = 853378
-mtime_ms = 1794681397407
-storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/ab450090-5d90-44fd-a73e-3e6c5d4e5ebd/a5226832-22aa-4ee9-ab4f-0f6ce0c10677"
-storage_version_token = "1794681532657651"
+content_hash = "sha256:75077d3b0d020ac85b070ad9cd1a963ca5c29d0e33600dcd6896c7299908d36d"
+size = 288044
+mtime_ms = 1794695950202
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/ab450090-5d90-44fd-a73e-3e6c5d4e5ebd/197c3f05-a4e9-4979-a8a7-df40e82e66d3"
+storage_version_token = "1794696119204252"
 content_type = "audio/wav"
 
 [[outputs]]

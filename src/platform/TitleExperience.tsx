@@ -2,9 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SyntheticEvent } from 'react';
 import type { Franchise } from '../game/lib/football/franchise';
 import { unlockRetroAudio, playMenuSound, retroAudioState, startMenuMusic, stopMenuMusic } from './retro-audio';
-import { TitleWordmark } from './TitleWordmark';
 import midfield86 from './assets/midfield-86.png';
-import menuGameplay from './assets/menu-gameplay.png';
+import menuIntro from './assets/menu-intro.png';
 import kickReturnIntro from './assets/kick-return-intro.mp4';
 
 type Mode = 'classic' | 'football' | 'franchise' | 'playoffs' | null;
@@ -27,8 +26,7 @@ const choices = [
 
 function PixelArtwork({ animate = false }: { animate?: boolean }) {
   return <div className={`kr-art${animate ? ' kr-art--moving' : ''}`}>
-    <img src={menuGameplay} alt="Kick Return '86 gameplay in progress on a marked football field" />
-    <span className="kr-art-year" aria-label="1986">’86</span>
+    <img src={menuIntro} alt="The Kick Return ’86 intro frame: KR lettering above a football runner, with red ’86 lettering in the lower-right corner." />
   </div>;
 }
 
@@ -296,9 +294,8 @@ export function TitleExperience(props: Props) {
         <button type="button" className="kr-replay" onClick={replayIntro} data-retro-sound="confirm">REPLAY INTRO</button>
       </header>
       <div className="kr-hero-art">
-        <TitleWordmark />
         <PixelArtwork />
-        <div className="kr-score-rule"><span>KICK RETURN ’86</span><span>GRIDIRON FOOTBALL</span></div>
+        <div className="kr-score-rule"><h1>KICK RETURN ’86</h1><span>GRIDIRON FOOTBALL</span></div>
       </div>
       <div className="kr-menu-heading"><span>SELECT YOUR GAME</span><i>▼</i></div>
       <div className="kr-mode-list">

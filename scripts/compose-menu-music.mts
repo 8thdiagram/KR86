@@ -1,7 +1,7 @@
-/** Original short, resolved 1988 football fanfare. Two pulse voices,
+/** Original upbeat, celebratory 1988 football victory theme. Two pulse voices,
  * a defining triangle bass and restrained noise/DPCM-style drums. No samples. */
 import fs from 'node:fs';
-const rate = 16000, bpm = 100, beat = 60 / bpm, duration = 5.6;
+const rate = 16000, bpm = 120, beat = 60 / bpm, duration = 18 * beat;
 const samples = new Float32Array(Math.round(rate * duration));
 function add(start: number, seconds: number, wave: (t: number) => number, level: number) {
   for (let i = 0; i < seconds * rate; i++) {
@@ -39,21 +39,34 @@ function drum(kind: 'kick' | 'snare' | 'hat' | 'tom', start: number, accent = 1,
     return Math.round(Math.sin(phase) * 15) / 15 * Math.exp(-(kind === 'kick' ? 29 : 22) * t);
   }, accent * (kind === 'hat' ? .006 : kind === 'snare' ? .045 : .09));
 }
-// C-major call and answer, ending on a held tonic rather than a loop turnaround.
+// Four paced C-major phrases: rising call, playful answer, lift, victory response.
+// Each voice stays monophonic, with a held tonic coda instead of a loop turnaround.
 const melody: [number, number, number][] = [
-  [55, 0, .65], [60, .75, .65], [64, 1.5, 1.2], [62, 3, .7],
-  [60, 4, .7], [59, 5, .65], [60, 6, 3.3],
+  [60, 0, .65], [64, .75, .65], [67, 1.5, 1], [64, 2.75, .4], [62, 3.25, .55],
+  [65, 4, .65], [64, 4.75, .65], [62, 5.5, .65], [60, 6.25, .65], [57, 7, .75],
+  [59, 8, .65], [62, 8.75, .65], [67, 9.5, 1], [65, 10.75, .4], [64, 11.25, .55],
+  [60, 12, .65], [64, 12.75, .65], [67, 13.5, .65], [64, 14.25, .65], [62, 15, .65],
+  [60, 16, 2],
 ];
 for (const [midi, at, length] of melody)
   note(midi, at * beat, length * beat, .115, 'pulse', .5);
-for (const [midi, at, length] of [[48, 0, 1.4], [53, 2, 1.4], [55, 4, 1.4], [52, 6, 3.3]])
-  note(midi!, at! * beat, length! * beat, .045, 'pulse', .25);
-for (const [midi, at, length] of [[36, 0, .85], [43, 1, .85], [41, 2, .85], [36, 3, .85],
-  [43, 4, .85], [31, 5, .85], [36, 6, 3.3]])
-  note(midi!, at! * beat, length! * beat, .28, 'triangle');
-for (const at of [0, 2, 4, 6]) drum('kick', at * beat, .8);
-for (const at of [1, 3, 5]) drum('snare', at * beat, .65);
-drum('tom', 5.5 * beat, .45, 90);
+const roots = [36, 41, 43, 36];
+for (let bar = 0; bar < roots.length; bar++) {
+  const root = roots[bar]!, start = bar * 4;
+  for (const [at, interval, length] of [[0, 0, .8], [1, 7, .8], [2, 12, .8], [3, 7, .4], [3.5, bar === 3 ? 11 : 7, .35]])
+    note(root + interval!, (start + at!) * beat, length! * beat, .28, 'triangle');
+  note(root + 24, start * beat, 1.6 * beat, .045, 'pulse', .25);
+  note(root + 19, (start + 2) * beat, 1.6 * beat, .045, 'pulse', .25);
+  for (const at of [0, 2]) drum('kick', (start + at) * beat, .8);
+  for (const at of [1, 3]) drum('snare', (start + at) * beat, .65);
+  for (const at of [.5, 2.5]) drum('hat', (start + at) * beat, .5);
+}
+// A small closing fill, then a sustained C-major resolution and natural release.
+drum('tom', 15.5 * beat, .45, 100);
+drum('tom', 15.75 * beat, .35, 75);
+drum('kick', 16 * beat, .8);
+note(36, 16 * beat, 2 * beat, .28, 'triangle');
+note(52, 16 * beat, 2 * beat, .045, 'pulse', .25);
 // Quiet playback and a natural release of the final chord; never a loop seam.
 const peak = samples.reduce((max, x) => Math.max(max, Math.abs(x)), 0);
 const master = .38 / peak;
@@ -63,7 +76,7 @@ wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22);
 wav.writeUInt32LE(rate, 24); wav.writeUInt32LE(rate * 2, 28); wav.writeUInt16LE(2, 32);
 wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(samples.length * 2, 40);
 samples.forEach((value, i) => {
-  // Release the final fill at the loop boundary rather than truncating its waveform.
+  // Release the final chord naturally rather than truncating its waveform.
   const edge = Math.min(1, i / (rate * .003), (samples.length - 1 - i) / (rate * .7));
   wav.writeInt16LE(Math.round(value * master * edge * 32767), 44 + i * 2);
 });

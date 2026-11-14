@@ -3,34 +3,32 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
-test('menu uses the real gameplay capture rather than the former illustration', () => {
+test('menu uses the exact KR ’86 frame from the existing intro', () => {
   const title = fs.readFileSync(new URL('./TitleExperience.tsx', import.meta.url), 'utf8');
-  assert.match(title, /import menuGameplay from '\.\/assets\/menu-gameplay\.png'/);
-  assert.match(title, /<img src=\{menuGameplay\}/);
-  assert.doesNotMatch(title, /kick-return-nes\.png/);
-  const file = new URL('./assets/menu-gameplay.png', import.meta.url);
+  assert.match(title, /import menuIntro from '\.\/assets\/menu-intro\.png'/);
+  assert.match(title, /<img src=\{menuIntro\}/);
+  assert.doesNotMatch(title, /kick-return-nes\.png|menu-gameplay\.png|<TitleWordmark/);
+  const file = new URL('./assets/menu-intro.png', import.meta.url);
   const png = fs.readFileSync(file);
   assert.equal(png.subarray(1, 4).toString(), 'PNG');
-  // An unfiltered, native-pixel crop of a live Classic kickoff return.
-  assert.equal(png.readUInt32BE(16), 304);
-  assert.equal(png.readUInt32BE(20), 190);
+  // An unfiltered, uncropped native frame; its own KR and ’86 need no text overlay.
+  assert.equal(png.readUInt32BE(16), 192);
+  assert.equal(png.readUInt32BE(20), 192);
   const pixels = execFileSync('ffmpeg', ['-v', 'error', '-i', file.pathname,
     '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1']);
-  assert.equal(pixels.length, 304 * 190 * 3);
-  assert(new Set(pixels).size > 20, 'Gameplay capture must contain visible field and sprite detail.');
+  const intro = execFileSync('ffmpeg', ['-v', 'error', '-ss', '4.5', '-i',
+    new URL('./assets/kick-return-intro.mp4', import.meta.url).pathname,
+    '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1']);
+  assert.deepEqual(pixels, intro, 'menu artwork is the actual intro screenshot, not a recreation');
 });
 
-test('menu retains the large Kick Return title and labels the lower-right year', () => {
+test('menu preserves an accessible title without covering the intro logo or duplicating the year', () => {
   const title = fs.readFileSync(new URL('./TitleExperience.tsx', import.meta.url), 'utf8');
-  assert.match(title, /<TitleWordmark \/>/);
-  const wordmark = fs.readFileSync(new URL('./TitleWordmark.tsx', import.meta.url), 'utf8');
-  assert.match(wordmark, /<h1[\s\S]*KICK RETURN/);
-  assert.match(wordmark, /title-wordmark\.png/);
-  assert.match(title, /className="kr-art-year" aria-label="1986">’86</);
+  assert.match(title, /<h1>KICK RETURN ’86<\/h1>/);
+  assert.match(title, /alt="[^"]*KR lettering[^"]*’86 lettering/);
+  assert.doesNotMatch(title, /className="kr-art-year"|<TitleWordmark/);
   const css = fs.readFileSync(new URL('./retro-theme.css', import.meta.url), 'utf8');
-  const year = css.match(/\.kr-art-year\s*\{([^}]+)\}/)?.[1] ?? '';
-  assert.match(year, /position:\s*absolute/);
-  assert.match(year, /right:\s*7px/);
-  assert.match(year, /bottom:\s*7px/);
+  assert.match(css, /\.kr-art\s*\{[^}]*aspect-ratio:\s*1(?:\s*\/\s*1)?\s*;/);
+  assert.match(css, /\.kr-art img\s*\{[^}]*object-fit:\s*contain;[^}]*image-rendering:\s*pixelated/);
   assert.match(css, /object-fit:\s*contain/);
 });

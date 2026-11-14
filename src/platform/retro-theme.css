@@ -73,7 +73,7 @@
 }
 .kr-sound:focus-visible, .kr-replay:focus-visible, .kr-mode-option:focus-visible { outline: 3px solid #ea9e22; outline-offset: 2px; }
 .kr-hero-art {
-  width: min(100%, 560px);
+  width: min(100%, 360px);
   container-type: inline-size;
   position: relative;
   overflow: visible;
@@ -87,7 +87,7 @@
 .kr-art {
   position: relative;
   width: 100%;
-  aspect-ratio: 8 / 5;
+  aspect-ratio: 1;
   overflow: hidden;
   background: #000000;
 }
@@ -97,21 +97,6 @@
   height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
-}
-.kr-art-year {
-  position: absolute;
-  right: 7px;
-  bottom: 7px;
-  z-index: 3;
-  padding: 2px 5px;
-  border: 2px solid #ea9e22;
-  background: #1412a7;
-  color: #ffffff;
-  font-family: 'KR Pixel', 'Space Mono', monospace;
-  font-size: clamp(12px, 4cqw, 20px);
-  line-height: 1.25;
-  letter-spacing: .02em;
-  text-shadow: none;
 }
 .kr-art--moving img { animation: none; }
 .kr-hero-art .kr-art { border: 2px solid #000000; }
@@ -128,6 +113,12 @@
   color: #ffffff;
   font-size: 7px;
   letter-spacing: .12em;
+}
+.kr-score-rule h1 {
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
 }
 .kr-wordmark {
   position: absolute;
@@ -422,12 +413,12 @@
   .kr-title-frame { max-width: 620px; }
   .kr-mode-list { gap: 6px; }
   .kr-mode-option { min-height: 58px; }
-  .kr-hero-art { width: min(100%, 560px); }
+  .kr-hero-art { width: min(100%, 360px); }
 }
 @media (max-height: 680px) and (orientation: landscape) {
   .kr-title-screen { padding-top: 5px; }
   .kr-title-topline { min-height: 22px; }
-  .kr-hero-art { width: min(100%, 390px); margin-top: 5px; margin-bottom: 8px; }
+  .kr-hero-art { width: min(100%, 220px); margin-top: 5px; margin-bottom: 8px; }
   .kr-mode-option { min-height: 43px; padding-top: 3px; padding-bottom: 3px; }
 }
 @media (prefers-reduced-motion: reduce) {

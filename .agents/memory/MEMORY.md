@@ -1,4 +1,4 @@
 - [Temporary preview servers](temporary-preview-servers.md) — asset-check servers can replace the app's forwarded preview port; use file-based rendering where possible.
-- [NES presentation direction](presentation-direction.md) — pixel-authored title, no opening/title hut, once-only bassy fanfare, subtle TV overlay and worn field paint; preserve gameplay and saves.
+- [NES presentation direction](presentation-direction.md) — intro-still menu, no opening/title hut, upbeat once-only chip theme, subtle TV overlay and worn field paint; preserve gameplay and saves.
 - [Defensive control boundaries](defensive-control-boundaries.md) — immediate nearest-defender ACTION; only arrows strafe the middle linebacker or kickoff kicker, then restore AI; white/yellow live targets.
 - [Browser touch verification](browser-touch-verification.md) — isolate saves, release the correct CDP contacts, and resume the host after visibility tests.

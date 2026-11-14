@@ -18,17 +18,15 @@ test('intro is natively low resolution, H.264 video-only, with the original 138 
   assert.match(processor, /flags=neighbor/); assert.match(processor, /paletteuse=dither=none/);
 });
 
-test('intro uses borderless aspect-fit nearest-pixel presentation; logo stays recognizable and below its old placement', () => {
+test('intro and its menu still retain aspect-fit nearest-pixel presentation', () => {
   const css = read('./retro-theme.css').toString();
   const film = css.match(/\.kr-film \{([^}]+)\}/)![1]!;
   assert.match(film, /width: 100%/); assert.match(film, /height: 100%/);
   assert.match(film, /border: 0/); assert.match(film, /box-shadow: none/);
   assert.match(css, /\.kr-film-video \{[^}]*object-fit: contain;[^}]*image-rendering: pixelated/);
-  assert.match(css, /\.kr-wordmark \{[^}]*top: 11%/);
-  assert.match(css, /\.kr-wordmark--raster \{[^}]*transform: none;[^}]*filter: none/);
-  assert.match(css, /\.kr-wordmark__image \{[^}]*height: auto;[^}]*image-rendering: pixelated/);
-  assert.match(read('./TitleExperience.tsx').toString(), /<TitleWordmark \/>/);
-  assert.match(read('./TitleWordmark.tsx').toString(), /<h1[\s\S]*KICK RETURN/);
+  assert.match(css, /\.kr-art \{[^}]*aspect-ratio: 1(?: \/ 1)?;/);
+  assert.match(read('./TitleExperience.tsx').toString(), /src=\{menuIntro\}/);
+  assert.doesNotMatch(read('./TitleExperience.tsx').toString(), /<TitleWordmark/);
 });
 
 // Small, test-only decoder for the non-interlaced RGBA PNG artwork.
