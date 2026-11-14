@@ -17,9 +17,8 @@
 .ga-scope button { font-family: 'Space Mono', monospace; }
 .kr-app-root { min-height: 100%; background: #050914; }
 .kr-title-screen {
-  min-height: 100dvh;
   width: 100%;
-  overflow: auto;
+  overflow: visible;
   padding: 9px max(10px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
   position: relative;
   isolation: isolate;
@@ -31,7 +30,20 @@
 }
 .kr-title-frame { max-width: 620px; margin: 0 auto; position: relative; }
 .kr-title-frame[inert], .kr-app-root:has(.kr-intro) > .krt { visibility: hidden; }
-.kr-title-topline, .kr-title-footer {
+/* Keep the cabinet viewport fixed while the title screen and device tools share
+   one scroll surface. Gameplay roots retain their existing layout and scrolling. */
+.gm-screen .gm-slot .ga-scope:has(.kr-title-screen) > .kr-app-root {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+.gm-screen .gm-slot .ga-scope:has(.kr-title-screen) > .kr-app-root > :is(.kr-title-screen, .krt) {
+  flex: none;
+}
+.kr-title-topline {
   min-height: 27px;
   display: flex;
   justify-content: space-between;
@@ -202,12 +214,6 @@
 .kr-mode-copy strong { font-family: 'KR Pixel', monospace; line-height: 1.6; font-weight: 400; font-size: 9px; }
 .kr-mode-copy small { color: #adadad; font-size: 10px; line-height: 1.4; }
 .kr-mode-arrow { color: #ea9e22; font-size: 12px; text-align: right; }
-.kr-title-footer {
-  margin-top: 9px;
-  border-top: 1px solid #666666;
-  padding-top: 5px;
-  font-size: 7px;
-}
 .kr-intro {
   position: fixed;
   inset: 0;
@@ -365,20 +371,21 @@
 .ga-scope .frn-sched li { border-radius: 0 !important; border-bottom: 1px solid #315277 !important; }
 .ga-scope .frn-panel { background-image: repeating-linear-gradient(135deg, rgba(73,121,169,.055) 0 2px, transparent 2px 6px) !important; }
 .ga-scope .frn-btn:disabled, .ga-scope button:disabled { filter: grayscale(.6); }
-.ga-scope .krt { margin: 12px auto; max-width: 660px; color: #c7ddf0; }
-.ga-scope .krt details, .ga-scope .krt-body, .ga-scope .krt-sec, .ga-scope .krt-preview {
+.ga-scope .krt { margin: 12px auto; max-width: 620px; color: #c7ddf0; }
+.ga-scope .krt-panel, .ga-scope .krt-body, .ga-scope .krt-sec, .ga-scope .krt-preview {
   border-radius: 0 !important;
   border-color: #315e88 !important;
   color: #c7ddf0 !important;
   background: #09172d !important;
 }
-.ga-scope .krt summary, .ga-scope .krt-btn {
+.ga-scope .krt-heading, .ga-scope .krt-btn {
   border-radius: 0 !important;
   color: #e6f3ff !important;
   border: 2px solid #467bac !important;
   background: #12345a !important;
   font-family: 'Space Mono', monospace !important;
 }
+.ga-scope .krt-heading { justify-content: flex-start; }
 .ga-scope .krt-btn--go { color: #071326 !important; background: #f3cf5c !important; }
 .ga-scope .krt input[type="checkbox"] { accent-color: #f3cf5c; }
 .ga-scope .device-save-error { border: 2px solid #ff6d6d; }
@@ -401,7 +408,7 @@
 }
 .ga-scope :is(.fb-game, .kr-game) :is(button, summary):focus-visible,
 .ga-scope .frn :is(button, summary):focus-visible,
-.ga-scope .krt :is(button, summary):focus-visible {
+.ga-scope .krt button:focus-visible {
   outline: 3px solid #ffdc69;
   outline-offset: 1px;
 }
@@ -413,7 +420,7 @@
 }
 
 @media (min-width: 700px) {
-  .kr-title-screen { min-height: 100%; padding-top: 14px; }
+  .kr-title-screen { padding-top: 14px; }
   .kr-title-frame { max-width: 620px; }
   .kr-mode-list { gap: 6px; }
   .kr-mode-option { min-height: 58px; }
@@ -426,7 +433,6 @@
   .kr-word-kick { font-size: clamp(32px, 8vw, 48px); }
   .kr-word-return { font-size: clamp(26px, 6.5vw, 38px); }
   .kr-mode-option { min-height: 43px; padding-top: 3px; padding-bottom: 3px; }
-  .kr-title-footer { margin-top: 5px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .kr-mode-option.is-selected, .kr-mark-stinger, .kr-film, .kr-film .kr-art img, .kr-intro { animation: none !important; }

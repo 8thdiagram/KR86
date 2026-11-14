@@ -21,6 +21,12 @@ The home/menu artwork should be an actual in-game screenshot. Keep the large, re
 
 **How to apply:** Use a frame from actual gameplay, not an invented gameplay-like illustration. Do not replace the separately supplied intro video or app icon merely to match menu artwork.
 
+The title mode choices and device update/backup/install options belong to one continuous scrolling screen. Do not use an expandable tools section, a SELECT / ENTER CONFIRM / BATTERY BACKUP READY footer, or a viewport-height gap between the menu and device options.
+
+**Why:** The user wants to scroll normally and see all options without opening a separate panel.
+
+**How to apply:** Keep shared scrolling limited to the title menu, not gameplay. Preserve update actions, backup controls and destructive-import confirmation.
+
 The supplied intro video is for visuals only: no original sound and no “hut” during the video. Preserve the other intro effects, then play the game's own “hut” once as the main title/menu appears. Do not display skip-intro or mute-sound options. Menu music should be a restrained, bass-forward, triumphant late-NES football theme: strong simple melody, short varied phrases, subtle pulse harmony, steady march and quiet percussion at background volume.
 
 **Why:** The user moved the cadence from the video to title entry, and found the earlier championship tune repetitive and irritating. They explicitly requested prominent triangle bass, lower-register phrases and restrained drums instead of shrill, busy notes.

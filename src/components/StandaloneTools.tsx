@@ -71,10 +71,11 @@ export default function StandaloneTools() {
 
   return (
     <aside className="krt" aria-label="Device tools" data-testid="standalone-tools">
-      <details>
-        <summary data-testid="button-toggle-tools">
-          SAVE &amp; INSTALL <span className="krt-status" data-testid="status-pwa">{pwa.status}{pwa.updateReady ? ' · update ready' : ''}</span>
-        </summary>
+      <div className="krt-panel">
+        <header className="krt-heading">
+          <h2>SAVE &amp; INSTALL</h2>
+          <span className="krt-status" data-testid="status-pwa">{pwa.status}{pwa.updateReady ? ' · update ready' : ''}</span>
+        </header>
         <div className="krt-body">
           <div className="krt-sec">
             <h3>UPDATE</h3>
@@ -131,7 +132,7 @@ export default function StandaloneTools() {
             </div>
           )}
         </div>
-      </details>
+      </div>
     </aside>
   );
 }

@@ -325,7 +325,6 @@ export function TitleExperience(props: Props) {
           </button>;
         })}
       </div>
-      <footer className="kr-title-footer"><span>◀ ▲ ▼ ▶ &nbsp; SELECT</span><span>ENTER &nbsp; CONFIRM</span><span>BATTERY BACKUP READY</span></footer>
     </div>
   </section>;
 }
