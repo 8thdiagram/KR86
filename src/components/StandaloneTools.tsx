@@ -76,13 +76,16 @@ export default function StandaloneTools() {
           SAVE &amp; INSTALL <span className="krt-status" data-testid="status-pwa">{pwa.status}{pwa.updateReady ? ' · update ready' : ''}</span>
         </summary>
         <div className="krt-body">
-          {pwa.updateReady && (
-            <div className="krt-sec">
-              <h3>UPDATE</h3>
-              <p>A newer version is downloaded. Applying it reloads the game; saved progress stays on this device.</p>
-              <div className="krt-row"><button type="button" className="krt-btn krt-btn--go" onClick={pwa.applyUpdate} data-testid="button-apply-update">Apply update</button></div>
+          <div className="krt-sec">
+            <h3>UPDATE</h3>
+            <p>{pwa.updateReady
+              ? 'A newer version is downloaded. Applying it reloads the game; saved progress stays on this device.'
+              : 'Check for a newer version without deleting saves. Updates are applied only when you choose.'}</p>
+            <div className="krt-row">
+              <button type="button" className="krt-btn" onClick={() => void pwa.checkForUpdates()} disabled={pwa.checking} data-testid="button-check-update">{pwa.checking ? 'Checking / downloading…' : 'Check for updates'}</button>
+              {pwa.updateReady && <button type="button" className="krt-btn krt-btn--go" onClick={pwa.applyUpdate} data-testid="button-apply-update">Apply update</button>}
             </div>
-          )}
+          </div>
 
           <div className="krt-sec">
             <h3>BACKUP</h3>
