@@ -3,7 +3,7 @@ import type { SyntheticEvent } from 'react';
 import type { Franchise } from '../game/lib/football/franchise';
 import { unlockRetroAudio, playMenuSound } from './retro-audio';
 import midfield86 from './assets/midfield-86.png';
-import kickReturnArtwork from './assets/kick-return-title.webp';
+import kickReturnArtwork from './assets/kick-return-nes.png';
 import kickReturnIntro from './assets/kick-return-intro.mp4';
 
 type Mode = 'classic' | 'football' | 'franchise' | 'playoffs' | null;
@@ -29,7 +29,7 @@ const choices = [
 
 function PixelArtwork({ animate = false }: { animate?: boolean }) {
   return <div className={`kr-art${animate ? ' kr-art--moving' : ''}`}>
-    <img src={kickReturnArtwork} alt="Pixel football player number 32 running through a night stadium beside the red 86 mark" />
+    <img src={kickReturnArtwork} alt="A block-drawn football runner carrying the ball across a marked field beneath packed stadium stands" />
   </div>;
 }
 
@@ -256,10 +256,10 @@ export function TitleExperience(props: Props) {
           aria-pressed={soundOn} onClick={onSoundToggle} data-retro-sound="off">{soundOn ? 'SOUND: ON' : 'SOUND: OFF'}</button>
       </header>
       <div className="kr-hero-art">
-        <div className="kr-wordmark" aria-label="Kick Return">
+        <h1 className="kr-wordmark">
           <span className="kr-word-kick">KICK</span>
           <span className="kr-word-return">RETURN</span>
-        </div>
+        </h1>
         <PixelArtwork />
         <div className="kr-score-rule"><span>KICK RETURN ’86</span><span>GRIDIRON FOOTBALL</span></div>
       </div>
