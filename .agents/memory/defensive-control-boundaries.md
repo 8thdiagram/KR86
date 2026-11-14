@@ -19,7 +19,7 @@ UP/DOWN temporarily overrides only the selected defender's movement direction wi
 
 **Why:** The user wants direct, simple repositioning without the defender fighting input or becoming passive.
 
-**How to apply:** Keep existing speed, acceleration, blocking, collisions, committed animations and eligible automatic tackles/sacks/interceptions/breakups. Resume the responsibility's current location, not starting coordinates; no teleport or boost.
+**How to apply:** Use the ball carrier's direct directional-response style at the defender's own legitimate lateral speed, without AI reaction slowdown or steering inertia. Keep ratings, blocking, collisions, committed animations and original eligible tackles/sacks/interceptions/breakups. Never initiate extra dives or interception attempts merely because the player is highlighted or an arrow is held: those selection-only actions caused animation locks and consumed the normal ACTION cooldown. On release, restore original AI steering toward the responsibility's current location, not starting coordinates; no teleport or boost.
 
 Use the exact original offense target only during live defensive gameplay: white normally or with ACTION alone, yellow only while strafing. Remove selection targets from defensive play diagrams. On human kickoff coverage, highlight and strafe the existing kicker, preserving original nearest-defender ACTION and receiving controls.
 

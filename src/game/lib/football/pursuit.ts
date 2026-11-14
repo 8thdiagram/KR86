@@ -58,6 +58,7 @@ export function stepDefense(g: FootballGame, dt: number) {
   for (const d of defense) {
     if (stepAthleteDive(d, dt)) continue;
     if (d.engaged > l.time) { d.vx *= .6; d.vy *= .6; continue; }
+    const userTarget = userDefenseTarget(g, d);
     const coverage = d.role === 'DB' || d.role === 'LB' && !isBlitz(l.defense) && l.defense !== 'run' && !goal;
     const holdCoverage = coverage && qbBehindLine && !(d.role === 'LB' && l.defense === 'contain');
     const pursueCarrier = carrying && !holdCoverage;
@@ -82,7 +83,7 @@ export function stepDefense(g: FootballGame, dt: number) {
     speed *= (1 + MOMENTS.coverSpeed * exceptionalCoverage) * (1 + .05 * exceptionalFit);
     const openGain = d.role === 'DB' ? openFieldGain(d, offense, dt, !d.dive && d.engaged <= l.time) : 1;
     speed *= openGain * franchiseAthleteFactor(g, d);
-    if (!openField && l.time < .28 && l.defense !== 'run' && !goal) speed *= .35;
+    if (!userTarget && !openField && l.time < .28 && l.defense !== 'run' && !goal) speed *= .35;
     // Repair a resumed pre-crossing scramble's cached run target as well.
     if (holdCoverage && d.pursuit && !['cover', 'deep'].includes(d.pursuit.role)) delete d.pursuit;
     const released = consumeDefenseRelease(g, d);
@@ -187,7 +188,6 @@ export function stepDefense(g: FootballGame, dt: number) {
     let tx = d.pursuit.x, ty = d.pursuit.y;
     const escape = openField ? undefined : penetrationTarget(l, d);
     if (escape) { tx = escape.x; ty = escape.y; }
-    const userTarget = userDefenseTarget(g, d);
     // Work around actual blockers, rather than ghosting through them or choosing a random gap.
     const pathX = tx - d.x, pathY = ty - d.y, pathLen = Math.max(1, Math.hypot(pathX, pathY));
     for (const block of offense) {
@@ -239,7 +239,11 @@ export function stepDefense(g: FootballGame, dt: number) {
         (exceptionalCoverage ? MOMENTS.coverAcceleration : exceptionalFit ? 1.06 : 1);
     const changeX = wantedX - d.vx, changeY = wantedY - d.vy, change = Math.hypot(changeX, changeY);
     const fraction = change > maxTurn ? maxTurn / change : 1;
-    d.vx += changeX * fraction; d.vy += changeY * fraction;
+    // Match the carrier's direct directional response, not cached AI steering.
+    // Keep this defender's computed speed; existing blocks/committed dives above
+    // still own their animations. Releasing arrows takes the unmodified AI path.
+    if (manual) { d.vx = manual.x; d.vy = manual.y; }
+    else { d.vx += changeX * fraction; d.vy += changeY * fraction; }
     d.x = clamp(d.x + d.vx * dt, 8, 1180); d.y = clamp(d.y + d.vy * dt, openField ? FOOTBALL_SIDELINES.minY : 24, 168);
     if (pressureGap && !userTarget && d.x < los + 4) { d.x = los + 4; d.vx = Math.max(0, d.vx); }
   }

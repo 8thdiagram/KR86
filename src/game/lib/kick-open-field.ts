@@ -35,7 +35,8 @@ export function stepOpenFieldCoverage(a: KickAttempt, d: KickDefender, dt: numbe
   const wantedY = strafe ? strafe * lateral : clamp((ty - d.y) / arrival + sy, -lateral, lateral);
   const dx = wantedX - m.vx, dy = wantedY - m.vy, change = Math.hypot(dx, dy);
   const fraction = Math.min(1, 650 * dt / Math.max(.001, change));
-  const vx = m.vx + dx * fraction, vy = m.vy + dy * fraction;
+  const vx = strafe ? wantedX : m.vx + dx * fraction;
+  const vy = strafe ? wantedY : m.vy + dy * fraction;
   return { ...d, active: true, x: clamp(d.x + vx * dt, 8, 1180),
     y: clamp(d.y + vy * dt, minY, 168), motion: {
        vx, vy, targetX: tx, targetY: ty, reactionLeft: strafe ? 0 : left,

@@ -20,7 +20,7 @@ import { MOMENTS, primaryMoment, momentRoute, interiorBlockBonus, canSeal, carri
 import { FOOTBALL_SIDELINES, outsideFootballSideline } from './sidelines';
 import { resolveReception } from './receiving';
 import { routePoint } from './route-geometry';
-import { manualDefender, prepareUserDefense } from './user-defense';
+import { prepareUserDefense } from './user-defense';
 export { routePoint } from './route-geometry';
 export { releasePass } from './passing';
 import { clamp, isBlitz, other, random, type Athlete, type Defense, type FootballGame, type FootballInput, type LivePlay, type PlayId } from './types';
@@ -283,8 +283,6 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
   }
   if (l.mode === 'flight') {
     if (input.action && canDefensiveAction(g)) attemptPassDefense(g);
-    const controlled = manualDefender(g, input);
-    if (controlled && !input.action) attemptPassDefense(g, controlled.id);
     cpuPassDefense(g);
   } else if (l.time - (l.defensiveActionAt ?? -Infinity) >= PASS_DEFENSE.actionCooldown) {
     const runner = l.athletes[l.carrier]!;
@@ -301,12 +299,6 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
       const candidates = cpuDive ? defenders.filter(d => !(elite.includes(secondary.indexOf(d)) &&
         d.x < runner.x && d.vx > runner.vx && runner.vx > 0 && Math.abs(d.y - runner.y) < 18)) : defenders;
       const d = startNearestDive(candidates, runner, l.time);
-      if (d) { d.defensiveAttempt = { kind: 'tackle', at: l.time }; l.defensiveActionAt = l.time; }
-    }
-    const controlled = manualDefender(g, input);
-    if (controlled && l.time - (l.defensiveActionAt ?? -Infinity) >= PASS_DEFENSE.actionCooldown &&
-      !defenders.some(d => d.dive?.phase === 'windup' || d.dive?.phase === 'airborne')) {
-      const d = startNearestDive([controlled], runner, l.time);
       if (d) { d.defensiveAttempt = { kind: 'tackle', at: l.time }; l.defensiveActionAt = l.time; }
     }
   }

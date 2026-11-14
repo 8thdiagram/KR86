@@ -59,11 +59,10 @@ export function eligiblePassDefenders(g: FootballGame) {
     .sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y) || a.id - b.id)
     .map(d => ({ d, target, horizon }));
 }
-export function attemptPassDefense(g: FootballGame, defenderId?: number) {
+export function attemptPassDefense(g: FootballGame) {
   const l = g.live!;
   if (l.time - (l.defensiveActionAt ?? -Infinity) < PASS_DEFENSE.actionCooldown) return;
-  const eligible = eligiblePassDefenders(g);
-  const choice = defenderId === undefined ? eligible[0] : eligible.find(choice => choice.d.id === defenderId);
+  const choice = eligiblePassDefenders(g)[0];
   if (!choice) return;
   const { d, target, horizon } = choice;
   const bullet = l.flight!.type === 'bullet', plant = bullet ? .06 : .10;

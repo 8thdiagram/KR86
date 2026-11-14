@@ -4,6 +4,7 @@ import { createFootball } from './engine';
 import { kickoffSequence, stepSpecialTeams } from './special-teams';
 import { isUserDefensivePlay, isUserKickoffCoverage } from './user-defense';
 import { KR, createKickAttempt, stepKickAttempt } from '../kick-return-engine';
+import { openFieldGain } from './athleticism';
 
 function fixture() {
   const g = createFootball(86); g.phase = 'kickoff'; g.kickReceiver = 'away';
@@ -22,7 +23,7 @@ test('kickoff coverage selects the existing kicker only after the kick, and neve
   s.stage = 'return'; s.kind = 'punt'; assert.equal(isUserKickoffCoverage(g), false);
   s.kind = 'full'; s.kicking = 'away'; s.receiver = 'home'; assert.equal(isUserKickoffCoverage(g), false);
 });
-test('kicker strafing overrides coverage with existing acceleration and changes no other player first-frame movement', () => {
+test('kicker strafing responds immediately at legitimate speed and changes no other player first-frame movement', () => {
   for (const direction of [-1, 1] as const) {
     const a = fixture(), b = structuredClone(a), id = a.special!.kicker;
     for (const g of [a, b]) {
@@ -31,11 +32,13 @@ test('kicker strafing overrides coverage with existing acceleration and changes 
       d.motion = { vx: 0, vy: 0, targetX: 600, targetY: direction < 0 ? 168 : 24, reactionLeft: 100, stride: 0, facing: -1 };
       g.special!.athletes[id]!.x = d.x; g.special!.athletes[id]!.y = d.y;
     }
+    const beforeKicker = structuredClone(b.returnAttempt!.defenders.find(d => d.id === id)!);
+    const gain = openFieldGain(beforeKicker, [b.returnAttempt!.player], KR.dt, !beforeKicker.dive);
     stepSpecialTeams(a, {}, KR.dt); stepSpecialTeams(b, { defenseDirection: direction }, KR.dt);
     const d = b.returnAttempt!.defenders.find(d => d.id === id)!;
     assert.equal(d.x, 900); assert((d.y - 96) * direction > 0);
-    assert(Math.abs(d.y - 96) <= d.lateralSpeed * KR.dt);
-    assert(Math.abs(d.motion!.vy) <= 650 * KR.dt + 1e-9);
+    assert(Math.abs(d.y - 96) <= d.lateralSpeed * gain * KR.dt + 1e-9);
+    assert.equal(d.motion!.vy, direction * d.lateralSpeed * gain);
     assert.equal(d.motion!.reactionLeft, 0);
     for (const other of a.returnAttempt!.defenders) if (other.id !== id)
       assert.deepEqual(b.returnAttempt!.defenders.find(d => d.id === other.id), other);

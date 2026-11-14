@@ -61,13 +61,7 @@ export function userDefenseTarget(g: FootballGame, d: Athlete): ManualDefenseTar
   return { x: d.x, y: d.y + direction * 42, direction };
 }
 
-/** Pure vertical intention, within existing speed and acceleration limits. */
+/** Pure vertical intention, using this player's existing lateral speed. */
 export function userDefenseVelocity(direction: ManualDefenseTarget['direction'], lateral: number) {
   return { x: 0, y: direction * lateral };
-}
-
-export function manualDefender(g: FootballGame, input: FootballInput) {
-  if (!input.defenseDirection || g.special || !isUserDefensivePlay(g)) return;
-  const id = controlledDefenderId(g.live!);
-  return g.live!.athletes.find(a => a.id === id);
 }

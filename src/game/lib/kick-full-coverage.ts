@@ -34,7 +34,8 @@ export function stepFullCoverage(a: KickAttempt, d: KickDefender, dt: number, st
   const desiredY = strafe ? strafe * d.lateralSpeed * gain : clamp((ty - d.y) / arrival + sy, -d.lateralSpeed * gain, d.lateralSpeed * gain);
   const changeX = desiredX - m.vx, changeY = desiredY - m.vy, change = Math.hypot(changeX, changeY);
   const fraction = Math.min(1, (elite ? 380 : 280) * (gain > 1 ? OPEN_FIELD.acceleration : 1) * dt / Math.max(.001, change));
-  const vx = m.vx + changeX * fraction, vy = m.vy + changeY * fraction;
+  const vx = strafe ? desiredX : m.vx + changeX * fraction;
+  const vy = strafe ? desiredY : m.vy + changeY * fraction;
   return { ...d, active: true, x: clamp(d.x + vx * dt, 8, 1180),
     y: clamp(d.y + vy * dt, 24, 168),
     observedY: left > m.reactionLeft ? a.player.y : d.observedY,
