@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KickReturnGame } from '../game/components/kick-return-game';
 import { FootballGame } from '../game/components/football-game';
 import { FootballFranchise } from '../game/components/football-franchise';
 import { ContainedGameMode } from '../game/components/games/GameModeHost';
 import { useFranchiseSave } from '../game/lib/football/use-franchise-save';
 import { initializeSaves, readSlot, writeSlot, useSaveStatus } from './local-save';
+import { unlockRetroAudio, playMenuSound, playIntroSound, stopIntroSound, setRetroSoundEnabled } from './retro-audio';
+import { TitleExperience } from './TitleExperience';
 import StandaloneTools from '../components/StandaloneTools';
 import '../game/components/games/game-mode.css';
 import '../game/components/games/game-mode-layouts.css';
 import './fonts.css';
+import './retro-theme.css';
 
 type Mode = 'classic' | 'football' | 'franchise' | 'playoffs' | null;
 export function GameHost() {
@@ -30,38 +33,91 @@ export function GameHost() {
 function DeviceGame() {
   const [mode, setMode] = useState<Mode>(null);
   const [frame, setFrame] = useState(0);
+  const [soundOn, setSoundOn] = useState(true);
+  const [hasSeenIntro, setHasSeenIntro] = useState(false);
+  const soundOnRef = useRef(soundOn);
+  soundOnRef.current = soundOn;
   const [classic] = useState(() => readSlot('classic'));
   const franchise = useFranchiseSave();
   const saveStatus = useSaveStatus();
   const playoffUnlocked = !!franchise.state?.bracket;
+  useEffect(() => { setRetroSoundEnabled(true); }, []);
   const back = () => { setMode(null); setFrame(n => n + 1); };
   const choose = (next: Mode) => {
+    if (!next) return;
+    if (next === 'playoffs' && !playoffUnlocked) return;
     setMode(next);
     // Best effort only: Safari may not implement orientation locking.
     const orientation = screen.orientation as ScreenOrientation & { lock?: (mode: string) => Promise<void> };
     if (next && orientation?.lock) void orientation.lock('landscape').catch(() => undefined);
   };
+  useEffect(() => {
+    const root = document.querySelector('.gm-screen[data-game="kick-return"]');
+    if (!root) return;
+    const onClick = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest('button');
+      if (!button || button.dataset.retroSound === 'off') return;
+      const inFranchise = !!button.closest('.frn') && !button.closest('.frn-game');
+      const inAudioMenu = !!button.closest('.kr-title-screen, .krt, [data-retro-audio="menu"]');
+      if (!inFranchise && !inAudioMenu) return;
+      void unlockRetroAudio();
+      if (!soundOnRef.current) return;
+      const kind = button.classList.contains('frn-back') ? 'transition'
+        : button.classList.contains('frn-tab') ? 'move'
+        : button.dataset.retroSound === 'locked' ? 'locked'
+        : button.dataset.retroSound === 'move' ? 'move'
+        : button.dataset.retroSound === 'transition' ? 'transition' : 'confirm';
+      playMenuSound(kind);
+    };
+    const onChange = (event: Event) => {
+      const target = event.target;
+      if (target instanceof HTMLSelectElement && target.closest('.frn, .krt')
+        && !target.closest('.frn-game') && soundOnRef.current) playMenuSound('move');
+    };
+    root.addEventListener('click', onClick);
+    root.addEventListener('change', onChange);
+    return () => {
+      root.removeEventListener('click', onClick);
+      root.removeEventListener('change', onChange);
+    };
+  }, [frame]);
+  useEffect(() => {
+    const stop = () => stopIntroSound();
+    const hidden = () => { if (document.hidden) stopIntroSound(); };
+    window.addEventListener('pagehide', stop);
+    document.addEventListener('visibilitychange', hidden);
+    return () => {
+      window.removeEventListener('pagehide', stop);
+      document.removeEventListener('visibilitychange', hidden);
+      stopIntroSound();
+    };
+  }, []);
   return <ContainedGameMode key={frame} id="kick-return" onBack={back}>
-    <div className="ga-scope"><div>
+    <div className="ga-scope"><div className="kr-app-root">
       {saveStatus.error && <div role="alert" className="device-save-error">
         {saveStatus.error} <button type="button" onClick={back}>SAVE TOOLS</button>
       </div>}
       {!mode ? <>
-        {/* This is the existing game chooser, not a replacement design. */}
-        <section className="fb-choose" aria-label="Choose game mode" data-testid="kick-mode-chooser">
-          <p className="fb-choose-brand">KICK RETURN '86</p>
-          <div className="fb-choose-row">
-            <button type="button" className="fb-choose-card" onClick={() => choose('classic')} data-testid="button-mode-classic">
-              <strong>CLASSIC MODE</strong><span>The original return. Steer, hit ACTION, find the end zone.</span></button>
-            <button type="button" className="fb-choose-card fb-choose-full" onClick={() => choose('football')} data-testid="button-mode-football">
-              <strong>FULL GAME</strong><span>Four quarters. Call plays, play defense, work the clock.</span></button>
-            <button type="button" className="fb-choose-card fb-choose-franchise" onClick={() => choose('franchise')} data-testid="button-mode-franchise">
-              <strong>FRANCHISE MODE</strong><span>{franchise.state ? `CONTINUE FRANCHISE · ${franchise.state.team} · Season ${franchise.state.season}` : 'Pick a team. 16-game seasons, playoffs, Super Bowls, permanent MVPs.'}</span></button>
-            <button type="button" className="fb-choose-card fb-choose-playoff" aria-disabled={!playoffUnlocked}
-              onClick={() => { if (playoffUnlocked) choose('playoffs'); }} data-testid="button-mode-playoffs" data-unlocked={playoffUnlocked}>
-              <strong>PLAYOFF MODE{playoffUnlocked ? '' : ' · LOCKED'}</strong><span>{playoffUnlocked ? (franchise.state?.bracket?.teams.some(t => t.team === franchise.state?.team) && franchise.state.phase === 'playoffs' ? 'Your 16-team bracket is saved. Continue your playoff run.' : 'View the league playoff bracket and champion.') : 'Finish a Franchise season with a winning record to unlock.'}</span></button>
-          </div>
-        </section>
+        <TitleExperience
+          playIntro={!hasSeenIntro}
+          onIntroComplete={() => setHasSeenIntro(true)}
+          soundOn={soundOn}
+          onSoundToggle={() => {
+            const next = !soundOnRef.current;
+            soundOnRef.current = next;
+            setSoundOn(next);
+            setRetroSoundEnabled(next);
+            if (next) void unlockRetroAudio();
+          }}
+          onIntroStinger={() => { if (soundOnRef.current) playIntroSound('stinger'); }}
+          onIntroTheme={() => { if (soundOnRef.current) playIntroSound('theme'); }}
+          onIntroStop={stopIntroSound}
+          franchise={franchise.state}
+          playoffUnlocked={playoffUnlocked}
+          onChoose={choose}
+        />
         <StandaloneTools />
       </> : mode === 'classic' ? <KickReturnGame seed={classic.seed} state={classic.progress}
         persist={progress => writeSlot('classic', { seed: classic.seed, progress })}

@@ -56,3 +56,17 @@ mtime_ms = 1794665477928
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/ff93c07f-1a2d-48e8-ad15-1b6c883e129d/9fbaff4c-16eb-4101-8947-5f2bb9d1c062"
 storage_version_token = "1794665499703890"
 content_type = "image/png"
+
+[[outputs]]
+id = "dx2DsnhKqH5f5sUcrCdUX"
+uri = "file://generated-artifacts/nes-title-mobile.png"
+type = "image"
+title = "New NES-style title screen"
+description = "Pixel stadium title art, four existing modes, sound toggle, and replayable intro."
+logical_id = "22ae7f3a-916c-484d-9be0-14715e8842e1"
+content_hash = "sha256:d07f09fff4f18b6f4896444cf8acff42910b0c88e1993516a10512a04528fcef"
+size = 143020
+mtime_ms = 1794669026051
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/22ae7f3a-916c-484d-9be0-14715e8842e1/d76e1fea-754c-47dd-baad-432149d9996d"
+storage_version_token = "1794669064503929"
+content_type = "image/png"
