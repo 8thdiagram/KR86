@@ -134,3 +134,17 @@ mtime_ms = 1794670436110
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/c7b10498-f25d-4a47-8cff-8d59c2eccd6f/8b54efba-1baf-46f1-a977-907d0360dc4a"
 storage_version_token = "1794670479465741"
 content_type = "image/png"
+
+[[outputs]]
+id = "TX4YtONPdVcJxSeIy6P3a"
+uri = "file://generated-artifacts/kick-return-icon-edge-preview.png"
+type = "image"
+title = "App icon with subtle edge finish"
+description = "Preview with an iPhone-like rounded mask: a fine cool highlight and slight inner bevel. The installed icons remain opaque for the device’s own corner mask."
+logical_id = "321b4184-716e-4008-b106-5aee7ab4fa34"
+content_hash = "sha256:b09fe9a1fd299adf4e5bc6d4cfe8c98723d017c7f16d0f37bc1b84f68ad081b8"
+size = 573969
+mtime_ms = 1794670562316
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/321b4184-716e-4008-b106-5aee7ab4fa34/d1b3c848-f832-4c47-89cb-46db3e04a298"
+storage_version_token = "1794670593535436"
+content_type = "image/png"
