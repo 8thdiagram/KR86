@@ -3,20 +3,26 @@ name: Defensive control boundaries
 description: User's preservation priorities for intelligent manual defense.
 ---
 
-Quick defensive ACTION taps must retain the original nearest-eligible-defender behavior, irrespective of the highlighted player. A sustained hold controls only the highlighted defender and must not also fire an initial or release tap.
+Defensive ACTION fires the original nearest-eligible-defender action immediately on press, irrespective of the highlighted player. Holding ACTION must never control movement, pursue the quarterback or carrier, wait for a tap/hold threshold, repeat the action, or fire another action on release.
 
-**Why:** The user called preservation of nearest-defender taps an absolute requirement; a nearby lineman must remain eligible for a sack even when the selected linebacker is far away.
+**Why:** The user explicitly removed the defensive control experiments and restored original ACTION timing and eligibility; a nearby lineman must remain eligible for a sack even when the highlighted linebacker is far away.
 
-**How to apply:** Keep tap selection separate from selected-player pursuit and eligible held actions. Do not simplify both paths into one highlighted-player action.
+**How to apply:** Keep ACTION independent of selection and arrow ownership. Preserve its original context, contact requirements, probabilities, cooldowns and animations, including when an arrow is also held.
 
-Manual defense fully overrides assignment-based movement, not defensive assignments or physical abilities. Arrows move the defender directly; ACTION pursues the actual ball carrier for every selected position. Do not use arrows to select receivers, assist coverage or follow receiver progression. With no input, retain ordinary AI behavior. Releasing all controls restores the original responsibility at its current location without teleporting.
+Always select the existing middle linebacker during normal defensive plays, regardless of the defensive call. If absent, use appropriate existing central defensive personnel based on their formation position. Do not move players to manufacture a linebacker or use hidden offensive knowledge.
 
-**Why:** The user explicitly corrected defenders fighting directional input and removed coverage-control complexity, while prioritizing existing gameplay, physical limits, ratings, animations, pressure schedules, playbooks and Franchise saves.
+**Why:** The user wants consistent selection, not a cornerback for Man or a safety for Prevent.
 
-**How to apply:** Select from defensive personnel and assignments only, never hidden offensive information. While manually controlled, neither coverage targets nor lane-spacing or assignment-based steering may pull the player against input. Preserve physical blocking and committed animations. Give arrows steering priority during pursuit, keeping existing speed/acceleration/diagonal limits. Partial releases remain manual until all controls are released. Reuse existing action admission, contact rules, probabilities, cooldowns and animations.
+**How to apply:** Preserve formations, personnel, assignments and all unselected players' AI.
 
-Use the exact original offense targeting symbol on defensive diagrams and the live selected defender: identical shape, proportions, outline and pixel styling, not a different dashed variation or red circle. White indicates automatic mode; yellow indicates ACTION and/or an arrow pressed. Only color changes during manual input.
+UP/DOWN temporarily overrides only the selected defender's movement direction with vertical strafing. No horizontal or diagonal pursuit, AI countersteering, assignment changes, hidden receiver tracking, or physical bonuses. Release arrows to resume the current original assignment immediately, even if ACTION remains held.
 
-**Why:** The user explicitly replaced the red indicator with the existing offense targeting system and wants immediate feedback for every manual press, not just a sustained hold.
+**Why:** The user wants direct, simple repositioning without the defender fighting input or becoming passive.
 
-**How to apply:** Keep the visual pressed state independent of the pursuit hold threshold. Do not reintroduce red controlled-player markers.
+**How to apply:** Keep existing speed, acceleration, blocking, collisions, committed animations and eligible automatic tackles/sacks/interceptions/breakups. Resume the responsibility's current location, not starting coordinates; no teleport or boost.
+
+Use the exact original offense target only during live defensive gameplay: white normally or with ACTION alone, yellow only while strafing. Remove selection targets from defensive play diagrams. On human kickoff coverage, highlight and strafe the existing kicker, preserving original nearest-defender ACTION and receiving controls.
+
+**Why:** The user explicitly requested these feedback and kickoff boundaries to match the simplified controls.
+
+**How to apply:** Arrow release immediately restores white and current coverage. Do not reintroduce red targets, diagram highlights or ACTION-driven yellow selection.

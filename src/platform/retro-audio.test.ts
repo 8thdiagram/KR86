@@ -2,20 +2,20 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   playIntroSound, playMenuSound, retroAudioState, setRetroSoundEnabled, stopIntroSound, unlockRetroAudio,
-  startMenuMusic, stopMenuMusic, prepareTitleHut,
+  startMenuMusic, stopMenuMusic,
 } from './retro-audio';
 
 test('optional audio is safe without browser audio or a user gesture', () => {
   assert.equal(retroAudioState(), 'unavailable');
   assert.doesNotThrow(() => {
-    unlockRetroAudio(); playIntroSound('stinger'); playIntroSound('hut');
+    unlockRetroAudio(); playIntroSound('stinger');
     playMenuSound('confirm'); startMenuMusic(); stopMenuMusic(); stopIntroSound();
   });
 });
 
-test('startup uses effects only; quiet menu music loops without duplication and stops on exit', async () => {
+test('startup stays effects-only; title fanfare plays once, ends naturally and respects cancellation and mute', async () => {
   type Record = { startAt?: number; stopAt?: number; stopped: boolean; disconnected: boolean; offset?: number; duration?: number; loop?: boolean };
-  const tones: Record[] = [], tracks: Record[] = [];
+  const tones: Record[] = [], tracks: Record[] = [], sources: { onended?: () => void }[] = [];
   let resolveDecode!: (buffer: { duration: number }) => void;
   const decoded = new Promise<{ duration: number }>(resolve => { resolveDecode = resolve; });
   const originalFetch = globalThis.fetch;
@@ -46,14 +46,14 @@ test('startup uses effects only; quiet menu music loops without duplication and 
     createBufferSource() {
       const record: Record = { stopped: false, disconnected: false }; tracks.push(record);
       const source = {
-        buffer: undefined, loop: false, onended: undefined, connect() {},
+        buffer: undefined as { duration: number } | undefined, loop: false, onended: undefined as (() => void) | undefined, connect() {},
         start(time?: number, offset?: number, duration?: number) {
-          record.startAt = time; record.offset = offset; record.duration = duration; record.loop = source.loop;
+          record.startAt = time; record.offset = offset; record.duration = duration ?? source.buffer?.duration; record.loop = source.loop;
         },
         stop(time?: number) { if (time === undefined) record.stopped = true; else record.stopAt = time; },
         disconnect() { record.disconnected = true; },
       };
-      return source;
+      sources.push(source); return source;
     }
     createGain() {
       return {
@@ -76,45 +76,38 @@ test('startup uses effects only; quiet menu music loops without duplication and 
     await settle();
     assert.equal(retroAudioState(), 'ready');
     assert(readyEvents > 0, 'the startup screen is notified when audio really becomes usable');
-    prepareTitleHut();
-    assert.equal(tracks.length, 0, 'warming the title sample never plays hut during the intro');
-    unlockRetroAudio(); playIntroSound('hut'); stopIntroSound();
-    resolveDecode({ duration: 3.2 }); await settle();
-    assert.equal(tracks.length, 0, 'ending intro during decoding must not start late effects');
-    playIntroSound('hut'); await settle();
-    assert.equal(tracks.length, 1);
-    assert.equal(tracks[0]!.startAt, 10);
-    assert.equal(tracks[0]!.duration, .9);
-    assert.equal(tracks[0]!.stopAt, 10.9);
-    assert.equal(tracks[0]!.loop, false, 'hut is a one-shot effect, not intro music');
-    playMenuSound('move'); stopIntroSound();
-    assert.ok(tracks[0]!.stopped && tracks[0]!.disconnected);
-    assert.equal(tones[0]!.stopped, false, 'stopping intro leaves menu effects alone');
-    playIntroSound('hut'); now = 10.2; await settle();
-    assert.equal(tracks[1]!.offset, 0, 'title entry plays one clear whole hut, not a clipped delayed syllable');
-    assert.equal(tracks[1]!.duration, .9);
-    assert.equal(tracks[1]!.startAt, 10.2);
-    assert.ok(Math.abs(tracks[1]!.stopAt! - 11.1) < 1e-9);
-    playIntroSound('hut'); now = 11.3; await settle();
-    assert.equal(tracks.length, 2, 'an expired request cannot play an awkward late cadence');
     playIntroSound('stinger');
-    assert.ok(tones.slice(1).every(tone => tone.stopAt! < 16));
+    assert.equal(tones.length, 3);
+    assert.equal(tracks.length, 0, 'intro effects contain no sampled voice or music');
+    playMenuSound('move'); stopIntroSound();
+    assert(tones.slice(0, 3).every(tone => tone.stopped));
+    assert.equal(tones[3]!.stopped, false, 'intro cleanup leaves selection effects alone');
     startMenuMusic(); startMenuMusic(); stopMenuMusic(); await settle();
-    assert.equal(tracks.length, 2, 'leaving menu during load cancels late background music');
+    resolveDecode({ duration: 5.6 }); await settle();
+    assert.equal(tracks.length, 0, 'leaving menu during decoding cancels late music');
     startMenuMusic(); startMenuMusic(); await settle();
-    assert.equal(tracks.length, 3);
-    assert.equal(tracks[2]!.loop, true);
+    assert.equal(tracks.length, 1);
+    assert.equal(tracks[0]!.loop, false);
+    assert.equal(tracks[0]!.duration, 5.6);
     startMenuMusic(); await settle();
-    assert.equal(tracks.length, 3, 'repeated ready/visibility events never stack loops');
+    assert.equal(tracks.length, 1, 'repeated ready events never stack tracks');
     stopIntroSound();
-    assert.equal(tracks[2]!.stopped, false, 'intro cleanup does not stop menu music');
+    assert.equal(tracks[0]!.stopped, false, 'intro cleanup does not stop title music');
+    sources[0]!.onended?.();
+    assert(tracks[0]!.disconnected);
+    startMenuMusic(); await settle();
+    assert.equal(tracks.length, 1, 'a completed fanfare never restarts on the same menu');
+    playMenuSound('move');
+    assert.equal(tracks.length, 1, 'selection effects still work without restarting music');
     stopMenuMusic();
-    assert.ok(tracks[2]!.stopped && tracks[2]!.disconnected);
+    startMenuMusic(); await settle();
+    assert.equal(tracks.length, 2, 'a new title appearance may play once');
     setRetroSoundEnabled(false);
     assert.equal(unlockRetroAudio(), 'muted');
+    assert(tracks[1]!.stopped);
     assert.ok(tones.every(tone => tone.stopped));
     const count = tracks.length + tones.length;
-    playMenuSound('confirm'); playIntroSound('hut'); startMenuMusic(); await settle();
+    playMenuSound('confirm'); playIntroSound('stinger'); startMenuMusic(); await settle();
     assert.equal(tracks.length + tones.length, count, 'mute prevents all new intro/menu audio');
   } finally {
     stopIntroSound(); stopMenuMusic(); setRetroSoundEnabled(true);

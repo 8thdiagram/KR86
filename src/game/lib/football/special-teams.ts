@@ -9,6 +9,7 @@ import { franchiseFactor, franchiseKickControl } from './franchise-upgrades';
 import { chaosOpportunity, SPECIAL_EXECUTION_SPEED } from './clutch';
 import { advanceKickLoose, advanceKickRush, contactKickBlock, receptionMuff } from './kick-events';
 import { looseBall, tryFumble } from './rare-events';
+import { isUserKickoffCoverage } from './user-defense';
 
 const point = (a: Athlete, x: number, y: number, speed: number, dt: number) => {
   const dx = x - a.x, dy = y - a.y, n = Math.hypot(dx, dy), f = n ? Math.min(1, speed * dt / n) : 0;
@@ -222,7 +223,10 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
     if ((s.kind === 'squib' || s.kind === 'onside') && s.stage === 'flight' && t > .25) s.stage = 'bounce'; // retain flight age
     if (s.kind !== 'field-goal') {
       for (const a of s.athletes) {
-        if (s.kind === 'onside') {
+        if (a.id === s.kicker && input.defenseDirection && isUserKickoffCoverage(g)) {
+          const speed = s.kind === 'full' ? 40 : s.kind === 'onside' ? 48 : 54;
+          point(a, a.x, clamp(a.y + input.defenseDirection * 42, 24, 168), speed, dt);
+        } else if (s.kind === 'onside') {
           // The historical recovery probability determines a visible receiving-team
           // misread or secure fielding, not a second random winner at the end.
           const isWinner = a.side === (s.onsideWinner === s.kicking ? 'offense' : 'defense');
@@ -310,7 +314,9 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
     }
     const returnSide = s.returnSide ?? s.receiver;
     const direction = returnSide === 'home' ? input.direction ?? 0 : kickWitnessDirection(a);
-    const next = stepKickAttempt(a, direction, dt, returnSide === 'home' ? { juke: !!input.action || !!input.juke, hesitate: input.hesitate } : {}, FOOTBALL_SIDELINES);
+    const strafe = isUserKickoffCoverage(g) && input.defenseDirection
+      ? { id: s.kicker, direction: input.defenseDirection } : undefined;
+    const next = stepKickAttempt(a, direction, dt, returnSide === 'home' ? { juke: !!input.action || !!input.juke, hesitate: input.hesitate } : {}, FOOTBALL_SIDELINES, strafe);
     g.returnAttempt = next;
     for (const d of next.defenders) { const actor = s.athletes[d.id]!, x = physicalX(d.x);
       actor.vx = (x - actor.x) / dt; actor.vy = (d.y - actor.y) / dt; actor.x = x; actor.y = d.y; }

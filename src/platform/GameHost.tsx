@@ -100,7 +100,6 @@ function DeviceGame() {
           playIntro={!hasSeenIntro}
           onIntroComplete={() => setHasSeenIntro(true)}
           onIntroStinger={() => playIntroSound('stinger')}
-          onTitleHut={() => playIntroSound('hut')}
           onIntroStop={stopIntroSound}
           franchise={franchise.state}
           playoffUnlocked={playoffUnlocked}

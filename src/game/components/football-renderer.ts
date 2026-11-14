@@ -5,7 +5,7 @@ import type { Athlete, FootballGame, LivePlay, SpecialTeams } from '../lib/footb
 import { fieldGoalDistance, fieldGoalAllowed, PLAYBOOK } from '../lib/football/playbook';
 import { highlightedReceiver } from '../lib/football/passing';
 import { primaryPlayer } from '../lib/football/execution';
-import { controlledDefenderId } from '../lib/football/user-defense';
+import { controlledDefenderId, isUserKickoffCoverage } from '../lib/football/user-defense';
 import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
 import { slim, carrierMark, airBall, landingMark, goalPosts, heldBall, R, type Kit } from './football-sprites';
 import { uniformKit } from './football-art';
@@ -150,7 +150,7 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   if (g.tackleScene?.space === 'legacy-return' && g.returnAttempt) {
     for (const d of g.returnAttempt.defenders) if (!isTackleActor(g, d, 'legacy-return'))
       slim(ctx, d.x, d.y, { ...(g.kickReceiver === 'home' ? away : home), dir: -1 });
-  } else if (sp) drawSpecial(ctx, g, sp, home, away, seconds);
+  } else if (sp) drawSpecial(ctx, g, sp, home, away, seconds, manualDefense);
   else drawScrimmage(ctx, g, home, away, seconds, manualDefense);
   drawTackle(ctx, g, home, away);
   referee(ctx, clamp(focus + 34, 18, KR.worldWidth - 18), seconds, g.lastResult.startsWith('TOUCHDOWN') && ['play-dead', 'final'].includes(g.phase));
@@ -267,7 +267,7 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
   }
 }
 
-function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: SpecialTeams, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number) {
+function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: SpecialTeams, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number, manualDefense: boolean) {
   const fg = sp.kind === 'field-goal';
   const dir = g.fieldFrame ?? 1;
   // athletes: offense = kicking team, defense = receiving team.
@@ -324,6 +324,8 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       slim(ctx, a.x, a.y, { ...kit, dir: fielding ? (sp.ball.x < a.x ? -1 : 1) : facing }, { step: moving ? t + a.id : 0, hold: fielding, engaged: a.engaged > sp.age, lean: a.engaged > sp.age ? facing : 0 });
     }
     ctx.restore();
+    if (a.id === sp.kicker && isUserKickoffCoverage(g))
+      playerTarget(ctx, a.x, a.y, manualDefense ? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE);
   }
   if (ret) return;
   const b = sp.ball;

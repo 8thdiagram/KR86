@@ -2,40 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const read = (path: string) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
-test('defensive diagrams and live field share one defensive-only selection helper', () => {
-  const diagrams = read('../game/lib/football/diagrams.ts');
-  const preplay = read('../game/components/football-preplay.tsx');
+test('selection targets exist only on the live field, not defensive play diagrams', () => {
+  const diagrams = read('../game/lib/football/diagrams.ts'), preplay = read('../game/components/football-preplay.tsx');
+  assert.doesNotMatch(diagrams, /controlledDefenderId|controlled:/);
+  assert.doesNotMatch(preplay, /fbp-controlled|PLAYER_TARGET_PIXELS|DIAGRAM_TARGET_SCALE/);
   const renderer = read('../game/components/football-renderer.ts');
-  assert.match(diagrams, /controlledDefenderId\(l\)/);
-  assert.match(preplay, /r\.controlled && defender && <g/);
-  assert.match(preplay, /PLAYER_TARGET_PIXELS\.map/);
-  assert.match(preplay, /s\.x - PLAYER_TARGET_CENTER\.x/);
-  assert.match(preplay, /s\.y - PLAYER_TARGET_CENTER\.y/);
-  assert.match(preplay, /fill=\{PLAYER_TARGET_WHITE\}/);
   assert.match(renderer, /controlledDefenderId\(live\)/);
+  assert.match(renderer, /a\.id === sp\.kicker && isUserKickoffCoverage\(g\)/);
   assert.match(renderer, /playerTarget\(ctx, a\.x, a\.y, manualDefense \? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE\)/);
   assert.match(renderer, /playerTarget\(ctx, a\.x, a\.y, live\.holdingPass \? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE\)/);
   assert.match(renderer, /for \(const \[dx, dy, width, height\] of PLAYER_TARGET_PIXELS\)/);
   assert.doesNotMatch(renderer, /#f0443e/);
-  assert.doesNotMatch(read('../game/components/football-preplay.css'), /#f0443e/);
-  assert.doesNotMatch(read('../game/components/football-preplay.css'), /fbp-controlled\{[^}]*stroke/);
-  assert.match(preplay, /const SIZE = 6/);
-  assert.match(preplay, /const SIZE = 4/);
 });
-test('defender highlight responds to ACTION before the hold threshold and to arrows without consuming input', () => {
-  const component = read('../game/components/football-game.tsx');
-  assert.match(component, /input\.current\.sample\(performance\.now\(\), false\)/);
-  assert.match(component, /controls\.pressed\.juke \|\| controls\.defenseDirection/);
-  assert.doesNotMatch(component, /red defender/);
-});
-test('landscape ACTION wrapper has square corners and does not clip the square button', () => {
-  const css = read('./retro-theme.css');
-  assert.match(css, /@container gm \(min-aspect-ratio:3\/2\)\s*\{\s*\.gm-screen \.gm-slot \.ga-scope \.fb-juke-col\s*\{\s*border-radius: 0;\s*overflow: visible;/);
-});
-test('existing touch arrows are enabled for live human defense without adding controls', () => {
-  const component = read('../game/components/football-game.tsx');
-  assert.match(component, /disabled=\{!controlsActive && !userDefenseActive\}/);
-  assert.match(component, /if \(!controlsActive && !userDefenseActive && !\(control === 'juke' && defenseActive\)\)/);
-  assert.match(component, /setPointerCapture\(e.pointerId\)/);
-  assert.match(component, /onPointerCancel=\{e => release\(e, true\)\}/);
+test('only arrows color the defensive target, and there is no ACTION tap/hold movement system', () => {
+  const game = read('../game/components/football-game.tsx'), controls = read('../game/lib/football/controls.ts');
+  assert.match(game, /!!controls\.defenseDirection\)/);
+  assert.doesNotMatch(game, /controls\.pressed\.juke \|\| controls\.defenseDirection|Hold: pursue/);
+  assert.doesNotMatch(controls, /defenseOwner|defenseTap|DEFENSE_HOLD_MS|defenseHold/);
+  assert.match(controls, /control === 'juke' && canDefensiveAction\(g\)/);
+  assert.match(controls, /kick = true; consumed\.add\(id\); return/);
 });

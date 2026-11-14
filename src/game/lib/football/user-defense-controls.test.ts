@@ -3,112 +3,67 @@ import assert from 'node:assert/strict';
 import { createFootball } from './engine';
 import { startField } from './field';
 import { createFootballControls } from './controls';
-import { DEFENSE_HOLD_MS } from './user-defense';
-
 function fixture() {
   const g = createFootball(86);
   g.phase = 'live'; g.possession = 'away'; g.live = startField(g, 'post', 'pass');
   return g;
 }
-test('defensive tap is responsive on release, never fires on initial press or repeats', () => {
-  for (const duration of [1, 60, 130, 199]) {
+test('defensive ACTION fires on press, not release, regardless of hold duration', () => {
+  for (const duration of [1, 60, 199, 200, 1000, 5000]) {
     const c = createFootballControls(), g = fixture();
     c.enter('action', 'juke', 0, g);
-    assert.equal(c.sample(0).action, false);
-    assert.equal(c.sample(0).defensePressed, true);
+    assert.equal(c.sample(0, false).action, true, 'drawing cannot consume the command');
+    assert.equal(c.sample(0).action, true);
+    assert.equal(c.sample(duration).action, false);
+    assert.equal(c.sample(duration).defenseDirection, 0);
+    assert(!('defenseHold' in c.sample(duration)));
     c.release('action', duration);
-    assert.equal(c.sample(duration).action, true);
-    assert.equal(c.sample(duration).defensePressed, false);
-    assert.equal(c.sample(duration + 1).action, false);
-    assert.equal(c.sample(duration + 1).defenseHold, false);
+    assert.equal(c.sample(duration).action, false);
   }
 });
-test('rapid holds, direction reversals and partial releases cannot stick or synthesize taps', () => {
+test('held/repeated ACTION never retriggers, redirects, or synthesizes a release action', () => {
   const c = createFootballControls(), g = fixture();
-  for (let cycle = 0; cycle < 50; cycle++) {
-    const now = cycle * 500;
-    c.enter('action', 'juke', now, g);
-    assert.equal(c.sample(now).defensePressed, true);
-    assert.equal(c.sample(now).defenseHold, false);
-    c.enter('up', 'up', now + 20, g);
-    c.enter('down', 'down', now + 210, g);
-    let s = c.sample(now + 220);
-    assert.equal(s.defenseHold, true); assert.equal(s.defenseDirection, 1); assert.equal(s.action, false);
-    c.release('down', now + 240); s = c.sample(now + 240);
-    assert.equal(s.defenseDirection, -1, 'remaining pressed arrow retains ownership');
-    if (cycle % 2) {
-      c.release('up', now + 260);
-      s = c.sample(now + 260);
-      assert.equal(s.defenseDirection, 0); assert.equal(s.defenseHold, true);
-      c.release('action', now + 280);
-    } else {
-      c.release('action', now + 260);
-      s = c.sample(now + 260);
-      assert.equal(s.defenseDirection, -1); assert.equal(s.defensePressed, false);
-      c.release('up', now + 280);
-    }
-    s = c.sample(now + 300);
-    assert.equal(s.defensePressed, false); assert.equal(s.defenseHold, false);
-    assert.equal(s.defenseDirection, 0); assert.equal(s.action, false);
+  c.enter('key', 'juke', 0, g); assert(c.sample(0).action);
+  for (let t = 10; t < 2000; t += 10) {
+    c.enter('key', 'juke', t, g);
+    const input = c.sample(t);
+    assert.equal(input.action, false); assert.equal(input.defenseDirection, 0);
+  }
+  c.release('key', 2000); assert.equal(c.sample(2000).action, false);
+  c.enter('key', 'juke', 2010, g); assert(c.sample(2010).action);
+});
+test('two-finger arrow ownership is independent of ACTION and ends immediately on release', () => {
+  const c = createFootballControls(), g = fixture();
+  for (let cycle = 0; cycle < 30; cycle++) {
+    const t = cycle * 1000;
+    c.enter('action', 'juke', t, g); assert(c.sample(t).action);
+    c.enter('up', 'up', t + 10, g); assert.equal(c.sample(t + 10).defenseDirection, -1);
+    c.enter('down', 'down', t + 20, g); assert.equal(c.sample(t + 20).defenseDirection, 1);
+    c.release('down', t + 30); assert.equal(c.sample(t + 30).defenseDirection, -1);
+    c.release('up', t + 40);
+    const held = c.sample(t + 200);
+    assert.equal(held.defenseDirection, 0); assert.equal(held.action, false);
+    c.release('action', t + 400); assert.equal(c.sample(t + 400).action, false);
   }
 });
-test('200 ms sustained ACTION starts pursuit without an initial dive or release tap', () => {
-  const c = createFootballControls(), g = fixture();
-  assert.equal(DEFENSE_HOLD_MS, 200);
-  c.enter('action', 'juke', 100, g);
-  assert.equal(c.sample(299).defenseHold, false);
-  assert.equal(c.sample(300).defenseHold, true);
-  for (let time = 300; time < 900; time += 16) assert.equal(c.sample(time).action, false);
-  c.release('action', 900);
-  assert.equal(c.sample(900).action, false);
-  assert.equal(c.sample(900).defenseHold, false);
-});
-test('a hold released between frames, cancellation, sliding away and clear never become taps', () => {
-  for (const kind of ['late', 'cancel', 'slide', 'clear']) {
+test('cancellation, blur/clear, and captured-finger sliding leave no stuck strafe', () => {
+  for (const end of ['cancel', 'clear', 'slide']) {
     const c = createFootballControls(), g = fixture();
-    c.enter('pointer:1', 'juke', 0, g);
-    if (kind === 'slide') c.enter('pointer:1', 'up', 250, g);
-    if (kind === 'clear') c.clear();
-    c.release('pointer:1', 250, kind === 'cancel');
-    assert.equal(c.sample(250).action, false, kind);
-    assert.equal(c.sample(250).defenseHold, false, kind);
+    c.enter('finger', 'up', 0, g); assert.equal(c.sample(1).defenseDirection, -1);
+    if (end === 'slide') {
+      c.enter('finger', 'juke', 20, g); assert(c.sample(20).action);
+      assert.equal(c.sample(21).defenseDirection, 0);
+    } else if (end === 'clear') c.clear();
+    c.release('finger', 40, end === 'cancel');
+    const input = c.sample(50);
+    assert.equal(input.defenseDirection, 0); assert.equal(input.direction, 0); assert.equal(input.action, false);
   }
 });
-test('two-finger arrows work with and without ACTION and release immediately restores AI intentions', () => {
+test('accessible directional clicks remain finite and kickoff/turnover ACTION stays immediate', () => {
   const c = createFootballControls(), g = fixture();
-  c.enter('up', 'up', 0, g);
-  assert.equal(c.sample(1).defenseDirection, -1);
-  c.enter('action', 'juke', 20, g);
-  assert.equal(c.sample(225).defenseHold, true);
-  assert.equal(c.sample(225).defenseDirection, -1);
-  c.release('up', 230);
-  assert.equal(c.sample(230).defenseDirection, 0, 'no legacy steering-tap latch after a real release');
-  assert.equal(c.sample(230).defenseHold, true);
-  c.enter('down', 'down', 240, g);
-  c.release('action', 250);
-  assert.equal(c.sample(250).defenseDirection, 1);
-  assert.equal(c.sample(250).action, false);
-  c.release('down', 260);
-  assert.equal(c.sample(260).defenseDirection, 0);
-});
-test('accessible directional clicks have a finite pulse; other phases retain their existing controls', () => {
-  const c = createFootballControls(), g = fixture();
-  c.tapDirection(1, 0);
-  assert.equal(c.sample(0).defenseDirection, 1);
+  c.tapDirection(1, 0); assert.equal(c.sample(0).defenseDirection, 1);
   assert.equal(c.sample(160).defenseDirection, 0);
   g.live!.mode = 'return'; g.live!.offense = 'home';
-  c.enter('return-action', 'juke', 200, g);
-  assert.equal(c.sample(200).action, true, 'return defense keeps its original press action');
-  assert.equal(c.sample(500).defenseHold, false);
-});
-test('sliding a captured arrow finger onto ACTION does not leave an orphaned steering press', () => {
-  const c = createFootballControls(), g = fixture();
-  c.enter('finger', 'up', 0, g);
-  c.enter('finger', 'juke', 10, g);
-  assert.equal(c.sample(220).defenseHold, true);
-  assert.equal(c.sample(220).direction, 0);
-  assert.equal(c.sample(220).defenseDirection, 0);
-  c.release('finger', 250);
-  assert.equal(c.sample(250).direction, 0);
-  assert.equal(c.sample(250).action, false);
+  c.enter('return-action', 'juke', 200, g); assert(c.sample(200).action);
+  assert.equal(c.sample(600).action, false);
 });

@@ -1,16 +1,14 @@
-/** Local sound effects and a quiet menu-only chip sports loop. */
+/** Local sound effects and a short, once-per-title chip football fanfare. */
 export type MenuSound = 'move' | 'confirm' | 'locked' | 'transition';
 type Voice = { oscillator: OscillatorNode; gain: GainNode; intro: boolean };
 let context: AudioContext | undefined;
 let enabled = true;
 const voices = new Set<Voice>();
-let introGeneration = 0;
-let hutBuffer: Promise<AudioBuffer> | undefined;
-let themeVoice: { source: AudioBufferSourceNode; gain: GainNode } | undefined;
 let menuBuffer: Promise<AudioBuffer> | undefined;
 let menuVoice: { source: AudioBufferSourceNode; gain: GainNode } | undefined;
 let menuGeneration = 0;
 let menuLoading = false;
+let menuStarted = false;
 export type RetroAudioState = 'ready' | 'blocked' | 'unavailable' | 'muted';
 
 export function retroAudioState(): RetroAudioState {
@@ -89,50 +87,15 @@ export function playMenuSound(kind: MenuSound) {
   }
 }
 
-/** Warm the actual game sample without playing anything during the video. */
-export function prepareTitleHut() {
-  if (!enabled || !context) return;
-  hutBuffer ??= loadAudio(new URL('../game/assets/football-hut.mp3', import.meta.url).href)
-    ?.catch(error => { hutBuffer = undefined; throw error; });
-  void hutBuffer?.catch(() => undefined);
-}
-
-export function playIntroSound(kind: 'stinger' | 'hut') {
+export function playIntroSound(kind: 'stinger') {
   stopIntroSound();
   if (kind === 'stinger') {
     [36, 43, 48].forEach((note, i) => tone(note, i * .075, .14, true));
-    return;
   }
-  if (!enabled || !context || context.state !== 'running') return;
-  const generation = introGeneration, audioContext = context, requestedAt = context.currentTime;
-  prepareTitleHut();
-  void hutBuffer?.then(buffer => {
-    if (generation !== introGeneration || !enabled || audioContext.state !== 'running'
-      || (typeof document !== 'undefined' && document.hidden)) return;
-    // Title entry is immediate, not scheduled near the end of the opening video.
-    const elapsed = Math.max(0, audioContext.currentTime - requestedAt);
-    const offset = 0, duration = Math.min(.9, buffer.duration);
-    if (elapsed > .9 || duration <= 0) return;
-    const source = audioContext.createBufferSource(), gain = audioContext.createGain();
-    source.buffer = buffer; source.loop = false; gain.gain.value = .5;
-    source.connect(gain); gain.connect(audioContext.destination);
-    const voice = { source, gain }; themeVoice = voice;
-    source.onended = () => {
-      source.disconnect(); gain.disconnect();
-      if (themeVoice === voice) themeVoice = undefined;
-    };
-    const startAt = audioContext.currentTime;
-    source.start(startAt, offset, duration);
-    source.stop(startAt + duration);
-  }).catch(() => {
-    if (generation === introGeneration && typeof window !== 'undefined') {
-      window.dispatchEvent?.(new Event('kick-return-intro-audio-error'));
-    }
-  });
 }
 
 export function startMenuMusic() {
-  if (unlockRetroAudio() !== 'ready' || !context || menuVoice || menuLoading
+  if (unlockRetroAudio() !== 'ready' || !context || menuVoice || menuLoading || menuStarted
     || (typeof document !== 'undefined' && document.hidden)) return;
   const generation = menuGeneration, audioContext = context;
   menuLoading = true;
@@ -143,11 +106,12 @@ export function startMenuMusic() {
       || (typeof document !== 'undefined' && document.hidden)) return;
     const source = audioContext.createBufferSource(), gain = audioContext.createGain();
     source.buffer = buffer;
-    source.loop = true;
+    source.loop = false;
     gain.gain.value = .18;
     source.connect(gain); gain.connect(audioContext.destination);
     const voice = { source, gain };
     menuVoice = voice;
+    menuStarted = true;
     source.onended = () => {
       source.disconnect(); gain.disconnect();
       if (menuVoice === voice) menuVoice = undefined;
@@ -162,6 +126,7 @@ export function startMenuMusic() {
 export function stopMenuMusic() {
   menuGeneration++;
   menuLoading = false;
+  menuStarted = false;
   if (!menuVoice) return;
   try { menuVoice.source.stop(); } catch { /* Already ended. */ }
   menuVoice.source.disconnect(); menuVoice.gain.disconnect();
@@ -178,13 +143,7 @@ function stopVoices(introOnly: boolean) {
 }
 
 export function stopIntroSound() {
-  introGeneration++;
   stopVoices(true);
-  if (themeVoice) {
-    try { themeVoice.source.stop(); } catch { /* Already ended. */ }
-    themeVoice.source.disconnect(); themeVoice.gain.disconnect();
-    themeVoice = undefined;
-  }
 }
 
 if (typeof document !== 'undefined') {

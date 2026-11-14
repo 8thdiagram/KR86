@@ -1,7 +1,7 @@
-/** Original eight-bar, bass-forward 1988 football march. Two pulse voices,
+/** Original short, resolved 1988 football fanfare. Two pulse voices,
  * a defining triangle bass and restrained noise/DPCM-style drums. No samples. */
 import fs from 'node:fs';
-const rate = 16000, bpm = 112, beat = 60 / bpm, bars = 8, duration = bars * 4 * beat;
+const rate = 16000, bpm = 100, beat = 60 / bpm, duration = 5.6;
 const samples = new Float32Array(Math.round(rate * duration));
 function add(start: number, seconds: number, wave: (t: number) => number, level: number) {
   for (let i = 0; i < seconds * rate; i++) {
@@ -39,38 +39,22 @@ function drum(kind: 'kick' | 'snare' | 'hat' | 'tom', start: number, accent = 1,
     return Math.round(Math.sin(phase) * 15) / 15 * Math.exp(-(kind === 'kick' ? 29 : 22) * t);
   }, accent * (kind === 'hat' ? .006 : kind === 'snare' ? .045 : .09));
 }
-// D-major call/response: longer, lower phrases with breathing room, not arpeggios.
-const roots = [38, 38, 43, 45, 35, 43, 40, 45];
-const melody: [number, number, number][][] = [
-  [[62, 0, 1], [66, 1.25, .65], [69, 2, 1.2], [66, 3.5, .35]],
-  [[64, 0, 1.25], [62, 1.5, 1], [57, 3, .7]],
-  [[62, 0, .75], [67, 1, .75], [66, 2, 1.5]],
-  [[64, 0, 1.5], [61, 2, .75], [57, 3, .65]],
-  [[66, 0, 1], [69, 1.5, .65], [71, 2.5, .5], [69, 3.25, .5]],
-  [[67, 0, 1.5], [66, 2, .75], [62, 3, .75]],
-  [[64, 0, .85], [66, 1, .75], [64, 2, .75], [61, 3, .65]],
-  [[64, 0, .75], [61, 1, .75], [57, 2, 1.15]],
+// C-major call and answer, ending on a held tonic rather than a loop turnaround.
+const melody: [number, number, number][] = [
+  [55, 0, .65], [60, .75, .65], [64, 1.5, 1.2], [62, 3, .7],
+  [60, 4, .7], [59, 5, .65], [60, 6, 3.3],
 ];
-for (let bar = 0; bar < bars; bar++) {
-  const start = bar * 4 * beat, root = roots[bar]!;
-  for (const [midi, at, length] of melody[bar]!)
-    note(midi, start + at * beat, length * beat, .115, 'pulse', .5);
-  // The second pulse supports two strong beats; it never competes with the tune.
-  for (const at of [0, 2])
-    note(root + (at ? 19 : 24), start + at * beat, beat * .65, .045, 'pulse', .25);
-  const bass = bar % 2 ? [0, 7, 12, 7, 0] : [0, 0, 7, 12, 7];
-  const bassBeats = [0, 1, 2, 2.75, 3.5];
-  bass.forEach((interval, i) => note(root + interval, start + bassBeats[i]! * beat,
-    beat * (i < 2 ? .85 : .43), .28, 'triangle'));
-  for (const at of [0, 2]) drum('kick', start + at * beat);
-  for (const at of [1, 3]) drum('snare', start + at * beat, .8);
-  for (const at of [0, 1, 2, 3]) drum('hat', start + at * beat, .6);
-  if (bar === 3 || bar === 7) {
-    drum('snare', start + 3.5 * beat, .45);
-    drum('tom', start + 3.75 * beat, .55, 100);
-  }
-}
-// Quiet menu playback is unchanged; normalize without clipping or a sudden loop seam.
+for (const [midi, at, length] of melody)
+  note(midi, at * beat, length * beat, .115, 'pulse', .5);
+for (const [midi, at, length] of [[48, 0, 1.4], [53, 2, 1.4], [55, 4, 1.4], [52, 6, 3.3]])
+  note(midi!, at! * beat, length! * beat, .045, 'pulse', .25);
+for (const [midi, at, length] of [[36, 0, .85], [43, 1, .85], [41, 2, .85], [36, 3, .85],
+  [43, 4, .85], [31, 5, .85], [36, 6, 3.3]])
+  note(midi!, at! * beat, length! * beat, .28, 'triangle');
+for (const at of [0, 2, 4, 6]) drum('kick', at * beat, .8);
+for (const at of [1, 3, 5]) drum('snare', at * beat, .65);
+drum('tom', 5.5 * beat, .45, 90);
+// Quiet playback and a natural release of the final chord; never a loop seam.
 const peak = samples.reduce((max, x) => Math.max(max, Math.abs(x)), 0);
 const master = .38 / peak;
 const wav = Buffer.alloc(44 + samples.length * 2);
@@ -80,8 +64,8 @@ wav.writeUInt32LE(rate, 24); wav.writeUInt32LE(rate * 2, 28); wav.writeUInt16LE(
 wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(samples.length * 2, 40);
 samples.forEach((value, i) => {
   // Release the final fill at the loop boundary rather than truncating its waveform.
-  const edge = Math.min(1, i / (rate * .003), (samples.length - 1 - i) / (rate * .008));
+  const edge = Math.min(1, i / (rate * .003), (samples.length - 1 - i) / (rate * .7));
   wav.writeInt16LE(Math.round(value * master * edge * 32767), 44 + i * 2);
 });
 fs.writeFileSync('src/platform/assets/menu-sports.wav', wav);
-console.log(`Created original ${bars}-bar, ${bpm} BPM championship chip theme (${duration.toFixed(2)} seconds).`);
+console.log(`Created original ${bpm} BPM championship chip fanfare (${duration.toFixed(2)} seconds, plays once).`);

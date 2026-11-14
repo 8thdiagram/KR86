@@ -17,6 +17,8 @@ export const KR = {
   forwardSpeed: 73, lateralSpeed: 86, kickoffSeconds: 1.55, dt: 1 / 60, downs: 4,
 } as const;
 export type KickDirection = -1 | 0 | 1;
+/** Transient Full Game coverage input; never part of a saved attempt or Classic controls. */
+export type KickCoverageInput = { id: number; direction: KickDirection };
 export type KickPhase = 'kickoff' | 'returning' | 'tackled' | 'touchdown';
 export type KickDefender = {
   id: number; x: number; y: number; homeX: number; minY: number; maxY: number;
@@ -160,8 +162,8 @@ export function isKickContact(player: { x: number; y: number }, defender: { x: n
   return Math.abs(player.x - defender.x) < 9 && Math.abs(player.y - defender.y) < 10;
 }
 export function stepKickAttempt(a: KickAttempt, direction: KickDirection, dt = KR.dt, input: KickMoveInput = {},
-  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }): KickAttempt {
-  return advanceKickAttempt(a, direction, dt, true, input, bounds);
+  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }, coverageInput?: KickCoverageInput): KickAttempt {
+  return advanceKickAttempt(a, direction, dt, true, input, bounds, coverageInput);
 }
 
 /** Conservative admission check: offer at least one immediate, real-physics escape.
@@ -177,7 +179,7 @@ export function canEvadeKickDive(a: KickAttempt, diver: KickDefender): boolean {
 }
 
 function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number, allowDiveStarts: boolean, input: KickMoveInput = {},
-  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }): KickAttempt {
+  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }, coverageInput?: KickCoverageInput): KickAttempt {
   if (a.phase === 'touchdown' || a.phase === 'tackled') return a;
   if (!Number.isFinite(dt) || dt <= 0 || dt > KR.dt + .000001)
     throw new Error('Kick Return requires fixed, bounded physics steps');
@@ -223,8 +225,10 @@ function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number
         return diving.dive.approach ? stepCommittedDive(diving, dt, true) : diving;
       }
     }
-    if (a.fullCoverage) return stepFullCoverage(a, d, dt);
-    if (a.pursuitVersion) return stepOpenFieldCoverage(a, d, dt);
+     const strafe = coverageInput?.id === d.id ? coverageInput.direction : 0;
+     if (a.fullCoverage) return stepFullCoverage(a, d, dt, strafe);
+     if (a.pursuitVersion) return stepOpenFieldCoverage(a, d, dt, d.speed, d.lateralSpeed, strafe);
+     if (strafe) return { ...d, active, y: clamp(d.y + strafe * d.lateralSpeed * dt, 24, 168) };
     // Predictable pursuit within each clearly separated patrol band.
     const target = clamp(d.jukeRead && d.jukeRead.until > a.returnTime ? d.jukeRead.targetY
       : player.y + direction * 10, d.minY, d.maxY);

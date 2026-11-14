@@ -25,11 +25,10 @@ test('intro uses borderless aspect-fit nearest-pixel presentation; logo stays re
   assert.match(film, /border: 0/); assert.match(film, /box-shadow: none/);
   assert.match(css, /\.kr-film-video \{[^}]*object-fit: contain;[^}]*image-rendering: pixelated/);
   assert.match(css, /\.kr-wordmark \{[^}]*top: 11%/);
-  assert.match(css, /\.kr-wordmark \{[^}]*'KR Pixel'/);
-  assert.match(css, /\.kr-wordmark \{[^}]*text-shadow: none/);
-  assert.match(css, /\.kr-wordmark span \{[\s\S]*?background-clip: text/);
-  assert.match(read('./TitleExperience.tsx').toString(), /className="kr-word-kick">KICK/);
-  assert.match(read('./TitleExperience.tsx').toString(), /className="kr-word-return">RETURN/);
+  assert.match(css, /\.kr-wordmark--raster \{[^}]*transform: none;[^}]*filter: none/);
+  assert.match(css, /\.kr-wordmark__image \{[^}]*height: auto;[^}]*image-rendering: pixelated/);
+  assert.match(read('./TitleExperience.tsx').toString(), /<TitleWordmark \/>/);
+  assert.match(read('./TitleWordmark.tsx').toString(), /<h1[\s\S]*KICK RETURN/);
 });
 
 // Small, test-only decoder for the non-interlaced RGBA PNG artwork.
@@ -57,6 +56,24 @@ function rgba(data: Buffer) {
   }
   return { width, height, pixels };
 }
+test('title lettering is an authored hard-pixel raster with a binary outline and no antialiased edges', () => {
+  const { width, height, pixels } = rgba(read('./assets/title-wordmark.png'));
+  assert.equal(width, 512); assert.equal(height, 192);
+  const colors = new Set<string>();
+  let transparent = 0, opaque = 0;
+  for (let i = 0; i < pixels.length; i += 4) {
+    const alpha = pixels[i + 3]!;
+    assert(alpha === 0 || alpha === 255, 'no smooth/partially transparent edge pixels');
+    if (!alpha) transparent++; else { opaque++; colors.add(pixels.subarray(i, i + 3).toString('hex')); }
+  }
+  assert(transparent > width * height / 4 && opaque > width * height / 4);
+  assert(colors.size <= 8);
+  for (const color of ['ffffff', '071326', 'aab7c6', '748399']) assert(colors.has(color));
+  const author = read('./scripts/render-title-wordmark.mjs').toString();
+  assert.match(author, /const glyphs =/);
+  assert.match(author, /shearCells = \[2, 2, 1, 1, 1, 0, 0, 0, 0\]/);
+  assert.doesNotMatch(author, /fillText|strokeText|createLinearGradient|fontFamily/);
+});
 test('turf version preserves the supplied silhouette with restrained missing pixels, varied faded alpha and no new lettering', () => {
   const original = rgba(read('./assets/midfield-86.png')), turf = rgba(read('./assets/midfield-86-turf.png'));
   assert.equal(turf.width, 64);

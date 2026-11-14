@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SyntheticEvent } from 'react';
 import type { Franchise } from '../game/lib/football/franchise';
-import { unlockRetroAudio, playMenuSound, prepareTitleHut, retroAudioState, startMenuMusic, stopMenuMusic } from './retro-audio';
+import { unlockRetroAudio, playMenuSound, retroAudioState, startMenuMusic, stopMenuMusic } from './retro-audio';
+import { TitleWordmark } from './TitleWordmark';
 import midfield86 from './assets/midfield-86.png';
 import menuGameplay from './assets/menu-gameplay.png';
 import kickReturnIntro from './assets/kick-return-intro.mp4';
@@ -11,7 +12,6 @@ type Props = {
   playIntro: boolean;
   onIntroComplete: () => void;
   onIntroStinger: () => void;
-  onTitleHut: () => void;
   onIntroStop: () => void;
   franchise: Franchise | null | undefined;
   playoffUnlocked: boolean;
@@ -33,7 +33,7 @@ function PixelArtwork({ animate = false }: { animate?: boolean }) {
 }
 
 export function TitleExperience(props: Props) {
-  const { playIntro, onIntroComplete, onIntroStinger, onTitleHut, onIntroStop, franchise, playoffUnlocked, onChoose } = props;
+  const { playIntro, onIntroComplete, onIntroStinger, onIntroStop, franchise, playoffUnlocked, onChoose } = props;
   const [stage, setStage] = useState<'black' | 'mark' | 'film' | 'menu'>(playIntro ? 'black' : 'menu');
   const stageRef = useRef(stage);
   stageRef.current = stage;
@@ -49,8 +49,8 @@ export function TitleExperience(props: Props) {
   const runId = useRef(0);
   const activeRun = useRef(false);
   const themeStarted = useRef(false);
-  const callbacks = useRef({ onIntroStinger, onTitleHut, onIntroStop, onIntroComplete });
-  callbacks.current = { onIntroStinger, onTitleHut, onIntroStop, onIntroComplete };
+  const callbacks = useRef({ onIntroStinger, onIntroStop, onIntroComplete });
+  callbacks.current = { onIntroStinger, onIntroStop, onIntroComplete };
   const finishIntro = useCallback((unlock = false) => {
     if (stageRef.current === 'menu') return;
     activeRun.current = false;
@@ -78,7 +78,6 @@ export function TitleExperience(props: Props) {
     }
     setAwaitingSound(false);
     callbacks.current.onIntroStop();
-    prepareTitleHut(); // Decode during the intro, but never play its cadence here.
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const currentRun = ++runId.current;
     activeRun.current = true;
@@ -231,9 +230,8 @@ export function TitleExperience(props: Props) {
       if (document.hidden) return;
       if (!announced && retroAudioState() === 'ready') {
         announced = true;
-        callbacks.current.onTitleHut();
+        startMenuMusic();
       }
-      startMenuMusic();
     };
     const visibility = () => { if (document.hidden) stopMenuMusic(); else start(); };
     start();
@@ -298,10 +296,7 @@ export function TitleExperience(props: Props) {
         <button type="button" className="kr-replay" onClick={replayIntro} data-retro-sound="confirm">REPLAY INTRO</button>
       </header>
       <div className="kr-hero-art">
-        <h1 className="kr-wordmark">
-          <span className="kr-word-kick">KICK</span>
-          <span className="kr-word-return">RETURN</span>
-        </h1>
+        <TitleWordmark />
         <PixelArtwork />
         <div className="kr-score-rule"><span>KICK RETURN ’86</span><span>GRIDIRON FOOTBALL</span></div>
       </div>

@@ -218,3 +218,17 @@ mtime_ms = 1794681397407
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/ab450090-5d90-44fd-a73e-3e6c5d4e5ebd/a5226832-22aa-4ee9-ab4f-0f6ce0c10677"
 storage_version_token = "1794681532657651"
 content_type = "audio/wav"
+
+[[outputs]]
+id = "VswIX_J33JiGQHVnQArFK"
+uri = "file://generated-artifacts/defense-title-verification.html"
+type = "html"
+title = "Change and test report"
+description = "Exact modified files, all 20 requested regression areas, and the results of 319 automated tests plus mobile browser checks."
+logical_id = "60288e42-1bef-45f7-913a-886be95db78c"
+content_hash = "sha256:c5e058c9979b95e0074f613604fe19a68a81e9410530c687e0c54fccfb2cbcff"
+size = 13755
+mtime_ms = 1794695345270
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/60288e42-1bef-45f7-913a-886be95db78c/d1848720-ef85-4552-945b-f7a5edee9928"
+storage_version_token = "1794695394038958"
+content_type = "text/html"

@@ -22,8 +22,10 @@ test('menu uses the real gameplay capture rather than the former illustration', 
 
 test('menu retains the large Kick Return title and labels the lower-right year', () => {
   const title = fs.readFileSync(new URL('./TitleExperience.tsx', import.meta.url), 'utf8');
-  assert.match(title, /className="kr-word-kick">KICK</);
-  assert.match(title, /className="kr-word-return">RETURN</);
+  assert.match(title, /<TitleWordmark \/>/);
+  const wordmark = fs.readFileSync(new URL('./TitleWordmark.tsx', import.meta.url), 'utf8');
+  assert.match(wordmark, /<h1[\s\S]*KICK RETURN/);
+  assert.match(wordmark, /title-wordmark\.png/);
   assert.match(title, /className="kr-art-year" aria-label="1986">’86</);
   const css = fs.readFileSync(new URL('./retro-theme.css', import.meta.url), 'utf8');
   const year = css.match(/\.kr-art-year\s*\{([^}]+)\}/)?.[1] ?? '';

@@ -226,7 +226,7 @@ export function stepDefense(g: FootballGame, dt: number) {
     const independentAxes = elite || runPursuit;
     // Manual movement replaces the entire assignment/avoidance/spacing vector,
     // not just its initial destination. Physical blocking and dives still apply.
-    const manual = userTarget ? userDefenseVelocity(d, userTarget, speed, lateral, independentAxes, dt) : undefined;
+    const manual = userTarget ? userDefenseVelocity(userTarget.direction, lateral) : undefined;
     const wantedX = manual ? manual.x : independentAxes ? clamp(dx / arrival + (space ? sx * spacing : 0), -speed, speed) : intentX * cap;
     const wantedY = manual ? manual.y : independentAxes ? clamp(dy / arrival + (space ? sy * spacing : 0), -lateral, lateral) : intentY * cap;
     const close = carrying && Math.hypot(d.x - carrier.x, d.y - carrier.y) < 48;
