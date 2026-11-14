@@ -458,3 +458,41 @@
 .ga-scope .kr-pause-sound {
   display: none !important;
 }
+
+/* Landscape field expansion: reclaim only interior cabinet gutters. The host's
+   safe-area insets remain untouched, and 44px control/action targets stay intact. */
+@container gm (min-aspect-ratio:3/2) {
+  .gm-screen .gm-slot .ga-scope .fb-game {
+    --fb-rail: clamp(80px, 10cqw, 108px);
+    grid-template-columns: var(--fb-rail) minmax(0, 1fr) var(--fb-rail);
+    column-gap: 3px;
+    row-gap: 1px;
+    padding: 0 1px 1px;
+  }
+
+  .gm-screen .gm-slot .ga-scope .fb-screen {
+    border-width: 1px;
+  }
+
+  .gm-screen .gm-slot .ga-scope .kr-game {
+    --kr-rail: clamp(64px, 8cqw, 76px);
+    grid-template-columns: var(--kr-rail) minmax(0, 1fr) var(--kr-rail);
+    grid-template-rows: minmax(0, 1fr) 44px;
+    column-gap: 3px;
+    row-gap: 2px;
+    padding: 0 1px 1px;
+  }
+
+  .gm-screen .gm-slot .ga-scope .kr-game:has(> .kr-main-actions > [data-testid="kick-return-action-placeholder"]) {
+    grid-template-rows: minmax(0, 1fr) 44px;
+  }
+
+  .gm-screen .gm-slot .ga-scope .kr-game:not([data-outcome=""]) {
+    grid-template-columns: minmax(0, 1.7fr) minmax(220px, .9fr);
+    grid-template-rows: minmax(0, 1fr) 44px;
+  }
+
+  .gm-screen .gm-slot .ga-scope .kr-game:not([data-outcome=""]) > .kr-screen {
+    border-width: 1px;
+  }
+}

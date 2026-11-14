@@ -21,9 +21,9 @@ The home/menu artwork should be an actual in-game screenshot. Keep the large Kic
 
 **How to apply:** Use a frame from actual gameplay, not an invented gameplay-like illustration. Do not replace the separately supplied intro video or app icon merely to match menu artwork.
 
-The supplied intro video is for visuals only. Do not use its original sound. Intro playback has sound effects, including the game's own “hut,” but no music. Do not display skip-intro or mute-sound options. The menu has quiet, simple sports-themed background music with some drums, not a busy arrangement.
+The supplied intro video is for visuals only. Do not use its original sound. Intro playback has sound effects, including the game's own “hut,” but no music. Do not display skip-intro or mute-sound options. The menu has an original, exciting era-appropriate 8-bit championship sports soundtrack with drums, more life and variety, at background volume.
 
-**Why:** The user replaced the earlier finite intro theme and silent-menu direction with explicit effects-only intro playback and quiet menu music with light drums.
+**Why:** The user retained effects-only intro playback and subsequently replaced the sparse menu tune with a request for a livelier NFL-championship-type sports soundtrack from the era, with drums and more variety.
 
 **How to apply:** Keep source video audio out of playback. Attempt automatic intro effects; where browser autoplay restrictions require a gesture, offer Start with sound before running the intro silently. Play background music only while the menu is up, stopping it for intro replay, gameplay, or a hidden page. Do not restore the removed skip or mute controls.
 
