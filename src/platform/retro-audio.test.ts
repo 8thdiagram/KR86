@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   playIntroSound, playMenuSound, retroAudioState, setRetroSoundEnabled, stopIntroSound, unlockRetroAudio,
-  startMenuMusic, stopMenuMusic,
+  startMenuMusic, stopMenuMusic, prepareTitleHut,
 } from './retro-audio';
 
 test('optional audio is safe without browser audio or a user gesture', () => {
@@ -76,22 +76,27 @@ test('startup uses effects only; quiet menu music loops without duplication and 
     await settle();
     assert.equal(retroAudioState(), 'ready');
     assert(readyEvents > 0, 'the startup screen is notified when audio really becomes usable');
+    prepareTitleHut();
+    assert.equal(tracks.length, 0, 'warming the title sample never plays hut during the intro');
     unlockRetroAudio(); playIntroSound('hut'); stopIntroSound();
     resolveDecode({ duration: 3.2 }); await settle();
     assert.equal(tracks.length, 0, 'ending intro during decoding must not start late effects');
     playIntroSound('hut'); await settle();
     assert.equal(tracks.length, 1);
-    assert.equal(tracks[0]!.startAt, 14.7);
+    assert.equal(tracks[0]!.startAt, 10);
     assert.equal(tracks[0]!.duration, .9);
-    assert.equal(tracks[0]!.stopAt, 15.6);
+    assert.equal(tracks[0]!.stopAt, 10.9);
     assert.equal(tracks[0]!.loop, false, 'hut is a one-shot effect, not intro music');
     playMenuSound('move'); stopIntroSound();
     assert.ok(tracks[0]!.stopped && tracks[0]!.disconnected);
     assert.equal(tones[0]!.stopped, false, 'stopping intro leaves menu effects alone');
-    playIntroSound('hut'); now = 15.2; await settle();
-    assert.ok(Math.abs(tracks[1]!.offset! - .5) < 1e-9, 'delayed music joins the elapsed video position');
-    assert.ok(Math.abs(tracks[1]!.duration! - .4) < 1e-9);
-    assert.ok(Math.abs(tracks[1]!.stopAt! - 15.6) < 1e-9);
+    playIntroSound('hut'); now = 10.2; await settle();
+    assert.equal(tracks[1]!.offset, 0, 'title entry plays one clear whole hut, not a clipped delayed syllable');
+    assert.equal(tracks[1]!.duration, .9);
+    assert.equal(tracks[1]!.startAt, 10.2);
+    assert.ok(Math.abs(tracks[1]!.stopAt! - 11.1) < 1e-9);
+    playIntroSound('hut'); now = 11.3; await settle();
+    assert.equal(tracks.length, 2, 'an expired request cannot play an awkward late cadence');
     playIntroSound('stinger');
     assert.ok(tones.slice(1).every(tone => tone.stopAt! < 16));
     startMenuMusic(); startMenuMusic(); stopMenuMusic(); await settle();

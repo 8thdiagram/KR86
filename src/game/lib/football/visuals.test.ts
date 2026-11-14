@@ -72,7 +72,7 @@ test('GOOD and NO GOOD appear once at screen center, independent of field direct
       g.spot = 80; g.phase = 'live'; g.fieldFrame = frame;
       g.live = startField(g, 'field-goal', 'run');
       g.live.kickAccuracy = good ? .5 : .01;
-      g.special = fieldGoalSequence(g); g.special.stage = 'resolved'; g.special.good = good;
+      g.special = fieldGoalSequence(g); g.special.stage = 'resolved'; g.special.stageAge = .3; g.special.good = good;
       const labels: { text: string; x: number; y: number }[] = [];
       const ctx = new Proxy({
         fillText(text: string, x: number, y: number) {

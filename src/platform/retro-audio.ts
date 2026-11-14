@@ -89,6 +89,14 @@ export function playMenuSound(kind: MenuSound) {
   }
 }
 
+/** Warm the actual game sample without playing anything during the video. */
+export function prepareTitleHut() {
+  if (!enabled || !context) return;
+  hutBuffer ??= loadAudio(new URL('../game/assets/football-hut.mp3', import.meta.url).href)
+    ?.catch(error => { hutBuffer = undefined; throw error; });
+  void hutBuffer?.catch(() => undefined);
+}
+
 export function playIntroSound(kind: 'stinger' | 'hut') {
   stopIntroSound();
   if (kind === 'stinger') {
@@ -97,16 +105,14 @@ export function playIntroSound(kind: 'stinger' | 'hut') {
   }
   if (!enabled || !context || context.state !== 'running') return;
   const generation = introGeneration, audioContext = context, requestedAt = context.currentTime;
-  hutBuffer ??= loadAudio(new URL('../game/assets/football-hut.mp3', import.meta.url).href)
-    ?.catch(error => { hutBuffer = undefined; throw error; });
+  prepareTitleHut();
   void hutBuffer?.then(buffer => {
     if (generation !== introGeneration || !enabled || audioContext.state !== 'running'
       || (typeof document !== 'undefined' && document.hidden)) return;
-    // If decode was delayed, join at the video's current elapsed time, never late.
+    // Title entry is immediate, not scheduled near the end of the opening video.
     const elapsed = Math.max(0, audioContext.currentTime - requestedAt);
-    const offset = Math.max(0, elapsed - 4.7);
-    const duration = Math.min(.9, buffer.duration) - offset;
-    if (duration <= 0) return;
+    const offset = 0, duration = Math.min(.9, buffer.duration);
+    if (elapsed > .9 || duration <= 0) return;
     const source = audioContext.createBufferSource(), gain = audioContext.createGain();
     source.buffer = buffer; source.loop = false; gain.gain.value = .5;
     source.connect(gain); gain.connect(audioContext.destination);
@@ -115,7 +121,7 @@ export function playIntroSound(kind: 'stinger' | 'hut') {
       source.disconnect(); gain.disconnect();
       if (themeVoice === voice) themeVoice = undefined;
     };
-    const startAt = Math.max(audioContext.currentTime, requestedAt + 4.7);
+    const startAt = audioContext.currentTime;
     source.start(startAt, offset, duration);
     source.stop(startAt + duration);
   }).catch(() => {

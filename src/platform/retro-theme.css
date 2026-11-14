@@ -120,20 +120,32 @@
 .kr-wordmark {
   position: absolute;
   z-index: 2;
-  top: 2%;
+  top: 11%;
   left: 0;
   width: 100%;
   margin: 0;
   color: #ffffff;
+  -webkit-text-stroke: 1px #050914;
   font-family: 'KR Pixel', 'Space Mono', monospace;
   font-style: normal;
   font-weight: 400;
   line-height: .92;
-  letter-spacing: -.08em;
+  letter-spacing: -.05em;
   text-align: center;
-  text-shadow: 3px 3px #155fd9, 6px 6px #b53120;
+  transform: skewX(-8deg);
+  text-shadow: none;
+  filter: drop-shadow(2px 2px 0 #164e9c) drop-shadow(1px 1px 0 #050914);
 }
-.kr-wordmark span { display: block; white-space: nowrap; }
+.kr-wordmark span {
+  display: block;
+  white-space: nowrap;
+  /* Each word gets its own discrete paint bands. An opaque text-shadow here
+     would cover the clipped lettering, making the entire logo dark blue. */
+  background-image: linear-gradient(to bottom, #ffffff 0 32%, #a9bdd1 32% 46%, #ffffff 46% 56%, #4da6ec 56% 74%, #d8efff 74% 88%, #ffffff 88% 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 .kr-word-kick {
   font-size: min(17cqw, 92px);
 }
@@ -224,16 +236,17 @@
   filter: grayscale(1) brightness(0) saturate(100%) invert(14%) sepia(91%) saturate(5702%) hue-rotate(344deg) brightness(96%) contrast(108%);
 }
 .kr-film {
-  width: min(100vw, 100vh, 760px);
-  aspect-ratio: 1;
-  max-height: 100dvh;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  max-height: none;
   position: relative;
   overflow: hidden;
   display: grid;
   place-items: center;
-  background: #071332;
-  border: 3px solid #4f8fca;
-  box-shadow: 0 0 0 3px #050a16, 0 8px 0 #02050c;
+  background: #03050a;
+  border: 0;
+  box-shadow: none;
   animation: kr-film-reveal .45s steps(5, end) both;
 }
 .kr-film-video {
@@ -241,7 +254,8 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #071332;
+  image-rendering: pixelated;
+  background: #03050a;
 }
 .kr-film-scan { display: none; }
 .kr-intro-music-note {
@@ -463,7 +477,7 @@
    safe-area insets remain untouched, and 44px control/action targets stay intact. */
 @container gm (min-aspect-ratio:3/2) {
   .gm-screen .gm-slot .ga-scope .fb-game {
-    --fb-rail: clamp(80px, 10cqw, 108px);
+    --fb-rail: clamp(72px, 9cqw, 96px);
     grid-template-columns: var(--fb-rail) minmax(0, 1fr) var(--fb-rail);
     column-gap: 3px;
     row-gap: 1px;
@@ -475,7 +489,7 @@
   }
 
   .gm-screen .gm-slot .ga-scope .kr-game {
-    --kr-rail: clamp(64px, 8cqw, 76px);
+    --kr-rail: clamp(58px, 7.25cqw, 70px);
     grid-template-columns: var(--kr-rail) minmax(0, 1fr) var(--kr-rail);
     grid-template-rows: minmax(0, 1fr) 44px;
     column-gap: 3px;

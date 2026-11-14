@@ -1,7 +1,8 @@
 {
   "description": "Frozen trytry game source. No automatic synchronization. Platform adapters are reviewed separately.",
   "gameplayOverrides": {
-    "components/football-renderer.ts": "ff32dec6f4f338aae5bd65cd5b43a917b98d5f4fb97ac24cd97548f74ff97c12",
+    "components/football-renderer.ts": "f795899083587252c24c9a14f9d7ef17153d487a3d7529b57829aa6be9a49028",
+    "components/football-field-goal.ts": "2e79742ba1355d27c406e8f6880c5e0fe861032c33f94cf1292e4a33686e038d",
     "components/football-preplay.tsx": "e7fc383c9ba7d0843dc48cee1e8c72161b2417257e87fd12dbcdca88b0be7ecc",
     "components/football-preplay.css": "f29b65ed982773a32afde79b5e5eaab735247afb01491d064303b26bc7a10f4e",
     "components/kick-return-renderer.ts": "ee3844423b11958211af9368c0e88adbf1a99dae7b504c593ee806903a090449",

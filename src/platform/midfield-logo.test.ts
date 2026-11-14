@@ -22,7 +22,7 @@ test('transparent logo draws centered on the fifty-yard line without changing ga
   } as unknown as CanvasRenderingContext2D;
   const image = { complete: true, naturalWidth: 200, naturalHeight: 200 } as HTMLImageElement;
   drawRegularSeasonMidfield(ctx, g, image);
-  assert.deepEqual(calls, [[image, 564, 60, 72, 72]]);
+  assert.deepEqual(calls, [[image, 570, 66, 60, 60]]);
   assert.deepEqual(g, before);
   calls.length = 0;
   g.franchise.playoff = { season: 1, year: 1986, round: 1 };

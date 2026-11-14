@@ -1,5 +1,4 @@
 import { KR } from '../lib/kick-return-engine';
-import { resultVisible } from '../lib/football/play-result';
 import { kickMatchupTeams } from '../lib/kick-return-teams';
 import { fieldViewportFrame, type KickViewport } from '../lib/kick-return-viewport';
 import type { Athlete, FootballGame, LivePlay, SpecialTeams } from '../lib/football/types';
@@ -16,6 +15,7 @@ import { drawTackle } from './football-tackle';
 import { attackDirection, playTravelDirection, worldX } from '../lib/football/direction';
 import { drawRegularSeasonMidfield } from '../../platform/midfield-logo';
 import { PLAYER_TARGET_PIXELS, PLAYER_TARGET_WHITE, PLAYER_TARGET_YELLOW } from '../lib/football/player-target';
+import { drawFieldGoalFlight, GOAL_VIEW } from './football-field-goal';
 
 /** Presentation only. Reads the engine state; never mutates it and never samples randomness. */
 const { field, moveSprite, prone, referee, football, crowd } = kickFootballArt;
@@ -104,6 +104,12 @@ function kits(g: FootballGame) {
 }
 
 export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, view: KickViewport | undefined, seconds: number, manualDefense = false) {
+  // Keep the original leg follow-through and the complete kick-block window.
+  if (g.special?.kind === 'field-goal' && (g.special.stage === 'resolved' ||
+      g.special.stage === 'flight' && g.special.stageAge >= GOAL_VIEW.followThrough)) {
+    drawFieldGoalFlight(ctx, g, view);
+    return;
+  }
   if (g.phase === 'kickoff' && g.returnAttempt && !g.special) {
     drawKickReturn(ctx, g.returnAttempt, 0, false, view, g.returnAttempt.teams,
       fieldContext => drawRegularSeasonMidfield(fieldContext, g));
@@ -157,23 +163,6 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
     ctx.restore();
   }
   ctx.restore();
-
-  // Kick verdicts belong to the visible screen, never the end-zone world frame.
-  // The existing timed result overlay takes over once the play is complete.
-  if (sp?.kind === 'field-goal' && sp.good !== undefined && !resultVisible(g) &&
-      (sp.stage === 'resolved' || sp.stage === 'flight' && worldX(sp.ball.x, g.fieldFrame ?? 1) > 1170)) {
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const label = sp.good ? 'GOOD' : 'NO GOOD';
-    const size = Math.round(clamp(12 * scale, 16, 28));
-    const w = Math.min(viewW - 16, size * 8), h = size * 2;
-    R(ctx, INK, (viewW - w) / 2, (viewH - h) / 2, w, h);
-    ctx.font = `bold ${size}px ui-monospace, monospace`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = sp.good ? '#58c46a' : ORANGE;
-    ctx.fillText(label, viewW / 2, viewH / 2);
-    ctx.restore();
-  }
 
   // Keep the entire meter below the overlaid landscape scoreboard, not in its top stripe.
   if (g.phase === 'live' && live?.mode === 'kick' && live.play === 'field-goal' && live.kickAccuracy === undefined &&
