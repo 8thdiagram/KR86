@@ -13,4 +13,10 @@ Manual defense is a temporary override of movement intentions, not a rewrite of 
 
 **Why:** The user explicitly prioritized existing gameplay, AI, physical limits, ratings, animations, defensive-line pressure schedules, playbooks and Franchise saves over a redesigned defensive engine.
 
-**How to apply:** Select the red-highlighted defender from defensive personnel and assignments only, never the hidden offensive call or quarterback receiver highlight. Keep identity consistent between diagrams and the live play. Reuse existing action admission, contact rules, probabilities, cooldowns and animations.
+**How to apply:** Select the highlighted defender from defensive personnel and assignments only, never the hidden offensive call or quarterback receiver highlight. Keep identity consistent between diagrams and the live play. Reuse existing action admission, contact rules, probabilities, cooldowns and animations.
+
+Use the original offense-style white targeting highlight for the selected defender, not a red circle. Turn it yellow whenever ACTION or an arrow is pressed, and back to white on release.
+
+**Why:** The user explicitly replaced the red indicator with the existing offense targeting system and wants immediate feedback for every manual press, not just a sustained hold.
+
+**How to apply:** Keep the visual pressed state independent of the pursuit hold threshold. Do not reintroduce red controlled-player markers.

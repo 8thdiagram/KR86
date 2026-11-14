@@ -35,7 +35,7 @@
 .fbp-primary polyline{stroke:#f4d23c;stroke-width:4.4;stroke-dasharray:none}
 .fbp-x{stroke:#ee7848;stroke-width:3;stroke-linecap:square}
 .fbp-o{fill:#0b1d36;stroke:#fff;stroke-width:2.2}
-.fbp-controlled{fill:none;stroke:#f0443e;stroke-width:2}
+.fbp-controlled{fill:none;stroke:#fff;stroke-width:1.8;stroke-dasharray:2 2;stroke-linecap:square}
 .fbp-primary .fbp-o{fill:#f4d23c;stroke:#f4d23c}
 .fbp-lbl{font:700 11px ui-monospace,monospace;fill:#f1e6d0;text-anchor:middle}
 .fbp-read{fill:#0b1d36;stroke:#9ccfff;stroke-width:1.8}

@@ -9,6 +9,33 @@ import { createFootball } from './engine';
 import { startField } from './field';
 import { drawFootball } from '../../components/football-renderer';
 import { fieldGoalSequence } from './special-teams';
+import { controlledDefenderId } from './user-defense';
+
+test('defensive target uses offense pixel corners: white idle, yellow pressed, white released without save mutations', () => {
+  for (const defense of ['pass', 'man', 'prevent'] as const) {
+    const g = createFootball(86);
+    g.phase = 'live'; g.possession = 'away'; g.spot = 40;
+    g.live = startField(g, 'post', defense); g.live.time = 1;
+    const d = g.live.athletes.find(a => a.id === controlledDefenderId(g.live!))!;
+    d.x = 700; d.y = 96;
+    const before = JSON.stringify(g);
+    for (const active of [false, true, false]) {
+      const marks: { color: string; rect: number[] }[] = [];
+      const target = {
+        fillStyle: '',
+        fillRect(x: number, y: number, w: number, h: number) {
+          if ((x === 692 || x === 708) && (y === 80 || y === 98) && w === 1 && h === 5)
+            marks.push({ color: this.fillStyle, rect: [x, y, w, h] });
+        },
+      };
+      const ctx = new Proxy(target, { get: (t, key) => Reflect.has(t, key) ? Reflect.get(t, key) : () => {} }) as unknown as CanvasRenderingContext2D;
+      drawFootball(ctx, g, { width: 393, height: 500 }, .5, active);
+      assert.equal(marks.length, 4, defense);
+      assert(marks.every(m => m.color === (active ? '#f4d23c' : '#f1e6d0')));
+      assert.equal(JSON.stringify(g), before, 'visual input never changes saved gameplay state');
+    }
+  }
+});
 
 test('field-goal timing meter clears the scoreboard and keeps its label on screen', () => {
   for (const [width, height] of [[664, 192], [760, 300], [390, 320]]) {

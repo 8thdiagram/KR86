@@ -391,6 +391,12 @@
   outline: 3px solid #ffdc69;
   outline-offset: 1px;
 }
+@container gm (min-aspect-ratio:3/2) {
+  .gm-screen .gm-slot .ga-scope .fb-juke-col {
+    border-radius: 0;
+    overflow: visible;
+  }
+}
 
 @media (min-width: 700px) {
   .kr-title-screen { min-height: 100%; padding-top: 14px; }

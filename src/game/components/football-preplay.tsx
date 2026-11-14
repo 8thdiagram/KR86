@@ -66,7 +66,8 @@ function Diagram({ routes, label }: { routes: DiagramRoute[]; label: string }) {
         {moving && !r.kick && !r.pitch && !r.fake && !split && <polyline points={line(r.points)} markerEnd={marker} className={defender ? 'fbp-rush' : undefined} />}
         {defender ? <path transform={`translate(${s.x} ${s.y})`} d="M-5 -5L5 5M5 -5L-5 5" className="fbp-x" />
           : !r.pitch && <circle cx={s.x} cy={s.y} r="5.5" className="fbp-o" />}
-        {r.controlled && <circle cx={s.x} cy={s.y} r="9" className="fbp-controlled" />}
+        {r.controlled && <path transform={`translate(${s.x} ${s.y})`}
+          d="M-9 -5V-9H-5M5 -9H9V-5M9 5V9H5M-5 9H-9V5" className="fbp-controlled" />}
         {r.label && <text x={s.x} y={defender ? s.y - 9 : s.y + 17} className="fbp-lbl">{r.label}</text>}
         {r.read && moving && <g transform={`translate(${e.x + (e.x > 96 ? 11 : -11)} ${e.y + 2})`}><circle r={r.read === 1 ? 9 : 7.5} className="fbp-read" /><text y="3.5" className="fbp-num">{r.read}</text></g>}
       </g>;

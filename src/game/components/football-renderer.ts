@@ -102,7 +102,7 @@ function kits(g: FootballGame) {
   return { home, away };
 }
 
-export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, view: KickViewport | undefined, seconds: number) {
+export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, view: KickViewport | undefined, seconds: number, manualDefense = false) {
   if (g.phase === 'kickoff' && g.returnAttempt && !g.special) {
     drawKickReturn(ctx, g.returnAttempt, 0, false, view, g.returnAttempt.teams,
       fieldContext => drawRegularSeasonMidfield(fieldContext, g));
@@ -144,7 +144,7 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
     for (const d of g.returnAttempt.defenders) if (!isTackleActor(g, d, 'legacy-return'))
       slim(ctx, d.x, d.y, { ...(g.kickReceiver === 'home' ? away : home), dir: -1 });
   } else if (sp) drawSpecial(ctx, g, sp, home, away, seconds);
-  else drawScrimmage(ctx, g, home, away, seconds);
+  else drawScrimmage(ctx, g, home, away, seconds, manualDefense);
   drawTackle(ctx, g, home, away);
   referee(ctx, clamp(focus + 34, 18, KR.worldWidth - 18), seconds, g.lastResult.startsWith('TOUCHDOWN') && ['play-dead', 'final'].includes(g.phase));
   if ((g.turnoverNotice ?? 0) > 0) {
@@ -194,7 +194,17 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   }
 }
 
-function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number) {
+/** The existing offense target: four separated pixel corners, shared by defense. */
+function playerTarget(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
+  for (const side of [-1, 1]) {
+    const edge = x + side * 8;
+    R(ctx, color, edge, y - 16, 1, 5); R(ctx, color, edge, y + 2, 1, 5);
+    R(ctx, color, side < 0 ? edge : edge - 3, y - 16, 4, 1);
+    R(ctx, color, side < 0 ? edge : edge - 3, y + 6, 4, 1);
+  }
+}
+
+function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number, manualDefense: boolean) {
   const live = g.live;
   const dir = g.fieldFrame ?? 1;
   const los = worldX(spotX(live?.snapSpot ?? g.spot), dir);
@@ -247,24 +257,14 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
     else if (snap && a.role === 'QB') slim(ctx, a.x, a.y, kit, { hold: true });
     else slim(ctx, a.x, a.y, { ...kit, dir: facing }, { step: moving ? t + a.id : 0, ball: hasBall, engaged, lean: engaged ? facing : 0, crouch: snap });
     if (g.phase === 'live' && a.id === read && g.possession === 'home' && !ic) {
-      const color = live.holdingPass ? FIRST : LACE;
-      for (const side of [-1, 1]) {
-        const x = a.x + side * 8;
-        R(ctx, color, x, a.y - 16, 1, 5); R(ctx, color, x, a.y + 2, 1, 5);
-        R(ctx, color, side < 0 ? x : x - 3, a.y - 16, 4, 1);
-        R(ctx, color, side < 0 ? x : x - 3, a.y + 6, 4, 1);
-      }
+      playerTarget(ctx, a.x, a.y, live.holdingPass ? FIRST : LACE);
     }
     // Small ground tick links the primary diagram to the opening assignment,
     // then disappears. No live labels, arrows, halos or permanent HUD additions.
     if (g.phase === 'live' && !ic && !snap && a.id === primary && a.id !== read &&
         live.time < PLAYBOOK[live.play].develop + .55) R(ctx, LACE, a.x - 3, a.y + 7, 6, 1);
     if (a.id === controlled) {
-      ctx.beginPath();
-      ctx.arc(a.x, a.y, 8.5, 0, Math.PI * 2);
-      ctx.strokeStyle = '#f0443e';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      playerTarget(ctx, a.x, a.y, manualDefense ? FIRST : LACE);
     }
     ctx.restore();
     if (hasBall) carrierAt = holding && ic ? { x: ic.catchX, y: ic.catchY } : a;

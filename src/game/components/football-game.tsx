@@ -86,7 +86,12 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
   };
   const draw = (seconds = 0) => {
     const ctx = canvas.current?.getContext('2d');
-    if (ctx && gRef.current) drawFootball(ctx, footballFormationPreview(gRef.current), view.current, seconds);
+    if (ctx && gRef.current) {
+      // Presentation reads current presses without consuming taps or waiting for the hold threshold.
+      const controls = input.current.sample(performance.now(), false);
+      drawFootball(ctx, footballFormationPreview(gRef.current), view.current, seconds,
+        !!(controls.pressed.juke || controls.defenseDirection));
+    }
   };
   const clearInput = () => {
     contextGesture.current = null;
@@ -356,7 +361,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
   const ctxAction = contextual();
   const jukeLabel = 'ACTION';
   const jukeHint = running
-    ? userDefenseActive ? 'Tap: nearest defender · Hold: red defender pursues · ▲▼ steer'
+    ? userDefenseActive ? 'Tap: nearest defender · Hold: highlighted defender pursues · ▲▼ steer'
     : defenseActive ? `Tap: ${defensiveActionKind(g) === 'intercept' ? 'intercept / break up pass' : defensiveActionKind(g) === 'recover' ? 'dive for loose ball' : 'nearest defender tackles'}`
     : !controlsActive ? 'Watch the play'
     : g.special?.stage === 'return' || live?.mode === 'return' ? 'Tap: burst · hold: hesitate'
