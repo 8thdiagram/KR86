@@ -61,8 +61,9 @@ export type LivePlay = {
   kickMeter: number; kickAge: number; kickAccuracy?: number; target?: number;
   snapAge?: number; interception?: { catcher: number; age: number; catchX: number; catchY: number };
   defensiveActionAt?: number; cpuActionAt?: number;
-  /** One independent, persisted pass-rush result per defensive lineman. */
-  lineRush?: { checked: true; winners: { defender: number; escapeY: number; cleared?: boolean }[] };
+  /** Persist whole-second checks and winners so saves cannot reroll pressure.
+   * lastCheck is optional only for older one-check saves. */
+  lineRush?: { checked: true; lastCheck?: number; winners: { defender: number; escapeY: number; cleared?: boolean }[] };
   penetration?: {
     roll: number; selection: number; recognition: number;
     event?: { defender: number; blocker: number; kind: 'line' | 'blitz'; at: number;

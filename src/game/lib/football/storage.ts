@@ -144,6 +144,8 @@ export function isFootballGame(value: unknown): value is FootballGame {
     if (l.lineRush !== undefined) {
       const r = l.lineRush;
       if (!r || r.checked !== true || l.time < 3 || !Array.isArray(r.winners) || r.winners.length > 3 ||
+          (r.lastCheck !== undefined && (!Number.isInteger(r.lastCheck) || r.lastCheck < 3 ||
+            r.lastCheck > Math.floor(l.time + 1e-9))) ||
           new Set(r.winners.map(w => w?.defender)).size !== r.winners.length ||
           !r.winners.every(w => w && Number.isInteger(w.defender) &&
             l.athletes[w.defender]?.side === 'defense' && l.athletes[w.defender]?.role === 'DL' &&

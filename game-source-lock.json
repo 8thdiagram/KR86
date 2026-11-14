@@ -1,10 +1,10 @@
 {
   "description": "Frozen trytry game source. No automatic synchronization. Platform adapters are reviewed separately.",
   "gameplayOverrides": {
-    "lib/football/types.ts": "f0a287c1dcee39bc1b8f1fdb50dd8f6860109a9b4231660bfc17cf91f53b5ca2",
+    "lib/football/types.ts": "3969a85e977a6a462206c3e3b0524b89eb2a05570ce3b9e6e0be42bfaec830b1",
     "lib/football/penetration.ts": "b5eb6afcd7a317d0ddc45f408d38cb8be6584bc73f2832bed4b9f492b3590146",
     "lib/football/field.ts": "5b8c78e9a4b0543a63d1f21efc85dda43903c73cb07bd8da04b26121575ea895",
-    "lib/football/line-rush.ts": "deb70ccf0f5a9b32365a3dc5db58ecf9324ae540e8df9a9ea70f6679aa9c3112"
+    "lib/football/line-rush.ts": "f605345e3ce78dcdbd75597ffde9b4f7effd01ba129d52a26f87fe1589030b60"
   },
   "adapters": [
     "lib/session.tsx",
