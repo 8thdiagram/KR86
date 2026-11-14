@@ -119,7 +119,7 @@ function TeamDetail({ f, t, season, isCurrent, onClose }: { f: Franchise; t: Lea
       <b>{s}</b><span>{counts[s]}x</span><em>{counts[s] ? mvpSummary(s, counts[s]) : '—'}</em></li>)}</ul>
     <p className="frn-kicker">AWARD HISTORY</p>
     {history.length ? <ol className="frl-hist">{history.map(a => <li key={`${a.season}-${a.slot}`}>Season {a.season} · {a.slot} · {mvpSummary(a.slot, history.filter(b => b.slot === a.slot && b.season <= a.season).length)}</li>)}</ol>
-      : <p className="frn-copy dim">No Super Bowl MVPs yet.</p>}
+      : <p className="frn-copy dim">No Super Cup MVPs yet.</p>}
     {titles.length > 0 && <p className="frn-copy">Titles: Season {titles.join(', ')}</p>}
   </article>;
 }

@@ -6,7 +6,10 @@
     "lib/football/types.ts": "3969a85e977a6a462206c3e3b0524b89eb2a05570ce3b9e6e0be42bfaec830b1",
     "lib/football/penetration.ts": "b5eb6afcd7a317d0ddc45f408d38cb8be6584bc73f2832bed4b9f492b3590146",
     "lib/football/field.ts": "5b8c78e9a4b0543a63d1f21efc85dda43903c73cb07bd8da04b26121575ea895",
-    "lib/football/line-rush.ts": "f605345e3ce78dcdbd75597ffde9b4f7effd01ba129d52a26f87fe1589030b60"
+    "lib/football/line-rush.ts": "f605345e3ce78dcdbd75597ffde9b4f7effd01ba129d52a26f87fe1589030b60",
+    "components/franchise-league.tsx": "1508df3776e06a50f45d975b204f86e7642854ccf8b96617e4f22a2f187d41e4",
+    "components/franchise-shows.tsx": "8feb61ea42b709ef3a5bd529a060c7cbb70104d8628f712db11be9cbc9b16a29",
+    "lib/football/franchise.ts": "31bf707a2d8ac9bd08d7ededacc5fa63057c402235104bd0e6382cb011adce43"
   },
   "adapters": [
     "lib/session.tsx",

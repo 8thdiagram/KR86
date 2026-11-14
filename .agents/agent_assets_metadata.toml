@@ -148,3 +148,17 @@ mtime_ms = 1794670562316
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/321b4184-716e-4008-b106-5aee7ab4fa34/d1b3c848-f832-4c47-89cb-46db3e04a298"
 storage_version_token = "1794670593535436"
 content_type = "image/png"
+
+[[outputs]]
+id = "0hxz8Mi2N7sDYHvC7kJOM"
+uri = "file://generated-artifacts/current-public-title-screen.png"
+type = "image"
+title = "Current title screen on the corrected preview"
+description = "Verified through the same public development address shown on your phone, not only through the local preview."
+logical_id = "f79c2b00-3029-41eb-ba48-cacf0a32e5aa"
+content_hash = "sha256:ef3a305229f150c47fc5983c0de1a9746afaf24ba7e5d54e06ed3843f7f59b3d"
+size = 308042
+mtime_ms = 1794670925022
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/f79c2b00-3029-41eb-ba48-cacf0a32e5aa/d34751cb-564b-4803-a6b8-356990ae3556"
+storage_version_token = "1794670987176213"
+content_type = "image/png"

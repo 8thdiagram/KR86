@@ -14,3 +14,9 @@ The supplied intro video is for visuals only. Do not use its original sound; pai
 **Why:** The user requested replacing the uploaded clip's sound, then asked for less percussion, a shorter and simpler low-pitched soundtrack inspired by game sounds, and the actual game “hut.”
 
 **How to apply:** Keep source audio out of playback and stop the replacement theme when the intro ends or is skipped.
+
+Call the championship game **Super Cup**, not Super Bowl.
+
+**Why:** The user explicitly requested this name for all mentions and animations.
+
+**How to apply:** Use Super Cup in future UI text, championship presentations, spoken announcements, and generated promotional media.

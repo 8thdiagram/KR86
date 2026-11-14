@@ -17,7 +17,7 @@ export const MVP_SLOTS: { id: MvpSlot; name: string; reward: string }[] = [
   { id: 'LB1', name: 'Linebacker · LB1', reward: '+20% pass-rush execution' },
   { id: 'K1', name: 'Kicker · K1', reward: 'Slower clutch meter / CPU control' },
 ];
-export const ROUND_NAMES = ['SWEET SIXTEEN', 'ELITE EIGHT', 'FINAL FOUR', 'SUPER BOWL'];
+export const ROUND_NAMES = ['SWEET SIXTEEN', 'ELITE EIGHT', 'FINAL FOUR', 'SUPER CUP'];
 export type FranchiseResult = { home: number; away: number; won: boolean; gameId: string };
 export type Fixture = { opponent: string; result?: FranchiseResult };
 export type Standing = { team: string; wins: number; losses: number; seed: number };
@@ -161,7 +161,7 @@ export function completeFranchiseGame(f: Franchise, game: FootballGame): Franchi
 export function awardMvp(f: Franchise, slot: MvpSlot): Franchise {
   if (!MVP_SLOTS.some(s => s.id === slot)) throw new Error('Choose an eligible player.');
   if (f.awards.some(a => a.season === f.season)) return f;
-  if (f.phase !== 'mvp' || !f.championships.some(c => c.season === f.season)) throw new Error('Win the Super Bowl to award an MVP.');
+  if (f.phase !== 'mvp' || !f.championships.some(c => c.season === f.season)) throw new Error('Win the Super Cup to award an MVP.');
   const n = mutate(f); n.awards.push({ season: n.season, slot }); recordHumanLeagueAward(n, slot);
   const championship = n.championships.find(c => c.season === n.season)!;
   n.ceremony ??= { season: n.season, winner: n.team, opponent: championship.opponent,

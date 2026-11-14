@@ -68,8 +68,8 @@ function useCanvasLoop(draw: (ctx: CanvasRenderingContext2D, t: number, dt: numb
   return ref;
 }
 
-/* ───────── SUPER BOWL INTRO ───────── */
-export function SuperBowlIntro({ home, away, onDone }: { home: string; away: string; onDone: () => void }) {
+/* ───────── SUPER CUP INTRO ───────── */
+export function SuperCupIntro({ home, away, onDone }: { home: string; away: string; onDone: () => void }) {
   const audio = useAudio();
   const sparks = useRef<Spark[]>([]);
   const [t, setT] = useState(0);
@@ -85,22 +85,22 @@ export function SuperBowlIntro({ home, away, onDone }: { home: string; away: str
   });
   useEffect(() => { const id = setInterval(() => setT(x => x + .25), 250); return () => clearInterval(id); }, []);
   const start = () => {
-    const a = audio(); a.unlock(); a.resume(); a.crowd(true); a.fanfare(); a.say('The Super Bowl!', .9); setSoundOn(true);
+    const a = audio(); a.unlock(); a.resume(); a.crowd(true); a.fanfare(); a.say('The Super Cup!', .9); setSoundOn(true);
   };
-  return <section className="frx-show" data-testid="franchise-superbowl-intro">
+  return <section className="frx-show" data-testid="franchise-supercup-intro">
     <canvas ref={ref} width={W} height={H} className="frx-canvas" aria-label={`Fireworks over the stadium. ${home} versus ${away}.`} role="img" />
     <div className="frx-over">
       {t >= .5 && <h2 className="frx-big frx-pop">CONGRATULATIONS!</h2>}
-      {t >= 1.5 && <p className="frx-mid frx-pop">YOU MADE THE SUPER BOWL!</p>}
-      {t >= 2.75 && <p className="frx-vs frx-pop" data-testid="text-superbowl-teams">
+      {t >= 1.5 && <p className="frx-mid frx-pop">YOU MADE THE SUPER CUP!</p>}
+      {t >= 2.75 && <p className="frx-vs frx-pop" data-testid="text-supercup-teams">
         <span style={{ color: kit(home).body === '#151820' ? kit(home).trim : kit(home).body }}>{home.toUpperCase()}</span>
         <small>VS.</small>
         <span style={{ color: kit(away).body === '#151820' ? kit(away).trim : kit(away).body }}>{away.toUpperCase()}</span></p>}
-      {t >= 4 && <p className="frx-big frx-gold frx-pop">THE SUPER BOWL!</p>}
+      {t >= 4 && <p className="frx-big frx-gold frx-pop">THE SUPER CUP!</p>}
     </div>
     <div className="frx-bar">
       <button type="button" className="frx-btn ghost" onClick={start} disabled={soundOn} data-testid="button-intro-sound">{soundOn ? 'CROWD + FANFARE ON' : 'PLAY CROWD + FANFARE'}</button>
-      <button type="button" className="frx-btn" disabled={t < 4.5} onClick={() => { audio().stopAll(); onDone(); }} data-testid="button-superbowl-kickoff">KICKOFF</button>
+      <button type="button" className="frx-btn" disabled={t < 4.5} onClick={() => { audio().stopAll(); onDone(); }} data-testid="button-supercup-kickoff">KICKOFF</button>
     </div>
   </section>;
 }
@@ -179,9 +179,9 @@ export function HalftimeShow({ home, away, remaining, onTick, onDone, blocked = 
   };
   const chantNow = ['GO TEAM!', 'WIN! WIN! WIN!', "LET'S GO!"][Math.floor((15 - left) / 5) % 3];
   return <section className="frx-show" data-testid="franchise-halftime" data-remaining={left.toFixed(1)}>
-    <canvas ref={ref} width={W} height={H} className="frx-canvas" role="img" aria-label="Super Bowl halftime show: cheerleaders and a marching band" />
+    <canvas ref={ref} width={W} height={H} className="frx-canvas" role="img" aria-label="Super Cup halftime show: cheerleaders and a marching band" />
     <div className="frx-over frx-top">
-      <p className="frx-mid">SUPER BOWL HALFTIME</p>
+      <p className="frx-mid">SUPER CUP HALFTIME</p>
       <p className="frx-chant frx-pop" key={chantNow}>{chantNow}</p>
     </div>
     <div className="frx-bar">
@@ -226,21 +226,21 @@ export function TrophyCeremony({ winner, loser, winScore, loseScore, humanWon, o
   const start = () => {
     const a = audio(); a.unlock(); a.resume(); a.crowd(true); a.fanfare(); setSoundOn(true);
     setTimeout(() => a.fanfare(), 1700);
-    if (mvp) setTimeout(() => a.say(`Super Bowl M V P: ${mvp.team} ${mvp.long.toLowerCase()}. Plus twenty percent ${mvp.bonus.toLowerCase()}.`, 1), 2600);
+    if (mvp) setTimeout(() => a.say(`Super Cup M V P: ${mvp.team} ${mvp.long.toLowerCase()}. Plus twenty percent ${mvp.bonus.toLowerCase()}.`, 1), 2600);
   };
   return <section className="frx-show" data-testid="franchise-ceremony" data-human-won={humanWon}>
     <canvas ref={ref} width={W} height={H} className="frx-canvas" role="img" aria-label={`${winner} captain receives the championship trophy`} />
     <div className="frx-over">
       {humanWon ? <>
         {t >= 4.5 && <h2 className="frx-big frx-pop">CONGRATULATIONS!</h2>}
-        {t >= 5 && <p className="frx-mid frx-gold frx-pop">YOU WON THE SUPER BOWL!</p>}
+        {t >= 5 && <p className="frx-mid frx-gold frx-pop">YOU WON THE SUPER CUP!</p>}
       </> : <>
-        {t >= 1 && <h2 className="frx-big frx-pop">SUPER BOWL FINAL</h2>}
+        {t >= 1 && <h2 className="frx-big frx-pop">SUPER CUP FINAL</h2>}
       </>}
       {t >= 2 && <p className="frx-score frx-pop" data-testid="text-ceremony-score">{winner.toUpperCase()} {winScore} · {loser.toUpperCase()} {loseScore}</p>}
       {t >= 5.5 && <p className="frx-sub frx-pop">{humanWon ? `${winner.toUpperCase()} ARE CHAMPIONS. NOW CHOOSE THE MVP.`
-        : `${winner.toUpperCase()} WIN THE SUPER BOWL. CONGRATULATIONS TO THEM — COME BACK NEXT SEASON AND TAKE IT!`}</p>}
-      {mvp && t >= 6 && <p className="frx-mvp frx-pop" data-testid="text-ceremony-mvp">SUPER BOWL MVP: {mvp.team.toUpperCase()} {mvp.slot} · {mvp.long} · {mvp.summary ?? `+${mvp.total}% ${mvp.bonus}`}</p>}
+        : `${winner.toUpperCase()} WIN THE SUPER CUP. CONGRATULATIONS TO THEM — COME BACK NEXT SEASON AND TAKE IT!`}</p>}
+      {mvp && t >= 6 && <p className="frx-mvp frx-pop" data-testid="text-ceremony-mvp">SUPER CUP MVP: {mvp.team.toUpperCase()} {mvp.slot} · {mvp.long} · {mvp.summary ?? `+${mvp.total}% ${mvp.bonus}`}</p>}
     </div>
     <div className="frx-bar">
       <button type="button" className="frx-btn ghost" onClick={start} disabled={soundOn} data-testid="button-ceremony-sound">{soundOn ? 'MUSIC ON' : 'PLAY CHAMPIONSHIP MUSIC'}</button>

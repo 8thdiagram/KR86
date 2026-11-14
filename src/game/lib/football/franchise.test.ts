@@ -95,7 +95,7 @@ test('early playoff elimination resolves the remaining tournament and preserves 
   assert.equal(n.season, 2); assert.equal(n.history[0]!.bracket!.round, 4);
   assert.equal(n.team, f.team); assert.equal(n.phase, 'regular');
 });
-test('Super Bowl loss celebrates only the opponent and never permits an MVP', () => {
+test('Super Cup loss celebrates only the opponent and never permits an MVP', () => {
   let f = season(10);
   for (let i = 0; i < 3; i++) f = result(f, true);
   f = result(f, false);

@@ -12,7 +12,7 @@ import { useFranchiseSave } from '../lib/football/use-franchise-save';
 import { acknowledgeFranchiseAnnouncement, franchiseYear, withPlayoffPresentation } from '../lib/football/franchise-announcements';
 import { visibleFranchiseSaveError } from '../lib/football/franchise-save-status';
 import { FootballGame } from './football-game';
-import { HalftimeShow, SuperBowlIntro, TrophyCeremony } from './franchise-shows';
+import { HalftimeShow, SuperCupIntro, TrophyCeremony } from './franchise-shows';
 import { LeagueView } from './franchise-league';
 import './football-franchise.css';
 
@@ -99,7 +99,7 @@ function FranchiseView({ onBack, entry = 'franchise', store }: Props & { store: 
     const title = notice.kind === 'clinched' ? 'Congratulations, you made the playoffs!'
       : notice.kind === 'eliminated' ? 'Eliminated — you did not qualify for the playoffs this year.'
       : notice.kind === 'playoffs' ? `${franchiseYear(notice.season)} — Welcome to the playoffs!`
-      : notice.round === 3 ? 'Super Bowl champions!' : 'You advance to the next playoff round!';
+      : notice.round === 3 ? 'Super Cup champions!' : 'You advance to the next playoff round!';
     return show(<Shell onBack={onBack} team={f.team} syncing={syncing}>
       <section className="frn-panel frn-hero" role="status" aria-live="polite" data-testid={`franchise-announcement-${notice.kind}`}>
         <p className="frn-kicker">{franchiseYear(notice.season)} · SEASON {notice.season} · {f.team.toUpperCase()}</p>
@@ -119,8 +119,8 @@ function FranchiseView({ onBack, entry = 'franchise', store }: Props & { store: 
       </button></section>
     </Shell>);
   }
-  // Super Bowl presentations take over the screen.
-  if (a && a.round === 3 && !a.introDone) return show(<SuperBowlIntro home={f.team} away={a.opponent}
+  // Super Cup presentations take over the screen.
+  if (a && a.round === 3 && !a.introDone) return show(<SuperCupIntro home={f.team} away={a.opponent}
     onDone={() => { if (run(x => bump(x, n => { n.active!.introDone = true; }), true)) setPlaying(true); }} />);
   if (a && a.round === 3 && !a.halftimeDone && a.game.phase === 'halftime') return show(<HalftimeShow home={f.team} away={a.opponent}
     key={blockingError ? 'save-blocked' : 'ready'} blocked={blockingError}
@@ -175,7 +175,7 @@ function FranchiseView({ onBack, entry = 'franchise', store }: Props & { store: 
       <Uniform team={f.team} size="lg" />
       <div><p className="frn-kicker">FRANCHISE · SEASON {f.season}</p><h2 className="frn-team" data-testid="text-franchise-team">{f.team.toUpperCase()}</h2>
         <p className="frn-ident">{teamProfile(f.team).identity}</p></div>
-      <div className="frn-rings" data-testid="text-championships">SUPER BOWL CHAMPIONSHIPS: <b>{f.championships.length}</b></div>
+      <div className="frn-rings" data-testid="text-championships">SUPER CUP CHAMPIONSHIPS: <b>{f.championships.length}</b></div>
     </header>
     <nav className="frn-tabs" role="tablist">
       {(['hq', 'schedule', 'bracket', 'league'] as const).map(t => <button key={t} type="button" role="tab" aria-selected={tab === t} className="frn-tab"
@@ -192,7 +192,7 @@ function FranchiseView({ onBack, entry = 'franchise', store }: Props & { store: 
         </div>
         <section className="frn-panel" data-testid="panel-legends">
           <p className="frn-kicker">FRANCHISE LEGENDS</p>
-          {f.awards.length === 0 ? <p className="frn-copy dim">No MVPs yet. Win a Super Bowl and choose one of seven players. Speed awards diminish; skills stack. Earned bonuses double in Clutch Chaos; kicker control is clutch-only.</p>
+          {f.awards.length === 0 ? <p className="frn-copy dim">No MVPs yet. Win a Super Cup and choose one of seven players. Speed awards diminish; skills stack. Earned bonuses double in Clutch Chaos; kicker control is clutch-only.</p>
             : <ul className="frn-legends">{MVP_SLOTS.filter(s => counts[s.id] > 0).map(s => <li key={s.id} data-testid={`legend-${s.id}`}>
               <b>{POS[s.id].pos}</b><span>{s.id} — {counts[s.id]}× MVP</span><em>{mvpSummary(s.id, counts[s.id])}</em></li>)}</ul>}
           {f.championships.length > 0 && <p className="frn-copy">Titles: {f.championships.map(c => `Season ${c.season} (${c.home}–${c.away} vs ${c.opponent})`).join(' · ')}</p>}
@@ -207,7 +207,7 @@ function FranchiseView({ onBack, entry = 'franchise', store }: Props & { store: 
             NEW FRANCHISE</button>
           : <div className="frn-danger" role="alertdialog" aria-labelledby="frn-reset-h" data-testid="dialog-new-franchise">
             <h3 id="frn-reset-h" className="frn-h">REPLACE THIS LEAGUE?</h3>
-          <p className="frn-copy">Starting a new franchise replaces ALL current league seasons, every Super Bowl title, every MVP record and all rival team growth saved on this device for the {f.team}. Export a backup first to keep your current franchise.</p>
+          <p className="frn-copy">Starting a new franchise replaces ALL current league seasons, every Super Cup title, every MVP record and all rival team growth saved on this device for the {f.team}. Export a backup first to keep your current franchise.</p>
             <p className="frn-copy dim">Nothing changes until you also pick a new team. Cancel any time before then.</p>
             <div className="frn-row"><button type="button" className="frn-btn danger" disabled={busy} onClick={() => setResetStage('pick')} data-testid="button-confirm-new-franchise">I UNDERSTAND · PICK NEW TEAM</button>
               <button type="button" className="frn-btn ghost" onClick={() => setResetStage('idle')} data-testid="button-cancel-new-franchise">CANCEL</button></div></div>}
@@ -266,7 +266,7 @@ function PhaseCard({ f, finished, canAct, onPlay, onAward, onNext, onBracket }: 
   const nextBtn = <button type="button" className="frn-btn" disabled={!canAct} onClick={onNext} data-testid="button-next-season">START NEXT SEASON</button>;
 
   if (f.phase === 'mvp') return <section className="frn-panel frn-hero" data-testid="panel-mvp">
-    <h2 className="frn-h gold">CHOOSE YOUR SUPER BOWL MVP</h2>
+    <h2 className="frn-h gold">CHOOSE YOUR SUPER CUP MVP</h2>
     <p className="frn-copy">YOUR MVP RECEIVES A PERMANENT PERFORMANCE BOOST!</p>
     <div className="frn-mvps">{MVP_SLOTS.map(s => { const n = mvpCounts(f)[s.id]; return <button key={s.id} type="button" className="frn-mvp" disabled={!canAct}
       onClick={() => onAward(s.id)} data-testid={`button-mvp-${s.id}`}>
@@ -297,15 +297,15 @@ function PhaseCard({ f, finished, canAct, onPlay, onAward, onNext, onBracket }: 
   if (f.phase === 'eliminated') return <section className="frn-panel frn-hero" data-testid="panel-eliminated">{last}
     <h2 className="frn-h">PLAYOFF RUN COMPLETE</h2><p className="frn-copy big">BETTER LUCK NEXT YEAR!</p>
     <div className="frn-row">{nextBtn}<button type="button" className="frn-btn ghost" onClick={onBracket}>FINAL BRACKET</button></div></section>;
-  // Offseason: missed playoffs, lost Super Bowl, or champions after MVP.
+  // Offseason: missed playoffs, lost Super Cup, or champions after MVP.
   const champ = f.championships.find(c => c.season === f.season);
   if (champ) return <section className="frn-panel frn-hero" data-testid="panel-champions">
     <h2 className="frn-h gold">SEASON {f.season} CHAMPIONS</h2>
     <p className="frn-copy">Beat the {champ.opponent} {champ.home}–{champ.away}. MVP awarded: {f.awards.filter(x => x.season === f.season).map(x => POS[x.slot].long).join(', ')}.</p>{nextBtn}</section>;
   if (f.bracket && inBracket(f) && f.bracket.rounds[3]![0]!.winner) {
     const sb = f.bracket.rounds[3]![0]!;
-    return <section className="frn-panel frn-hero" data-testid="panel-superbowl-loss">
-      <h2 className="frn-h">SUPER BOWL FINAL</h2>
+    return <section className="frn-panel frn-hero" data-testid="panel-supercup-loss">
+      <h2 className="frn-h">SUPER CUP FINAL</h2>
       <p className="frn-copy big">{sb.winner?.toUpperCase()} {sb.score ? Math.max(...sb.score) : ''} · {f.team.toUpperCase()} {sb.score ? Math.min(...sb.score) : ''}</p>
       <p className="frn-copy">Congratulations to the {sb.winner}. You got all the way there — come back next season and finish the job.</p>
       <div className="frn-row">{nextBtn}<button type="button" className="frn-btn ghost" onClick={onBracket}>FINAL BRACKET</button></div></section>;

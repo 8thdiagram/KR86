@@ -46,7 +46,7 @@ test('new leagues begin without future results; completed weeks pair every team 
   assert.equal(s.teams.find(t => t.team === f.team)!.regular.rushYards, 11.25, 'Retain actual engine fractions.');
   assert.deepEqual(finish(createFranchise('Big Blue', 617), true, 11.25), f, 'No render/reload rerolls.');
 });
-test('missed playoffs still produce a CPU Super Bowl champion, statistical postseason and one saved random MVP', () => {
+test('missed playoffs still produce a CPU Super Cup champion, statistical postseason and one saved random MVP', () => {
   const f = regular(), s = f.league!.seasons[0]!;
   assert.equal(f.phase, 'offseason'); assert(!f.bracket!.teams.some(t => t.team === f.team));
   assert(s.teams.every(t => t.regular.games === 16));
@@ -57,7 +57,7 @@ test('missed playoffs still produce a CPU Super Bowl champion, statistical posts
   assert.equal(teamAwardCounts(f, s.champion!)[s.mvp!.slot], 1);
   assert(s.teams.find(t => t.team === s.champion)!.playoffs.wins === 4);
 });
-test('early elimination and a human Super Bowl loss both persist the CPU award without granting a human reward', () => {
+test('early elimination and a human Super Cup loss both persist the CPU award without granting a human reward', () => {
   for (const wonRounds of [0, 3]) {
     let f = regular(12);
     for (let i = 0; i < wonRounds; i++) f = finish(f, true);
