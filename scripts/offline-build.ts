@@ -37,7 +37,7 @@ self.addEventListener('install', event => {
         const response = await fetch(new Request(url, {cache:'reload', credentials:'same-origin'}));
         if (!response.ok || response.redirected) throw new Error('Game asset unavailable: ' + url);
         const type = response.headers.get('content-type') || '';
-        if (url.endsWith('.js') && !/javascript/.test(type) || /\\.(png|woff2|mp3)$/.test(url) && /text\\/html/.test(type))
+        if (url.endsWith('.js') && !/javascript/.test(type) || /\\.(png|webp|woff2|ttf|mp3|mp4)$/.test(url) && /text\\/html/.test(type))
           throw new Error('Not a game asset: ' + url);
         await cache.put(url, response);
       }));

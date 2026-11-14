@@ -61,12 +61,48 @@ content_type = "image/png"
 id = "dx2DsnhKqH5f5sUcrCdUX"
 uri = "file://generated-artifacts/nes-title-mobile.png"
 type = "image"
-title = "New NES-style title screen"
-description = "Pixel stadium title art, four existing modes, sound toggle, and replayable intro."
+title = "Updated title artwork"
+description = "Your supplied stadium and runner artwork on the title screen, with the existing Kick Return lettering and mode menu."
 logical_id = "22ae7f3a-916c-484d-9be0-14715e8842e1"
-content_hash = "sha256:d07f09fff4f18b6f4896444cf8acff42910b0c88e1993516a10512a04528fcef"
-size = 143020
-mtime_ms = 1794669026051
-storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/22ae7f3a-916c-484d-9be0-14715e8842e1/d76e1fea-754c-47dd-baad-432149d9996d"
-storage_version_token = "1794669064503929"
+content_hash = "sha256:77c0ca08ec23442ad713c30bf1f98b5922037e4c01efec08020edfa4074691f7"
+size = 296192
+mtime_ms = 1794669254070
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/22ae7f3a-916c-484d-9be0-14715e8842e1/411d95f7-2a31-46ad-bc41-948cf882c80c"
+storage_version_token = "1794669282353211"
 content_type = "image/png"
+
+[[outputs]]
+id = "2i6GodSa8Lvb92q3KU8dt"
+uri = "file://generated-artifacts/kick-return-86-intro-theme.mp3"
+type = "audio"
+title = "Original NES football intro"
+description = "Generated music: Compose a completely ORIGINAL 5.8-second instrumental title theme for Kick Return '86, a fictional American football NES cartridge released in 1987. Authentic RP2A03 / 2A03 APU limit…"
+logical_id = "b76b6310-956f-476c-9134-5b524c97cb05"
+
+[[outputs]]
+id = "Dwf9NIKIDdzfnDmhYpsxR"
+uri = "file://generated-artifacts/kick-return-86-new-intro.mp4"
+type = "video"
+title = "New video intro with original 8-bit theme"
+description = "Your full intro clip paired with the new NES-style sports theme. None of the source video audio is included."
+logical_id = "a1a69308-29d0-42d0-b8b6-d624ff09c60b"
+content_hash = "sha256:7fd9a56ebedcc82ed8430d1f6db871dcb9e489e7c50f63ff3eac71cd21168292"
+size = 688274
+mtime_ms = 1794669647194
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/a1a69308-29d0-42d0-b8b6-d624ff09c60b/19e9e2f4-f14b-416f-b13a-53ac52f43c1e"
+storage_version_token = "1794669681860590"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "g2_4uYEYsdAOuD9VNDeXT"
+uri = "file://src/platform/assets/intro-theme.mp3"
+type = "audio"
+title = "Kick Return ’86 intro theme"
+description = "Original short instrumental sports-game chiptune, with a finite ending for the video intro."
+logical_id = "e14faeb7-7ea9-4868-8e8f-773fc4005d72"
+content_hash = "sha256:0a9fb4e36f7a50e1bfbe4e1ca71afade2bda518008375cb966f0e3f2fcd59ba5"
+size = 69321
+mtime_ms = 1794669646130
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/e14faeb7-7ea9-4868-8e8f-773fc4005d72/ee2b99cf-0fd7-451f-a9b5-2f0a5e43f9f5"
+storage_version_token = "1794669682604691"
+content_type = "audio/mpeg"

@@ -1,13 +1,31 @@
-/** Short, original Web Audio cues. Nothing streams, loops, or needs a server. */
+/** Local intro music and short original cues. No streaming service or idle music. */
 export type MenuSound = 'move' | 'confirm' | 'locked' | 'transition';
 type Voice = { oscillator: OscillatorNode; gain: GainNode; intro: boolean };
 let context: AudioContext | undefined;
 let enabled = true;
 const voices = new Set<Voice>();
+const INTRO_SECONDS = 5.75;
+let introGeneration = 0;
+let themeBytes: Promise<ArrayBuffer> | undefined;
+let themeBuffer: Promise<AudioBuffer> | undefined;
+let themeVoice: { source: AudioBufferSourceNode; gain: GainNode } | undefined;
+
+function loadTheme() {
+  if (!context) return undefined;
+  const audioContext = context;
+  themeBytes ??= fetch(new URL('./assets/intro-theme.mp3', import.meta.url).href)
+    .then(response => {
+      if (!response.ok) throw new Error('Intro music could not be loaded.');
+      return response.arrayBuffer();
+    }).catch(error => { themeBytes = undefined; throw error; });
+  themeBuffer ??= themeBytes.then(bytes => audioContext.decodeAudioData(bytes.slice(0)))
+    .catch(error => { themeBuffer = undefined; throw error; });
+  return themeBuffer;
+}
 
 export function setRetroSoundEnabled(value: boolean) {
   enabled = value;
-  if (!value) stopVoices(false);
+  if (!value) { stopIntroSound(); stopVoices(false); }
 }
 
 export function unlockRetroAudio() {
@@ -18,6 +36,8 @@ export function unlockRetroAudio() {
     if (!Audio) return;
     context ??= new Audio();
     if (context.state === 'suspended') void context.resume().catch(() => undefined);
+    // A replay gesture unlocks the context and prepares music before video begins.
+    void loadTheme()?.catch(() => undefined);
   } catch { /* Optional browser audio must never prevent playing or saving. */ }
 }
 
@@ -61,12 +81,29 @@ export function playIntroSound(kind: 'stinger' | 'theme') {
     [48, 60, 67, 72].forEach((note, i) => tone(note, i * .07, .18, true));
     return;
   }
-  // A finite 3.36-second, two-voice sports fanfare. No intervals or repeats.
-  const lead = [72, 0, 76, 79, 79, 76, 74, 72, 74, 77, 81, 79, 76, 74, 72, 72];
-  const bass = [48, 55, 48, 55, 53, 60, 53, 60, 50, 57, 50, 57, 55, 55, 48, 48];
-  lead.forEach((note, i) => {
-    if (note) tone(note, i * .2, i === 15 ? .36 : .14, true);
-    tone(bass[i]!, i * .2, .15, true, 'triangle', .075);
+  if (!enabled || !context || context.state !== 'running') return;
+  const generation = introGeneration, audioContext = context, requestedAt = context.currentTime;
+  void loadTheme()?.then(buffer => {
+    if (generation !== introGeneration || !enabled || audioContext.state !== 'running'
+      || (typeof document !== 'undefined' && document.hidden)) return;
+    // If decode was delayed, join at the video's current elapsed time, never late.
+    const elapsed = Math.max(0, audioContext.currentTime - requestedAt);
+    const duration = Math.min(INTRO_SECONDS, buffer.duration) - elapsed;
+    if (duration <= 0) return;
+    const source = audioContext.createBufferSource(), gain = audioContext.createGain();
+    source.buffer = buffer; source.loop = false; gain.gain.value = .65;
+    source.connect(gain); gain.connect(audioContext.destination);
+    const voice = { source, gain }; themeVoice = voice;
+    source.onended = () => {
+      source.disconnect(); gain.disconnect();
+      if (themeVoice === voice) themeVoice = undefined;
+    };
+    source.start(audioContext.currentTime, elapsed, duration);
+    source.stop(audioContext.currentTime + duration);
+  }).catch(() => {
+    if (generation === introGeneration && typeof window !== 'undefined') {
+      window.dispatchEvent?.(new Event('kick-return-intro-audio-error'));
+    }
   });
 }
 
@@ -79,10 +116,18 @@ function stopVoices(introOnly: boolean) {
   }
 }
 
-export function stopIntroSound() { stopVoices(true); }
+export function stopIntroSound() {
+  introGeneration++;
+  stopVoices(true);
+  if (themeVoice) {
+    try { themeVoice.source.stop(); } catch { /* Already ended. */ }
+    themeVoice.source.disconnect(); themeVoice.gain.disconnect();
+    themeVoice = undefined;
+  }
+}
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stopVoices(false);
+    if (document.hidden) { stopIntroSound(); stopVoices(false); }
   });
 }

@@ -68,52 +68,58 @@
 }
 .kr-sound:focus-visible, .kr-mode-option:focus-visible { outline: 3px solid #ffe174; outline-offset: 2px; }
 .kr-hero-art {
-  min-height: 236px;
-  height: min(43vh, 300px);
-  max-height: 310px;
+  width: min(100%, 560px);
   position: relative;
-  overflow: hidden;
-  margin: 2px 0 12px;
+  overflow: visible;
+  margin: 8px auto 14px;
   border: 4px solid #050a16;
   outline: 2px solid #4f8fca;
   background: #0c2a59;
   box-shadow: inset 0 0 0 2px #91d6ff, 0 6px 0 #02050c;
 }
 .kr-hero-art::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(4,11,27,.25), transparent 50%, rgba(3,12,26,.05));
+  content: none;
 }
 .kr-art {
-  position: absolute;
-  inset: auto 0 0;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #071332;
+}
+.kr-art img {
+  display: block;
   width: 100%;
   height: 100%;
-  image-rendering: pixelated;
-  object-fit: fill;
+  object-fit: contain;
   object-position: center;
 }
-.kr-stadium-art { position: absolute; inset: 0; width: 100%; height: 100%; }
-.kr-runner-art {
-  position: absolute;
-  left: 50%;
-  bottom: 4%;
-  height: 70%;
-  width: auto;
-  max-width: 90%;
-  overflow: visible;
-  transform: translateX(-50%);
+.kr-art--moving img {
+  animation: kr-scene-drift 3.25s ease-out both;
 }
-.kr-film .kr-runner-art { height: min(52%, 420px); bottom: 13%; }
+.kr-hero-art .kr-art {
+  border: 2px solid #91d6ff;
+}
+.kr-score-rule {
+  position: relative;
+  z-index: 4;
+  min-height: 19px;
+  padding: 2px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #071326;
+  border-top: 2px solid #75b9e7;
+  color: #d9edff;
+  font-size: 7px;
+  letter-spacing: .12em;
+}
 .kr-wordmark {
   position: absolute;
   z-index: 2;
-  top: 2%;
+  top: 5%;
   left: 4%;
-  width: 75%;
-  height: 52%;
+  width: 74%;
   color: #f7f9fc;
   font-family: 'KR Pixel', 'Space Mono', monospace;
   font-style: italic;
@@ -140,35 +146,13 @@
   background-clip: text;
   -webkit-background-clip: text;
 }
-.kr-edition-stamp {
+.kr-hero-art::before {
+  content: '';
   position: absolute;
-  z-index: 3;
-  right: 3%;
-  bottom: 17%;
-  color: white;
-  font-family: 'KR Pixel', 'Space Mono', monospace;
-  font-size: clamp(18px, 4vw, 27px);
-  line-height: 1.2;
-  font-style: italic;
-  text-align: center;
-  text-shadow: 3px 3px #071229, -1px -1px #071229, 1px -1px #071229, -1px 1px #071229;
-  transform: rotate(-7deg);
-}
-.kr-edition-stamp small { color: #91d6ff; font-size: 6px; letter-spacing: .2em; }
-.kr-score-rule {
-  position: absolute;
-  z-index: 4;
-  inset: auto 0 0;
-  height: 19px;
-  padding: 0 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #071326;
-  border-top: 2px solid #75b9e7;
-  color: #d9edff;
-  font-size: 7px;
-  letter-spacing: .12em;
+  z-index: 1;
+  inset: 2px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(4,11,27,.18), transparent 36%);
 }
 .kr-menu-heading {
   display: flex;
@@ -249,30 +233,31 @@
   filter: grayscale(1) brightness(0) saturate(100%) invert(14%) sepia(91%) saturate(5702%) hue-rotate(344deg) brightness(96%) contrast(108%);
 }
 .kr-film {
-  width: 100%;
-  height: 100%;
+  width: min(100vw, 100vh, 760px);
+  aspect-ratio: 1;
+  max-height: 100dvh;
   position: relative;
   overflow: hidden;
   display: grid;
   place-items: center;
-  background: radial-gradient(ellipse at 50% 60%, #194e8b, #070d1d 68%);
+  background: #071332;
+  border: 3px solid #4f8fca;
+  box-shadow: 0 0 0 3px #050a16, 0 8px 0 #02050c;
   animation: kr-film-reveal .45s steps(5, end) both;
 }
-.kr-film-head {
-  position: absolute;
-  top: 7%;
-  z-index: 2;
-  display: grid;
-  text-align: center;
-  color: #f1f5fb;
-  font: italic 900 clamp(36px, 11vw, 82px)/.88 'KR Pixel', 'Space Mono', monospace;
-  letter-spacing: -.1em;
-  text-shadow: 4px 5px #081126, 0 0 10px #72c8ff;
-  transform: skewX(-8deg);
+.kr-film-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #071332;
 }
-.kr-film .kr-art { height: 100%; bottom: 0; }
-.kr-film .kr-runner { transform-box: fill-box; transform-origin: center bottom; animation: kr-runner-enter 3s steps(10, end) both; }
 .kr-film-scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent 0 5px, rgba(1,7,18,.23) 6px); }
+.kr-intro-music-note {
+  position: absolute; bottom: 8px; left: 8px; right: 8px;
+  padding: 6px; color: #fff1bd; background: #071332;
+  border: 1px solid #d84343; font: 9px/1.5 'Space Mono', monospace;
+}
 .kr-intro .kr-skip {
   position: absolute;
   right: max(14px, env(safe-area-inset-right));
@@ -282,22 +267,46 @@
   font: 8px 'Space Mono', monospace;
   border: 1px solid #416993;
   background: #061127;
+  cursor: pointer;
+  z-index: 3;
+}
+.kr-intro .kr-skip:focus-visible, .kr-intro-play:focus-visible { outline: 3px solid #ffe174; outline-offset: 2px; }
+.kr-film-message {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  width: min(86%, 340px);
+  padding: 14px;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  transform: translate(-50%, -50%);
+  color: #f4e7bd;
+  background: rgba(4, 9, 20, .94);
+  border: 2px solid #d84343;
+  box-shadow: 4px 4px 0 #02050c;
+  text-align: center;
+  font: 9px/1.6 'Space Mono', monospace;
+}
+.kr-intro-play {
+  min-height: 40px;
+  padding: 7px 14px;
+  color: #fff1bd;
+  background: #8d2028;
+  border: 2px solid #f0b954;
+  font: 9px 'Space Mono', monospace;
+  cursor: pointer;
 }
 .kr-intro--black .kr-skip { color: #75889d; }
 .kr-intro--black { animation: none; }
-.kr-intro--film { animation: kr-intro-fade .3s steps(3, end) both, kr-film-out .3s steps(3, end) 3.3s forwards; }
+.kr-intro--film { animation: kr-intro-fade .3s steps(3, end) both; }
 @keyframes kr-intro-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes kr-mark-hit { from { transform: scale(.45); opacity: 0; } 70% { transform: scale(1.04); opacity: 1; } to { transform: scale(1); opacity: 1; } }
 @keyframes kr-film-reveal { from { opacity: .25; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
 @keyframes kr-mark-fade { 0%, 62% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes kr-film-out { from { opacity: 1; } to { opacity: 0; } }
-@keyframes kr-runner-enter {
-  0% { transform: translateX(-118px) translateY(4px) scale(1.2); }
-  22% { transform: translateX(-70px) translateY(-3px) scale(1.2); }
-  46% { transform: translateX(-36px) translateY(2px) scale(1.2); }
-  72% { transform: translateX(-12px) translateY(-2px) scale(1.2); }
-  100% { transform: translateX(0) translateY(0) scale(1.2); }
-}
+@keyframes kr-scene-drift { from { transform: scale(1.035) translateY(1%); opacity: .72; } to { transform: scale(1) translateY(0); opacity: 1; } }
 @keyframes kr-select-blink { 0%, 48% { box-shadow: inset 0 0 0 1px #071326, 0 2px 0 #020711, inset 0 0 16px rgba(117,196,255,.15); } 50%, 100% { box-shadow: inset 0 0 0 1px #071326, 0 2px 0 #020711; } }
 
 /* The original franchise and all of its workflows remain intact; these overrides
@@ -397,16 +406,16 @@
   .kr-title-frame { max-width: 700px; }
   .kr-mode-list { gap: 6px; }
   .kr-mode-option { min-height: 58px; }
-  .kr-hero-art { height: min(39vh, 305px); }
+  .kr-hero-art { width: min(100%, 540px); }
 }
 @media (max-height: 680px) and (orientation: landscape) {
   .kr-title-screen { padding-top: 5px; }
   .kr-title-topline { min-height: 22px; }
-  .kr-hero-art { height: min(39vh, 202px); min-height: 155px; margin-bottom: 8px; }
+  .kr-hero-art { width: min(100%, 330px); margin-bottom: 8px; }
   .kr-mode-option { min-height: 43px; padding-top: 3px; padding-bottom: 3px; }
   .kr-title-footer { margin-top: 5px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .kr-mode-option.is-selected, .kr-mark-stinger, .kr-film, .kr-film .kr-art, .kr-film .kr-runner, .kr-intro { animation: none !important; }
+  .kr-mode-option.is-selected, .kr-mark-stinger, .kr-film, .kr-film .kr-art img, .kr-intro { animation: none !important; }
   .kr-mode-option { transition: none; }
 }
