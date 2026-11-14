@@ -412,3 +412,43 @@
   .kr-mode-option.is-selected, .kr-mark-stinger, .kr-film, .kr-film .kr-art img, .kr-intro { animation: none !important; }
   .kr-mode-option { transition: none; }
 }
+
+/* Direction controls: draw the arrows as inset CSS geometry, not font glyphs.
+   Centering inside the existing buttons keeps the original hit areas/layout intact. */
+.ga-scope .fb-game .fb-steer .fb-pad,
+.ga-scope .kr-game .kr-steering .kr-direction {
+  display: grid;
+  place-items: center;
+}
+.ga-scope .fb-game .fb-arrow,
+.ga-scope .kr-game .kr-arrow {
+  display: block;
+  width: 20px;
+  height: 14px;
+  flex: none;
+  font-size: 0;
+  line-height: 0;
+}
+.ga-scope .fb-game .fb-arrow::before,
+.ga-scope .kr-game .kr-arrow::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: currentColor;
+}
+.ga-scope .fb-game .fb-pad[data-control="up"] .fb-arrow::before,
+.ga-scope .kr-game .kr-steering .kr-direction:first-child .kr-arrow::before {
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+}
+.ga-scope .fb-game .fb-pad[data-control="down"] .fb-arrow::before,
+.ga-scope .kr-game .kr-steering .kr-direction:last-child .kr-arrow::before {
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+/* Sound remains automatic; do not offer mute controls in game/pause menus either. */
+.ga-scope [data-testid="button-football-sound"],
+.ga-scope [data-testid="kick-return-sound"],
+.ga-scope .kr-pause-sound {
+  display: none !important;
+}

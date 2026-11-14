@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KickReturnGame } from '../game/components/kick-return-game';
 import { FootballGame } from '../game/components/football-game';
 import { FootballFranchise } from '../game/components/football-franchise';
@@ -33,10 +33,7 @@ export function GameHost() {
 function DeviceGame() {
   const [mode, setMode] = useState<Mode>(null);
   const [frame, setFrame] = useState(0);
-  const [soundOn, setSoundOn] = useState(true);
   const [hasSeenIntro, setHasSeenIntro] = useState(false);
-  const soundOnRef = useRef(soundOn);
-  soundOnRef.current = soundOn;
   const [classic] = useState(() => readSlot('classic'));
   const franchise = useFranchiseSave();
   const saveStatus = useSaveStatus();
@@ -63,7 +60,6 @@ function DeviceGame() {
       const inAudioMenu = !!button.closest('.kr-title-screen, .krt, [data-retro-audio="menu"]');
       if (!inFranchise && !inAudioMenu) return;
       void unlockRetroAudio();
-      if (!soundOnRef.current) return;
       const kind = button.classList.contains('frn-back') ? 'transition'
         : button.classList.contains('frn-tab') ? 'move'
         : button.dataset.retroSound === 'locked' ? 'locked'
@@ -74,7 +70,7 @@ function DeviceGame() {
     const onChange = (event: Event) => {
       const target = event.target;
       if (target instanceof HTMLSelectElement && target.closest('.frn, .krt')
-        && !target.closest('.frn-game') && soundOnRef.current) playMenuSound('move');
+        && !target.closest('.frn-game')) playMenuSound('move');
     };
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
@@ -103,16 +99,8 @@ function DeviceGame() {
         <TitleExperience
           playIntro={!hasSeenIntro}
           onIntroComplete={() => setHasSeenIntro(true)}
-          soundOn={soundOn}
-          onSoundToggle={() => {
-            const next = !soundOnRef.current;
-            soundOnRef.current = next;
-            setSoundOn(next);
-            setRetroSoundEnabled(next);
-            if (next) void unlockRetroAudio();
-          }}
-          onIntroStinger={() => { if (soundOnRef.current) playIntroSound('stinger'); }}
-          onIntroTheme={() => { if (soundOnRef.current) playIntroSound('theme'); }}
+          onIntroStinger={() => playIntroSound('stinger')}
+          onIntroTheme={() => playIntroSound('hut')}
           onIntroStop={stopIntroSound}
           franchise={franchise.state}
           playoffUnlocked={playoffUnlocked}

@@ -1,16 +1,16 @@
-/** Local intro music and short original cues. No streaming service or idle music. */
+/** Local sound effects and a quiet menu-only chip sports loop. */
 export type MenuSound = 'move' | 'confirm' | 'locked' | 'transition';
 type Voice = { oscillator: OscillatorNode; gain: GainNode; intro: boolean };
 let context: AudioContext | undefined;
 let enabled = true;
 const voices = new Set<Voice>();
-const INTRO_SECONDS = 5.75;
-// The shorter cue enters with the KR reveal and finishes with the game's hut.
-const THEME_START_SECONDS = 2.6;
 let introGeneration = 0;
-let themeBytes: Promise<ArrayBuffer> | undefined;
-let themeBuffer: Promise<AudioBuffer> | undefined;
+let hutBuffer: Promise<AudioBuffer> | undefined;
 let themeVoice: { source: AudioBufferSourceNode; gain: GainNode } | undefined;
+let menuBuffer: Promise<AudioBuffer> | undefined;
+let menuVoice: { source: AudioBufferSourceNode; gain: GainNode } | undefined;
+let menuGeneration = 0;
+let menuLoading = false;
 export type RetroAudioState = 'ready' | 'blocked' | 'unavailable' | 'muted';
 
 export function retroAudioState(): RetroAudioState {
@@ -24,22 +24,19 @@ function announceAudioReady() {
   if (retroAudioState() === 'ready') window.dispatchEvent?.(new Event('kick-return-retro-audio-ready'));
 }
 
-function loadTheme() {
+function loadAudio(url: string) {
   if (!context) return undefined;
   const audioContext = context;
-  themeBytes ??= fetch(new URL('./assets/intro-theme.mp3', import.meta.url).href)
+  return fetch(url)
     .then(response => {
-      if (!response.ok) throw new Error('Intro music could not be loaded.');
+      if (!response.ok) throw new Error('Local audio could not be loaded.');
       return response.arrayBuffer();
-    }).catch(error => { themeBytes = undefined; throw error; });
-  themeBuffer ??= themeBytes.then(bytes => audioContext.decodeAudioData(bytes.slice(0)))
-    .catch(error => { themeBuffer = undefined; throw error; });
-  return themeBuffer;
+    }).then(bytes => audioContext.decodeAudioData(bytes));
 }
 
 export function setRetroSoundEnabled(value: boolean) {
   enabled = value;
-  if (!value) { stopIntroSound(); stopVoices(false); }
+  if (!value) { stopIntroSound(); stopMenuMusic(); stopVoices(false); }
 }
 
 export function unlockRetroAudio(): RetroAudioState {
@@ -54,8 +51,6 @@ export function unlockRetroAudio(): RetroAudioState {
       context.addEventListener?.('statechange', announceAudioReady);
     }
     if (context.state === 'suspended') void context.resume().then(announceAudioReady).catch(() => undefined);
-    // A replay gesture unlocks the context and prepares music before video begins.
-    void loadTheme()?.catch(() => undefined);
     return retroAudioState();
   } catch { return 'unavailable'; /* Optional audio must never prevent playing or saving. */ }
 }
@@ -94,7 +89,7 @@ export function playMenuSound(kind: MenuSound) {
   }
 }
 
-export function playIntroSound(kind: 'stinger' | 'theme') {
+export function playIntroSound(kind: 'stinger' | 'hut') {
   stopIntroSound();
   if (kind === 'stinger') {
     [36, 43, 48].forEach((note, i) => tone(note, i * .075, .14, true));
@@ -102,23 +97,25 @@ export function playIntroSound(kind: 'stinger' | 'theme') {
   }
   if (!enabled || !context || context.state !== 'running') return;
   const generation = introGeneration, audioContext = context, requestedAt = context.currentTime;
-  void loadTheme()?.then(buffer => {
+  hutBuffer ??= loadAudio(new URL('../game/assets/football-hut.mp3', import.meta.url).href)
+    ?.catch(error => { hutBuffer = undefined; throw error; });
+  void hutBuffer?.then(buffer => {
     if (generation !== introGeneration || !enabled || audioContext.state !== 'running'
       || (typeof document !== 'undefined' && document.hidden)) return;
     // If decode was delayed, join at the video's current elapsed time, never late.
     const elapsed = Math.max(0, audioContext.currentTime - requestedAt);
-    const offset = Math.max(0, elapsed - THEME_START_SECONDS);
-    const duration = Math.min(INTRO_SECONDS - THEME_START_SECONDS, buffer.duration) - offset;
+    const offset = Math.max(0, elapsed - 4.7);
+    const duration = Math.min(.9, buffer.duration) - offset;
     if (duration <= 0) return;
     const source = audioContext.createBufferSource(), gain = audioContext.createGain();
-    source.buffer = buffer; source.loop = false; gain.gain.value = .65;
+    source.buffer = buffer; source.loop = false; gain.gain.value = .5;
     source.connect(gain); gain.connect(audioContext.destination);
     const voice = { source, gain }; themeVoice = voice;
     source.onended = () => {
       source.disconnect(); gain.disconnect();
       if (themeVoice === voice) themeVoice = undefined;
     };
-    const startAt = Math.max(audioContext.currentTime, requestedAt + THEME_START_SECONDS);
+    const startAt = Math.max(audioContext.currentTime, requestedAt + 4.7);
     source.start(startAt, offset, duration);
     source.stop(startAt + duration);
   }).catch(() => {
@@ -126,6 +123,43 @@ export function playIntroSound(kind: 'stinger' | 'theme') {
       window.dispatchEvent?.(new Event('kick-return-intro-audio-error'));
     }
   });
+}
+
+export function startMenuMusic() {
+  if (unlockRetroAudio() !== 'ready' || !context || menuVoice || menuLoading
+    || (typeof document !== 'undefined' && document.hidden)) return;
+  const generation = menuGeneration, audioContext = context;
+  menuLoading = true;
+  menuBuffer ??= loadAudio(new URL('./assets/menu-sports.wav', import.meta.url).href)
+    ?.catch(error => { menuBuffer = undefined; throw error; });
+  void menuBuffer?.then(buffer => {
+    if (generation !== menuGeneration || !enabled || audioContext.state !== 'running'
+      || (typeof document !== 'undefined' && document.hidden)) return;
+    const source = audioContext.createBufferSource(), gain = audioContext.createGain();
+    source.buffer = buffer;
+    source.loop = true;
+    gain.gain.value = .18;
+    source.connect(gain); gain.connect(audioContext.destination);
+    const voice = { source, gain };
+    menuVoice = voice;
+    source.onended = () => {
+      source.disconnect(); gain.disconnect();
+      if (menuVoice === voice) menuVoice = undefined;
+    };
+    source.start();
+  }).catch(() => {
+    if (generation === menuGeneration && typeof window !== 'undefined')
+      window.dispatchEvent?.(new Event('kick-return-menu-audio-error'));
+  }).finally(() => { if (generation === menuGeneration) menuLoading = false; });
+}
+
+export function stopMenuMusic() {
+  menuGeneration++;
+  menuLoading = false;
+  if (!menuVoice) return;
+  try { menuVoice.source.stop(); } catch { /* Already ended. */ }
+  menuVoice.source.disconnect(); menuVoice.gain.disconnect();
+  menuVoice = undefined;
 }
 
 function stopVoices(introOnly: boolean) {
@@ -149,6 +183,6 @@ export function stopIntroSound() {
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { stopIntroSound(); stopVoices(false); }
+    if (document.hidden) { stopIntroSound(); stopMenuMusic(); stopVoices(false); }
   });
 }

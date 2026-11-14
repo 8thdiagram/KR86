@@ -7,7 +7,7 @@ Kick Return ’86 should look like a believable late-NES football game from roug
 
 **Why:** The user explicitly requested a cohesive visual redesign while preserving all modes, game logic, and saved progress.
 
-**How to apply:** Keep title, Franchise management, and supporting interfaces visually consistent. Intro music is short and finite; the static main menu has interaction effects only, never looping background music. Keep browser audio activation restrictions in mind and preserve existing gameplay sounds.
+**How to apply:** Keep title, Franchise management, and supporting interfaces visually consistent. Keep browser audio activation restrictions in mind and preserve existing gameplay sounds. Follow the intro/menu audio boundaries below.
 
 A subtle 1980s-TV overlay should cover all intros, videos, menus, and gameplay without becoming distracting.
 
@@ -21,11 +21,11 @@ The home/menu artwork should be an actual in-game screenshot. Keep the large Kic
 
 **How to apply:** Use a frame from actual gameplay, not an invented gameplay-like illustration. Do not replace the separately supplied intro video or app icon merely to match menu artwork.
 
-The supplied intro video is for visuals only. Do not use its original sound; pair it with a short, simple, low-pitched 8-bit cue, with fewer drums and the game's own “hut” at the end. Play sounds on startup.
+The supplied intro video is for visuals only. Do not use its original sound. Intro playback has sound effects, including the game's own “hut,” but no music. Do not display skip-intro or mute-sound options. The menu has quiet, simple sports-themed background music with some drums, not a busy arrangement.
 
-**Why:** The user requested replacing the uploaded clip's sound, then asked for less percussion, a shorter and simpler low-pitched soundtrack inspired by game sounds, the actual game “hut,” and startup sound playback.
+**Why:** The user replaced the earlier finite intro theme and silent-menu direction with explicit effects-only intro playback and quiet menu music with light drums.
 
-**How to apply:** Keep source audio out of playback and stop the replacement theme when the intro ends or is skipped. Attempt automatic audio; where browser autoplay restrictions require a gesture, offer Start with sound before running the intro silently. Keep mute and silent idle-menu behavior intact.
+**How to apply:** Keep source video audio out of playback. Attempt automatic intro effects; where browser autoplay restrictions require a gesture, offer Start with sound before running the intro silently. Play background music only while the menu is up, stopping it for intro replay, gameplay, or a hidden page. Do not restore the removed skip or mute controls.
 
 Call the championship game **Super Cup**, not Super Bowl.
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SyntheticEvent } from 'react';
 import type { Franchise } from '../game/lib/football/franchise';
-import { unlockRetroAudio, playMenuSound, retroAudioState } from './retro-audio';
+import { unlockRetroAudio, playMenuSound, retroAudioState, startMenuMusic, stopMenuMusic } from './retro-audio';
 import midfield86 from './assets/midfield-86.png';
 import menuGameplay from './assets/menu-gameplay.png';
 import kickReturnIntro from './assets/kick-return-intro.mp4';
@@ -10,8 +10,6 @@ type Mode = 'classic' | 'football' | 'franchise' | 'playoffs' | null;
 type Props = {
   playIntro: boolean;
   onIntroComplete: () => void;
-  soundOn: boolean;
-  onSoundToggle: () => void;
   onIntroStinger: () => void;
   onIntroTheme: () => void;
   onIntroStop: () => void;
@@ -35,14 +33,13 @@ function PixelArtwork({ animate = false }: { animate?: boolean }) {
 }
 
 export function TitleExperience(props: Props) {
-  const { playIntro, onIntroComplete, soundOn, onSoundToggle, onIntroStinger, onIntroTheme, onIntroStop, franchise, playoffUnlocked, onChoose } = props;
+  const { playIntro, onIntroComplete, onIntroStinger, onIntroTheme, onIntroStop, franchise, playoffUnlocked, onChoose } = props;
   const [stage, setStage] = useState<'black' | 'mark' | 'film' | 'menu'>(playIntro ? 'black' : 'menu');
   const stageRef = useRef(stage);
   stageRef.current = stage;
   const [selected, setSelected] = useState(0);
   const [replayToken, setReplayToken] = useState(0);
   const [introError, setIntroError] = useState('');
-  const [musicError, setMusicError] = useState(false);
   const [awaitingSound, setAwaitingSound] = useState(false);
   const [audioAttempt, setAudioAttempt] = useState(0);
   const buttons = useRef<Array<HTMLButtonElement | null>>([]);
@@ -70,15 +67,10 @@ export function TitleExperience(props: Props) {
     setStage('menu');
     callbacks.current.onIntroComplete();
   }, []);
-  const skip = useCallback(() => {
-    if (stageRef.current === 'menu') return;
-    finishIntro(true);
-  }, [finishIntro]);
-
   useEffect(() => {
     if (!playIntro && replayToken === 0) return;
     // Do not spend the intro silently while mobile autoplay is blocked.
-    if (soundOn && unlockRetroAudio() === 'blocked') {
+    if (unlockRetroAudio() === 'blocked') {
       setStage('black');
       stageRef.current = 'black';
       setAwaitingSound(true);
@@ -90,7 +82,6 @@ export function TitleExperience(props: Props) {
     activeRun.current = true;
     themeStarted.current = false;
     setIntroError('');
-    setMusicError(false);
     stageRef.current = 'black';
     setStage('black');
     timers.current.push(window.setTimeout(() => {
@@ -188,12 +179,6 @@ export function TitleExperience(props: Props) {
   }, []);
 
   useEffect(() => {
-    const onMusicError = () => setMusicError(true);
-    window.addEventListener('kick-return-intro-audio-error', onMusicError);
-    return () => window.removeEventListener('kick-return-intro-audio-error', onMusicError);
-  }, []);
-
-  useEffect(() => {
     if (stage !== 'film' || !activeRun.current) return;
     const currentRun = runId.current;
     const video = videoRef.current;
@@ -212,13 +197,13 @@ export function TitleExperience(props: Props) {
   }, [stage, renderRunId, tryPlayVideo]);
 
   useEffect(() => {
-    if (stage === 'menu') return;
+    if (stage === 'menu' || awaitingSound) return;
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') finishIntro();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-  }, [stage, finishIntro]);
+  }, [stage, awaitingSound, finishIntro]);
 
   const replayIntro = () => {
     void unlockRetroAudio();
@@ -226,18 +211,31 @@ export function TitleExperience(props: Props) {
   };
 
   useEffect(() => {
-    if (stage === 'menu') return;
+    if (stage === 'menu' || !awaitingSound) return;
     const onKey = (event: KeyboardEvent) => {
       if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key !== 'Tab'
         && !['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) {
         event.preventDefault();
-        if (awaitingSound && event.key !== 'Escape') startWithSound();
-        else skip();
+        startWithSound();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [stage, skip, awaitingSound, startWithSound]);
+  }, [stage, awaitingSound, startWithSound]);
+
+  useEffect(() => {
+    if (stage !== 'menu') return;
+    const start = () => { if (!document.hidden) startMenuMusic(); };
+    const visibility = () => { if (document.hidden) stopMenuMusic(); else start(); };
+    start();
+    window.addEventListener('kick-return-retro-audio-ready', start);
+    document.addEventListener('visibilitychange', visibility);
+    return () => {
+      window.removeEventListener('kick-return-retro-audio-ready', start);
+      document.removeEventListener('visibilitychange', visibility);
+      stopMenuMusic();
+    };
+  }, [stage]);
 
   useEffect(() => {
     if (stage !== 'menu') return;
@@ -259,7 +257,7 @@ export function TitleExperience(props: Props) {
   }, [stage, selected, playoffUnlocked]);
 
   return <section className="kr-title-screen" aria-label="Kick Return '86 title screen" data-testid="kick-mode-chooser">
-    {stage !== 'menu' && <div className={`kr-intro kr-intro--${stage}`} onClick={skip} role="dialog" aria-modal="true"
+    {stage !== 'menu' && <div className={`kr-intro kr-intro--${stage}`} role="dialog" aria-modal="true"
       aria-label="Kick Return '86 intro">
       {awaitingSound ? <div className="kr-film-message" data-testid="startup-sound-gate">
         <span>KICK RETURN ’86</span>
@@ -274,7 +272,6 @@ export function TitleExperience(props: Props) {
               if (renderRunId === runId.current && activeRun.current) finishIntro();
             }} onError={onVideoError} aria-label="Silent Kick Return '86 pixel football intro" />
           <div className="kr-film-scan" />
-          {musicError && <p className="kr-intro-music-note" role="status">INTRO MUSIC UNAVAILABLE · VIDEO IS SILENT</p>}
           {introError && <div className="kr-film-message" role="status">
             <span>{introError}</span>
             {!introError.startsWith('THE INTRO CLIP') && <button type="button" className="kr-intro-play"
@@ -285,16 +282,11 @@ export function TitleExperience(props: Props) {
               onKeyDown={event => event.stopPropagation()}>RETRY VIDEO</button>}
           </div>}
         </div>}
-        <button type="button" className="kr-skip" onClick={event => { event.stopPropagation(); skip(); }}>
-          {awaitingSound ? 'SKIP INTRO' : 'TAP OR PRESS ANY KEY TO SKIP'}
-        </button>
     </div>}
     <div className="kr-title-frame" inert={stage !== 'menu'}>
       <header className="kr-title-topline">
         <span>GRIDIRON SERIES</span><span>NO. 86&nbsp; / &nbsp;USA</span>
         <button type="button" className="kr-replay" onClick={replayIntro} data-retro-sound="confirm">REPLAY INTRO</button>
-        <button type="button" className="kr-sound" aria-label={soundOn ? 'Turn sound off' : 'Turn sound on'}
-          aria-pressed={soundOn} onClick={onSoundToggle} data-retro-sound="off">{soundOn ? 'SOUND: ON' : 'SOUND: OFF'}</button>
       </header>
       <div className="kr-hero-art">
         <h1 className="kr-wordmark">
