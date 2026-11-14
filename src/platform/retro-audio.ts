@@ -5,6 +5,8 @@ let context: AudioContext | undefined;
 let enabled = true;
 const voices = new Set<Voice>();
 const INTRO_SECONDS = 5.75;
+// The shorter cue enters with the KR reveal and finishes with the game's hut.
+const THEME_START_SECONDS = 2.6;
 let introGeneration = 0;
 let themeBytes: Promise<ArrayBuffer> | undefined;
 let themeBuffer: Promise<AudioBuffer> | undefined;
@@ -78,7 +80,7 @@ export function playMenuSound(kind: MenuSound) {
 export function playIntroSound(kind: 'stinger' | 'theme') {
   stopIntroSound();
   if (kind === 'stinger') {
-    [48, 60, 67, 72].forEach((note, i) => tone(note, i * .07, .18, true));
+    [36, 43, 48].forEach((note, i) => tone(note, i * .075, .14, true));
     return;
   }
   if (!enabled || !context || context.state !== 'running') return;
@@ -88,7 +90,8 @@ export function playIntroSound(kind: 'stinger' | 'theme') {
       || (typeof document !== 'undefined' && document.hidden)) return;
     // If decode was delayed, join at the video's current elapsed time, never late.
     const elapsed = Math.max(0, audioContext.currentTime - requestedAt);
-    const duration = Math.min(INTRO_SECONDS, buffer.duration) - elapsed;
+    const offset = Math.max(0, elapsed - THEME_START_SECONDS);
+    const duration = Math.min(INTRO_SECONDS - THEME_START_SECONDS, buffer.duration) - offset;
     if (duration <= 0) return;
     const source = audioContext.createBufferSource(), gain = audioContext.createGain();
     source.buffer = buffer; source.loop = false; gain.gain.value = .65;
@@ -98,8 +101,9 @@ export function playIntroSound(kind: 'stinger' | 'theme') {
       source.disconnect(); gain.disconnect();
       if (themeVoice === voice) themeVoice = undefined;
     };
-    source.start(audioContext.currentTime, elapsed, duration);
-    source.stop(audioContext.currentTime + duration);
+    const startAt = Math.max(audioContext.currentTime, requestedAt + THEME_START_SECONDS);
+    source.start(startAt, offset, duration);
+    source.stop(startAt + duration);
   }).catch(() => {
     if (generation === introGeneration && typeof window !== 'undefined') {
       window.dispatchEvent?.(new Event('kick-return-intro-audio-error'));

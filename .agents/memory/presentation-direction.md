@@ -9,8 +9,8 @@ Kick Return ’86 should look like a believable late-NES football game from roug
 
 **How to apply:** Keep title, Franchise management, and supporting interfaces visually consistent. Intro music is short and finite; the static main menu has interaction effects only, never looping background music. Keep browser audio activation restrictions in mind and preserve existing gameplay sounds.
 
-The supplied intro video is for visuals only. Do not use its original sound; pair it with original 1980s sports-game / NES-style 8-bit music.
+The supplied intro video is for visuals only. Do not use its original sound; pair it with a short, simple, low-pitched 8-bit cue, with fewer drums and the game's own “hut” at the end.
 
-**Why:** The user explicitly requested replacing the uploaded clip's sound with a newly produced theme.
+**Why:** The user requested replacing the uploaded clip's sound, then asked for less percussion, a shorter and simpler low-pitched soundtrack inspired by game sounds, and the actual game “hut.”
 
 **How to apply:** Keep source audio out of playback and stop the replacement theme when the intro ends or is skipped.
