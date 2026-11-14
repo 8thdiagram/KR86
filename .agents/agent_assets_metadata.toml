@@ -162,3 +162,17 @@ mtime_ms = 1794672042833
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/f79c2b00-3029-41eb-ba48-cacf0a32e5aa/d95aa3d6-aba0-4da5-ac6d-584086074f0f"
 storage_version_token = "1794672073648497"
 content_type = "image/png"
+
+[[outputs]]
+id = "TSTTyZ6qfg7siwE0ox4BN"
+uri = "file://generated-artifacts/gameplay-menu-mobile.png"
+type = "image"
+title = "Updated home menu"
+description = "Actual Classic-mode gameplay screenshot, with the large Kick Return title and ’86 in the lower-right corner."
+logical_id = "2604d287-ab0d-4666-8aa3-fdccc2c3d92e"
+content_hash = "sha256:3dd57632a1b2fd01dbe03c10f5f5b2582420e559b85d92e3f694058c4be354fb"
+size = 37402
+mtime_ms = 1794674510015
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/2604d287-ab0d-4666-8aa3-fdccc2c3d92e/8d845b6f-40db-46d2-9404-da9a3a43ddc9"
+storage_version_token = "1794674541240786"
+content_type = "image/png"

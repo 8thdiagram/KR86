@@ -83,8 +83,23 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: fill;
+  object-fit: contain;
   image-rendering: pixelated;
+}
+.kr-art-year {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  z-index: 3;
+  padding: 2px 5px;
+  border: 2px solid #ea9e22;
+  background: #1412a7;
+  color: #ffffff;
+  font-family: 'KR Pixel', 'Space Mono', monospace;
+  font-size: clamp(12px, 4cqw, 20px);
+  line-height: 1.25;
+  letter-spacing: .02em;
+  text-shadow: none;
 }
 .kr-art--moving img { animation: none; }
 .kr-hero-art .kr-art { border: 2px solid #000000; }

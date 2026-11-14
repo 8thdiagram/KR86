@@ -9,11 +9,11 @@ Kick Return ’86 should look like a believable late-NES football game from roug
 
 **How to apply:** Keep title, Franchise management, and supporting interfaces visually consistent. Intro music is short and finite; the static main menu has interaction effects only, never looping background music. Keep browser audio activation restrictions in mind and preserve existing gameplay sounds.
 
-The home/menu artwork must use graphics an NES could reproduce, not high-resolution imagery with a pixel filter. Keep the menu title large and prominent. This tightens the earlier chrome-inspired direction: use flat pixel colors rather than smooth metallic lighting, gradients, blur, or glow on the menu.
+The home/menu artwork should be an actual in-game screenshot. Keep the large Kick Return title and add ’86 in the lower-right corner. Retain flat pixel styling rather than smooth metallic lighting, gradients, blur, or glow.
 
-**Why:** The user explicitly asked for an NES-rendered home screen, a bigger menu title, and no graphics beyond what an NES could reproduce.
+**Why:** The user replaced the earlier NES-illustration direction with an explicit request for an in-game screenshot, keeping the Kick Return text and adding ’86 at the lower right.
 
-**How to apply:** Preserve these limits in future home-screen changes; do not replace the separately supplied intro video or app icon merely to match menu artwork.
+**How to apply:** Use a frame from actual gameplay, not an invented gameplay-like illustration. Do not replace the separately supplied intro video or app icon merely to match menu artwork.
 
 The supplied intro video is for visuals only. Do not use its original sound; pair it with a short, simple, low-pitched 8-bit cue, with fewer drums and the game's own “hut” at the end.
 
