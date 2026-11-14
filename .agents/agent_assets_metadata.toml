@@ -120,3 +120,17 @@ mtime_ms = 1794669908219
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/1284d46c-f599-4a50-9109-7bb4794766da/8d4f7725-b7cf-45a8-a72c-3512d543bc08"
 storage_version_token = "1794670034693524"
 content_type = "video/mp4"
+
+[[outputs]]
+id = "5RYO3nPoO4Fke5CN0wzra"
+uri = "file://public/icons/official-512.png"
+type = "image"
+title = "New Kick Return ’86 app icon"
+description = "Cropped square artwork without the screenshot’s black bars. Updated browser, Apple touch, installed-app, and maskable icon sizes."
+logical_id = "c7b10498-f25d-4a47-8cff-8d59c2eccd6f"
+content_hash = "sha256:201080cb939c2f9211a199e99547fae5d72c3ea3e3886a1b1c2ecfb9f76f1342"
+size = 515408
+mtime_ms = 1794670436110
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/c7b10498-f25d-4a47-8cff-8d59c2eccd6f/8b54efba-1baf-46f1-a977-907d0360dc4a"
+storage_version_token = "1794670479465741"
+content_type = "image/png"
