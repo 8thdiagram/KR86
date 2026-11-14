@@ -9,6 +9,12 @@ Kick Return ’86 should look like a believable late-NES football game from roug
 
 **How to apply:** Keep title, Franchise management, and supporting interfaces visually consistent. Keep browser audio activation restrictions in mind and preserve existing gameplay sounds. Follow the intro/menu audio boundaries below.
 
+For app icons, preserve the latest supplied artwork and use a subtle, sharp iPhone-style edge finish.
+
+**Why:** The user requested this finish for replacement app icons.
+
+**How to apply:** Keep installed icons opaque and square so iOS applies its own rounded mask. Avoid large borders or heavy gloss, and do not substitute app-icon artwork for the separately chosen menu or intro.
+
 A subtle 1980s-TV overlay should cover all intros, videos, menus, and gameplay without becoming distracting.
 
 **Why:** The user explicitly requested a subtle TV effect across the entire experience.

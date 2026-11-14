@@ -232,3 +232,17 @@ mtime_ms = 1794695345270
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/60288e42-1bef-45f7-913a-886be95db78c/d1848720-ef85-4552-945b-f7a5edee9928"
 storage_version_token = "1794695394038958"
 content_type = "text/html"
+
+[[outputs]]
+id = "BLGM3eX5zKCGf9Q0DO34J"
+uri = "file://branding/app-store-icon-1024.png"
+type = "image"
+title = "Kick Return ’86 — finished app icon"
+description = "1024 × 1024 master with a fine edge highlight and subtle inset bevel. Opaque square corners let iPhone apply its native rounded mask."
+logical_id = "15c331cc-b8e5-4a73-8047-e56fede945b2"
+content_hash = "sha256:37cede659243c843c0a07366445480ac54915ac1c2ec7d37bd9c5b633673c86a"
+size = 1754115
+mtime_ms = 1794698677748
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/15c331cc-b8e5-4a73-8047-e56fede945b2/be2c0079-c399-4825-a1bd-3831f2924782"
+storage_version_token = "1794698784926124"
+content_type = "image/png"
