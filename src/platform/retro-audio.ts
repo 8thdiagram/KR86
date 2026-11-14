@@ -11,6 +11,18 @@ let introGeneration = 0;
 let themeBytes: Promise<ArrayBuffer> | undefined;
 let themeBuffer: Promise<AudioBuffer> | undefined;
 let themeVoice: { source: AudioBufferSourceNode; gain: GainNode } | undefined;
+export type RetroAudioState = 'ready' | 'blocked' | 'unavailable' | 'muted';
+
+export function retroAudioState(): RetroAudioState {
+  if (!enabled) return 'muted';
+  if (typeof window === 'undefined' || !(window.AudioContext ??
+    (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)) return 'unavailable';
+  return context?.state === 'running' ? 'ready' : 'blocked';
+}
+
+function announceAudioReady() {
+  if (retroAudioState() === 'ready') window.dispatchEvent?.(new Event('kick-return-retro-audio-ready'));
+}
 
 function loadTheme() {
   if (!context) return undefined;
@@ -30,17 +42,22 @@ export function setRetroSoundEnabled(value: boolean) {
   if (!value) { stopIntroSound(); stopVoices(false); }
 }
 
-export function unlockRetroAudio() {
-  if (!enabled || typeof window === 'undefined') return;
+export function unlockRetroAudio(): RetroAudioState {
+  if (!enabled) return 'muted';
+  if (typeof window === 'undefined') return 'unavailable';
   try {
     const Audio = window.AudioContext ??
       (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Audio) return;
-    context ??= new Audio();
-    if (context.state === 'suspended') void context.resume().catch(() => undefined);
+    if (!Audio) return 'unavailable';
+    if (!context) {
+      context = new Audio();
+      context.addEventListener?.('statechange', announceAudioReady);
+    }
+    if (context.state === 'suspended') void context.resume().then(announceAudioReady).catch(() => undefined);
     // A replay gesture unlocks the context and prepares music before video begins.
     void loadTheme()?.catch(() => undefined);
-  } catch { /* Optional browser audio must never prevent playing or saving. */ }
+    return retroAudioState();
+  } catch { return 'unavailable'; /* Optional audio must never prevent playing or saving. */ }
 }
 
 function tone(note: number, offset: number, duration: number, intro = false,

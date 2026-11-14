@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SyntheticEvent } from 'react';
 import type { Franchise } from '../game/lib/football/franchise';
-import { unlockRetroAudio, playMenuSound } from './retro-audio';
+import { unlockRetroAudio, playMenuSound, retroAudioState } from './retro-audio';
 import midfield86 from './assets/midfield-86.png';
 import menuGameplay from './assets/menu-gameplay.png';
 import kickReturnIntro from './assets/kick-return-intro.mp4';
@@ -43,6 +43,8 @@ export function TitleExperience(props: Props) {
   const [replayToken, setReplayToken] = useState(0);
   const [introError, setIntroError] = useState('');
   const [musicError, setMusicError] = useState(false);
+  const [awaitingSound, setAwaitingSound] = useState(false);
+  const [audioAttempt, setAudioAttempt] = useState(0);
   const buttons = useRef<Array<HTMLButtonElement | null>>([]);
   const timers = useRef<number[]>([]);
   const loadTimer = useRef<number | null>(null);
@@ -63,6 +65,7 @@ export function TitleExperience(props: Props) {
     videoRef.current?.pause();
     if (unlock) void unlockRetroAudio();
     callbacks.current.onIntroStop();
+    setAwaitingSound(false);
     stageRef.current = 'menu';
     setStage('menu');
     callbacks.current.onIntroComplete();
@@ -74,6 +77,14 @@ export function TitleExperience(props: Props) {
 
   useEffect(() => {
     if (!playIntro && replayToken === 0) return;
+    // Do not spend the intro silently while mobile autoplay is blocked.
+    if (soundOn && unlockRetroAudio() === 'blocked') {
+      setStage('black');
+      stageRef.current = 'black';
+      setAwaitingSound(true);
+      return;
+    }
+    setAwaitingSound(false);
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const currentRun = ++runId.current;
     activeRun.current = true;
@@ -109,7 +120,29 @@ export function TitleExperience(props: Props) {
       videoRef.current?.pause();
       callbacks.current.onIntroStop();
     };
-  }, [playIntro, replayToken, finishIntro]);
+  }, [playIntro, replayToken, finishIntro, audioAttempt]);
+
+  const startWithSound = useCallback(() => {
+    const state = unlockRetroAudio();
+    if (state !== 'blocked') {
+      setAwaitingSound(false);
+      setAudioAttempt(value => value + 1);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!awaitingSound) return;
+    let resumed = false;
+    const ready = () => {
+      if (resumed || stageRef.current === 'menu' || retroAudioState() !== 'ready') return;
+      resumed = true;
+      setAwaitingSound(false);
+      setAudioAttempt(value => value + 1);
+    };
+    window.addEventListener('kick-return-retro-audio-ready', ready);
+    ready(); // Audio may have resumed between the initial check and this effect.
+    return () => window.removeEventListener('kick-return-retro-audio-ready', ready);
+  }, [awaitingSound]);
 
   const renderRunId = runId.current;
   const onVideoPlaying = (event: SyntheticEvent<HTMLVideoElement>) => {
@@ -197,12 +230,14 @@ export function TitleExperience(props: Props) {
     const onKey = (event: KeyboardEvent) => {
       if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key !== 'Tab'
         && !['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) {
-        event.preventDefault(); skip();
+        event.preventDefault();
+        if (awaitingSound && event.key !== 'Escape') startWithSound();
+        else skip();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [stage, skip]);
+  }, [stage, skip, awaitingSound, startWithSound]);
 
   useEffect(() => {
     if (stage !== 'menu') return;
@@ -226,7 +261,12 @@ export function TitleExperience(props: Props) {
   return <section className="kr-title-screen" aria-label="Kick Return '86 title screen" data-testid="kick-mode-chooser">
     {stage !== 'menu' && <div className={`kr-intro kr-intro--${stage}`} onClick={skip} role="dialog" aria-modal="true"
       aria-label="Kick Return '86 intro">
-      {stage === 'black' ? <span className="kr-intro-black" /> : stage === 'mark'
+      {awaitingSound ? <div className="kr-film-message" data-testid="startup-sound-gate">
+        <span>KICK RETURN ’86</span>
+        <button type="button" className="kr-intro-play" data-testid="button-start-with-sound"
+          onClick={event => { event.stopPropagation(); startWithSound(); }}>START WITH SOUND</button>
+        <span>Your browser needs a tap or keypress to play startup sounds.</span>
+      </div> : stage === 'black' ? <span className="kr-intro-black" /> : stage === 'mark'
         ? <div className="kr-mark-stinger"><img src={midfield86} alt="86" /></div>
         : <div className="kr-film">
           <video ref={videoRef} className="kr-film-video" src={kickReturnIntro} autoPlay muted playsInline
@@ -246,7 +286,7 @@ export function TitleExperience(props: Props) {
           </div>}
         </div>}
         <button type="button" className="kr-skip" onClick={event => { event.stopPropagation(); skip(); }}>
-          TAP OR PRESS ANY KEY TO SKIP
+          {awaitingSound ? 'SKIP INTRO' : 'TAP OR PRESS ANY KEY TO SKIP'}
         </button>
     </div>}
     <div className="kr-title-frame" inert={stage !== 'menu'}>

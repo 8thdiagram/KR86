@@ -1,27 +1,37 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  playIntroSound, playMenuSound, setRetroSoundEnabled, stopIntroSound, unlockRetroAudio,
+  playIntroSound, playMenuSound, retroAudioState, setRetroSoundEnabled, stopIntroSound, unlockRetroAudio,
 } from './retro-audio';
 
 test('optional audio is safe without browser audio or a user gesture', () => {
+  assert.equal(retroAudioState(), 'unavailable');
   assert.doesNotThrow(() => {
     unlockRetroAudio(); playIntroSound('stinger'); playIntroSound('theme');
     playMenuSound('confirm'); stopIntroSound();
   });
 });
 
-test('new theme is finite, synchronized, cancellable during decoding, and independent of menu cues', async () => {
+test('startup waits for audio permission, then plays the finite cancellable theme and respects mute', async () => {
   type Record = { startAt?: number; stopAt?: number; stopped: boolean; disconnected: boolean; offset?: number; duration?: number };
   const tones: Record[] = [], tracks: Record[] = [];
   let resolveDecode!: (buffer: { duration: number }) => void;
   const decoded = new Promise<{ duration: number }>(resolve => { resolveDecode = resolve; });
   const originalFetch = globalThis.fetch;
   let now = 10;
+  let allowResume = false;
+  const events = new EventTarget();
+  let readyEvents = 0;
+  events.addEventListener('kick-return-retro-audio-ready', () => readyEvents++);
   class Audio {
     get currentTime() { return now; }
-    state = 'running';
+    state = 'suspended';
     destination = {};
+    async resume() {
+      if (!allowResume) throw new Error('User activation required');
+      await Promise.resolve();
+      this.state = 'running';
+    }
     decodeAudioData() { return decoded; }
     createOscillator() {
       const record: Record = { stopped: false, disconnected: false }; tones.push(record);
@@ -48,10 +58,20 @@ test('new theme is finite, synchronized, cancellable during decoding, and indepe
       };
     }
   }
-  Object.defineProperty(globalThis, 'window', { configurable: true, value: { AudioContext: Audio } });
+  Object.defineProperty(globalThis, 'window', { configurable: true,
+    value: { AudioContext: Audio, dispatchEvent: events.dispatchEvent.bind(events) } });
   globalThis.fetch = (async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) })) as typeof fetch;
   const settle = () => new Promise(resolve => setImmediate(resolve));
   try {
+    assert.equal(unlockRetroAudio(), 'blocked');
+    playIntroSound('stinger');
+    await settle();
+    assert.equal(tones.length, 0, 'blocked startup must not pretend a sound was played');
+    allowResume = true;
+    assert.equal(unlockRetroAudio(), 'blocked', 'resume may finish asynchronously after the gesture');
+    await settle();
+    assert.equal(retroAudioState(), 'ready');
+    assert(readyEvents > 0, 'the startup screen is notified when audio really becomes usable');
     unlockRetroAudio(); playIntroSound('theme'); stopIntroSound();
     resolveDecode({ duration: 3.2 }); await settle();
     assert.equal(tracks.length, 0, 'skipping during decoding must not start late music');
@@ -70,6 +90,7 @@ test('new theme is finite, synchronized, cancellable during decoding, and indepe
     playIntroSound('stinger');
     assert.ok(tones.slice(1).every(tone => tone.stopAt! < 14));
     setRetroSoundEnabled(false);
+    assert.equal(unlockRetroAudio(), 'muted');
     assert.ok(tones.every(tone => tone.stopped));
     const count = tracks.length + tones.length;
     playMenuSound('confirm'); playIntroSound('theme'); await settle();

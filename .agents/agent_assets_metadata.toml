@@ -176,3 +176,17 @@ mtime_ms = 1794674510015
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/2604d287-ab0d-4666-8aa3-fdccc2c3d92e/8d845b6f-40db-46d2-9404-da9a3a43ddc9"
 storage_version_token = "1794674541240786"
 content_type = "image/png"
+
+[[outputs]]
+id = "UyuegPtPewE0p299xxRqG"
+uri = "file://generated-artifacts/crt-classic-gameplay.png"
+type = "image"
+title = "Subtle 1980s TV treatment"
+description = "Gameplay with faint static scanlines and gentle edge shading, applied across the entire app without flicker or distortion."
+logical_id = "ef2e0271-8eac-47f5-bda8-ef0ee4a7bd96"
+content_hash = "sha256:2355abf54f1e52ef570763330bebe729bb385252dfea11037e3ec93aec941029"
+size = 97009
+mtime_ms = 1794675090079
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/ef2e0271-8eac-47f5-bda8-ef0ee4a7bd96/ad60b9a8-3e66-4483-ada5-e32ac197d1be"
+storage_version_token = "1794675128911558"
+content_type = "image/png"

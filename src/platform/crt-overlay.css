@@ -1,0 +1,23 @@
+.kr-crt-overlay {
+  position: fixed;
+  z-index: 2147483647;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse at center,
+      transparent 56%,
+      rgba(3, 8, 15, 0.045) 100%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 3px,
+      rgba(5, 10, 18, 0.075) 3px 4px
+    );
+}
+
+@media (forced-colors: active), (prefers-contrast: more), (prefers-reduced-transparency: reduce) {
+  .kr-crt-overlay {
+    display: none;
+  }
+}
