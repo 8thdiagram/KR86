@@ -4,7 +4,7 @@ import { createFootball, stepFootball } from './engine';
 import { startField } from './field';
 import { fieldGoalDistance } from './playbook';
 import { fieldGoalSequence, stepSpecialTeams } from './special-teams';
-import { fieldGoalHeight, fieldGoalMeterAccuracy, fieldGoalWindow, FIELD_GOAL, kickGeometry } from './field-goal-geometry';
+import { fieldGoalHeight, fieldGoalMeterAccuracy, fieldGoalMeterSpeed, fieldGoalWindow, FIELD_GOAL, kickGeometry } from './field-goal-geometry';
 import { drawFootball } from '../../components/football-renderer';
 import { fieldGoalFrame, fieldGoalSample, fieldGoalVerdictVisible, projectFieldGoal } from '../../components/football-field-goal';
 import { kickMatchupTeams } from '../kick-return-teams';
@@ -64,41 +64,74 @@ test('ordinary plays retain the dead-ball lane for a subsequent field goal and e
   old.live = startField(old, 'field-goal', 'run');
   assert.equal(fieldGoalSequence(old).fromY, 96, 'older saves still use the original center when no lane was recorded');
 });
-test('20, 35 and 55 yard posts and real timing windows shrink naturally at every viewport', () => {
+test('20 through 60 yard posts and timing windows shrink continuously at every viewport', () => {
   for (const [width, height] of [[131, 192], [393, 500], [852, 270]]) {
     const widths: number[] = [], windows: number[] = [];
-    for (const distance of [20, 35, 55]) {
+    for (const distance of [20, 25, 30, 35, 40, 45, 50, 55, 60]) {
       const g = kick(undefined, distance), s = g.special!, f = fieldGoalFrame(width!, height!, s);
       const left = projectFieldGoal({ y: 76, z: 10, depth: 1 }, f);
       const right = projectFieldGoal({ y: 116, z: 10, depth: 1 }, f);
       const geo = kickGeometry(s.fromX, s.fromY);
       widths.push(right.x - left.x); windows.push(geo.half * 2);
-      assert(Math.abs(right.x - left.x - f.focal * .8 * geo.half * 2) < 1e-9);
+      assert(Math.abs(right.x - left.x - f.focal * FIELD_GOAL.sensor * geo.half * 2) < 1e-9);
       assert(left.y > 42 / f.scale, 'crossbar clears the real landscape HUD');
+      const top = projectFieldGoal({ y: 76, z: FIELD_GOAL.top, depth: 1 }, f);
+      assert(top.y > 45 / f.scale, 'entire upright clears the HUD');
+      assert.equal(geo.range, Math.abs(s.toX - s.fromX), 'use real launch point, not announced distance plus snap/end zone again');
     }
-    assert(widths[0]! > widths[1]! && widths[1]! > widths[2]!);
-    assert(windows[0]! > windows[1]! && windows[1]! > windows[2]!);
-    assert(widths[0]! / widths[2]! > 1.8);
+    for (let i = 1; i < widths.length; i++) {
+      assert(widths[i - 1]! > widths[i]!);
+      assert(windows[i - 1]! > windows[i]!);
+    }
+    assert(widths[0]! / widths.at(-1)! > 2.5);
+    assert(windows[0]! > .38, '20-yard opening spans a generous portion of the stable aiming track');
+    assert(windows.at(-1)! < .2, '60-yard opening spans less than a fifth');
+  }
+});
+test('human meter speed progresses smoothly and remains controllable without changing CPU lottery', () => {
+  assert.equal(fieldGoalMeterSpeed(20), .65);
+  assert.equal(fieldGoalMeterSpeed(60), 1.35);
+  for (let distance = 20; distance < 60; distance++) {
+    assert(Math.abs(fieldGoalMeterSpeed(distance + 1) - fieldGoalMeterSpeed(distance) - .0175) < 1e-10);
+  }
+});
+test('close camera follows the real high arc without hiding the ball or changing horizontal aim', () => {
+  for (const distance of [20, 25, 30, 35, 40, 45, 50, 55, 60]) {
+    for (const [width, height] of [[393, 500], [852, 270]]) {
+      const g = kick(.5, distance), s = g.special!;
+      const aim = fieldGoalFrame(width!, height!, s);
+      for (let step = 0; step <= 100; step++) {
+        const t = step / 100;
+        s.stage = 'flight'; s.ball = { x: s.fromX + (s.toX - s.fromX) * t,
+          y: s.fromY + (s.toY - s.fromY) * t, z: fieldGoalHeight(g, t) };
+        const frame = fieldGoalFrame(width!, height!, s);
+        const p = projectFieldGoal(fieldGoalSample(s), frame);
+        assert(p.y * frame.scale >= 49, 'ball clears the scoreboard throughout the real arc');
+        assert(p.y < 192, 'ball remains above the screen bottom');
+        assert.equal(frame.focal, aim.focal, 'no zoom or horizontal aim change during flight');
+      }
+    }
   }
 });
 test('human slider, left/right hashes, actual trajectory and scoring use the same opening', () => {
-  for (const distance of [20, 35, 55]) for (const hash of [65, 96, 127])
+  for (const distance of [20, 25, 30, 35, 40, 45, 50, 55, 60]) for (const hash of [65, 96, 127])
     for (const normalized of [-1.2, -.8, 0, .8, 1.2]) {
       const g = kick(undefined, distance, hash), s = g.special!;
       const geo = kickGeometry(s.fromX, s.fromY);
       const meter = geo.center + normalized * geo.half;
+      if (meter < 0 || meter > 1) continue; // A pointer cannot leave its fixed track.
       s.stage = 'hold';
       // Place the real sinusoidal meter precisely at the selected sample.
-      const speed = .85 + Math.max(0, distance - 25) * .06;
+      const speed = fieldGoalMeterSpeed(distance);
       const dt = 1e-8;
       g.live!.time = Math.asin((meter - .5) * 2) / (speed * Math.PI * 2) - dt;
       stepSpecialTeams(g, { action: true }, dt);
       assert.equal(s.stage, 'approach');
       assert(Math.abs(s.toY - (96 + normalized * 20)) < 1e-7);
-      assert.equal(s.good, Math.abs(normalized) < 1);
+      assert.equal(s.good, Math.abs(normalized) < 1 && distance <= 55);
       const f = fieldGoalFrame(393, 500, s);
       const ball = projectFieldGoal({ y: s.toY, z: fieldGoalHeight(g, 1), depth: 1 }, f);
-      const indicator = f.center + (meter - .5) * f.focal * .8;
+      const indicator = f.center + (meter - .5) * f.focal * FIELD_GOAL.sensor;
       assert(Math.abs(ball.x - indicator) < 1e-7, 'stopped pointer is the ball crossing x');
       assert.equal(s.fromY, hash, 'holder/hash is never recentered');
       assert.equal(s.athletes[5]!.y, hash + 12);
@@ -194,15 +227,15 @@ test('camera covers pre-snap through verdict, green meter edges equal projected 
   }
 });
 test('engine awards three points once only after the real flight and verdict hold', () => {
-  for (const accuracy of [0, .5, 1]) {
-    const g = kick(accuracy), s = g.special!;
+  for (const distance of [20, 25, 30, 35, 40, 45, 50, 55, 60]) for (const accuracy of [0, .5, 1]) {
+    const g = kick(accuracy, distance), s = g.special!;
     let frames = 0;
     while (g.special === s && frames++ < 400) {
       if (s.stage !== 'resolved' || s.stageAge < .44) assert.equal(g.score.home, 0);
       stepFootball(g, {}, 1 / 60);
     }
-    assert.equal(g.score.home, accuracy === .5 ? 3 : 0);
-    assert.equal(g.stats.home.fieldGoals, accuracy === .5 ? 1 : 0);
+    assert.equal(g.score.home, accuracy === .5 && distance <= 55 ? 3 : 0);
+    assert.equal(g.stats.home.fieldGoals, accuracy === .5 && distance <= 55 ? 1 : 0);
     assert.equal(fieldGoalDistance(g) >= 0, true);
   }
 });

@@ -2,7 +2,11 @@ import type { FootballGame, SpecialTeams } from './types';
 import { fieldGoalDistance } from './playbook';
 
 /** Existing field coordinates: the posts are at x1194, centered on y96. */
-export const FIELD_GOAL = { x: 1194, center: 96, half: 20, crossbar: 10, top: 46, near: 120 } as const;
+export const FIELD_GOAL = { x: 1194, center: 96, half: 20, crossbar: 10, top: 46, near: 60, sensor: .44 } as const;
+/** Fair, continuous human timing: .65 cycles/sec at 20 yd to 1.35 at 60 yd. */
+export function fieldGoalMeterSpeed(distance: number) {
+  return .65 + Math.max(0, Math.min(1, (distance - 20) / 40)) * .7;
+}
 export function fieldGoalWindow(g: FootballGame) {
   const distance = fieldGoalDistance(g), max = g.profiles[g.possession].kickMax;
   return Math.max(.025, Math.min(.26, .26 - Math.max(0, distance - 20) / Math.max(1, max - 20) * .235));
@@ -11,7 +15,7 @@ export function kickGeometry(fromX: number, fromY: number, toX: number = FIELD_G
   const range = Math.max(1, Math.abs(toX - fromX));
   // The meter is a fixed camera sensor, not a difficulty graphic. A fixed
   // fraction of that sensor subtends a larger physical width at greater range.
-  const span = (range + FIELD_GOAL.near) * .8;
+  const span = (range + FIELD_GOAL.near) * FIELD_GOAL.sensor;
   return { range, span, center: .5 + (FIELD_GOAL.center - fromY) / span,
     half: FIELD_GOAL.half / span };
 }

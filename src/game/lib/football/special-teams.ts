@@ -3,7 +3,7 @@ import { FOOTBALL_SIDELINES } from './sidelines';
 import { clamp, other, random, type Athlete, type FootballGame, type FootballInput, type Side, type SpecialTeams } from './types';
 import { startField } from './field';
 import { fieldGoalDistance } from './playbook';
-import { fieldGoalAim, fieldGoalHeight, fieldGoalMeterAccuracy } from './field-goal-geometry';
+import { fieldGoalAim, fieldGoalHeight, fieldGoalMeterAccuracy, fieldGoalMeterSpeed } from './field-goal-geometry';
 import { canDefensiveAction, startNearestDive } from './defensive-action';
 import { ELITE, eliteSlots } from './secondary';
 import { franchiseFactor, franchiseKickControl } from './franchise-upgrades';
@@ -189,7 +189,7 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
   if (s.stage === 'hold') {
     const l = g.live!, distance = fieldGoalDistance(g);
     const control = franchiseKickControl(g, g.possession);
-    l.time += dt; l.kickMeter = .5 + Math.sin(l.time * (.85 + Math.max(0, distance - 25) * .06) * control * Math.PI * 2) * .5;
+    l.time += dt; l.kickMeter = .5 + Math.sin(l.time * fieldGoalMeterSpeed(distance) * control * Math.PI * 2) * .5;
     if (g.possession === 'home' ? input.action : s.stageAge > .8) {
       const error = g.possession === 'home' ? 0 : (random(g) - .5) * (.24 + Math.max(0, distance - 35) * .009) * control;
       s.accuracy = l.kickAccuracy = g.possession === 'home' ? fieldGoalMeterAccuracy(g, s, l.kickMeter) : clamp(.5 + error, 0, 1);
