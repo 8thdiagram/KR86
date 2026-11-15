@@ -21,6 +21,12 @@ Keep the newly approved sprite designs. Refine them with approximately 10% faste
 
 **How to apply:** Keep strides recognizable rather than excessively fast or jittery. Smooth render positioning without changing ball speed, game/pressure clocks, probabilities, controls, field/camera, saves, or established sound effects.
 
+Keep dive silhouettes consistent with the athlete's upright size rather than visually shrinking on launch or landing. The user also requested all player sprites slightly smaller overall; apply a common reduction, not a dive-only reduction.
+
+**Why:** The user reported a defender appearing to shrink when diving and explicitly requested both size consistency and a modest game-wide player reduction.
+
+**How to apply:** Preserve directional anatomy, proportions, team identity and held-ball registration across standing, diving, grounded and recovery poses.
+
 Further flow refinements must preserve the existing speed and difficulty balance, not add another player-speed increase. The user confirmed the improved designs look significantly better; refine natural bent arm pumps and event-specific reaches without replacing those designs.
 
 **Why:** The user explicitly prioritized restoring smooth ball movement, camera scrolling and responsiveness while keeping the improved graphics, current game speed and all audio.

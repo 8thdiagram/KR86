@@ -27,6 +27,21 @@ export function manAssignment(l: LivePlay, defender: Athlete) {
   return undefined;
 }
 
+/** The spare man-coverage safety helps over the deepest observed release;
+ * he must not sit at his original depth while the receivers run past him. */
+export function safetySupportTarget(l: LivePlay, d: Athlete) {
+  const los = 100 + l.snapSpot * 10;
+  const threat = eligibleReceivers(l).filter(a => a.x > los + 35)
+    .sort((a, b) => (b.x + Math.max(0, b.vx) * .35 - Math.abs(b.y - d.y) * .35) -
+      (a.x + Math.max(0, a.vx) * .35 - Math.abs(a.y - d.y) * .35) || a.id - b.id)[0];
+  const thrownDeep = l.flight && l.flight.toX > los + 100;
+  const x = Math.max(los + 110, thrownDeep ? l.flight!.toX + 18
+    : (threat?.x ?? los) + 24 + Math.max(0, threat?.vx ?? 0) * .3);
+  const y = thrownDeep ? l.flight!.toY
+    : threat ? d.startY * .35 + (threat.y + threat.vy * .2) * .65 : d.startY;
+  return { x: Math.min(1110, x), y: clamp(y, 25, 167), threat };
+}
+
 /** Areas first: exchange threats crossing lanes rather than chasing one player.
  * Only current positions/velocity and an already-thrown ball are observed. */
 export function zoneTarget(l: LivePlay, d: Athlete) {
@@ -35,19 +50,22 @@ export function zoneTarget(l: LivePlay, d: Athlete) {
   const center = d.role === 'LB' ? 96 : d.startY;
   const receivers = eligibleReceivers(l).filter(a =>
     Math.abs(a.y - center) < (prevent ? 65 : 43) && (!deep || a.x > los + 35));
-  const threat = receivers.sort((a, b) =>
-    (Math.abs(a.y - center) - a.x * .10) - (Math.abs(b.y - center) - b.x * .10) || a.id - b.id)[0];
+  const threatScore = (a: Athlete) => deep
+    ? Math.abs(a.y + a.vy * .2 - center) * .45 - (a.x + Math.max(0, a.vx) * .35)
+    : Math.abs(a.y - center) - a.x * .10;
+  const threat = receivers.sort((a, b) => threatScore(a) - threatScore(b) || a.id - b.id)[0];
   const floor = deep ? prevent ? 175 : 105 : d.role === 'LB' ? 32 : 50;
-  let x = Math.max(los + floor, (threat?.x ?? los) + (prevent ? 35 : 4));
+  const cushion = prevent ? 35 : deep ? 18 : 10;
+  let x = Math.max(los + floor, (threat?.x ?? los) + cushion + Math.max(0, threat?.vx ?? 0) * .22);
   let y = threat ? clamp(threat.y + threat.vy * .14, center - 38, center + 38) : center;
   // React to an observed deep throw, not the unannounced offensive play.
-  if (prevent && d.role === 'DB' && l.flight && l.flight.toX > los + 100) {
+  if (deep && d.role === 'DB' && l.flight && l.flight.toX > los + 100) {
     const backs = l.athletes.filter(a => a.side === 'defense' && a.role === 'DB')
       .sort((a, b) => Math.hypot(a.x - l.flight!.toX, a.y - l.flight!.toY) -
         Math.hypot(b.x - l.flight!.toX, b.y - l.flight!.toY) || a.id - b.id);
     const rank = backs.findIndex(a => a.id === d.id);
     if (rank < 2) {
-      x = Math.max(los + 135, Math.min(1110, l.flight.toX + (rank ? 22 : 2)));
+      x = Math.max(los + (prevent ? 135 : 105), Math.min(1110, l.flight.toX + (rank ? 22 : 2)));
       y = clamp(l.flight.toY + (rank ? (center < l.flight.toY ? -16 : 16) : 0), 25, 167);
     }
   }

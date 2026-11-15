@@ -256,7 +256,7 @@ test('actual standing, hold, and moving composites contain no distal baked barre
 });
 
 test('shared athlete scale reduces art by five percent while retaining the ground anchor', () => {
-  assert.equal(PLAYER_FRAME_SCALE, 0.475);
+  assert.equal(PLAYER_FRAME_SCALE, 0.45);
   const kit = uniformKit(KICK_TEAMS[0]!, 1);
   const { ctx, rects } = canvas();
   drawFootballPlayer(ctx, 100, 100, kit, {

@@ -3,7 +3,7 @@
  *
  * Every frame is authored as overlapping, hard-edged pixel clusters on a
  * 16x22 design grid. Each design cell expands to 2x2 atlas pixels: frames are
- * exactly 32x44 pixels, with each atlas pixel rendered at 0.475 world units.
+ * exactly 32x44 pixels, rendered at the shared player raster scale.
  * The 16x22 design grid expands 2x; the foot anchor is native atlas pixel
  * (16,42), so cleat pixels 40-41 meet the shared turf line at y+5. Each
  * directional sheet changes the anatomy/silhouette; none is a rotated
@@ -236,7 +236,7 @@ function buildGlyphGrid(
   }
   if ((action === 'fall' || action === 'dive') && phase < 2) return withBall(out, view, action, ball);
   if (action === 'dive' || action === 'fall' || action === 'ground') {
-    const prone = composeProne(action, view);
+    const prone = composeProne(view);
     if (ball) addBall(prone, view, action);
     return prone;
   }
@@ -245,29 +245,40 @@ function buildGlyphGrid(
 
 const PRONE_PARTS = {
   horizontal: [
-    '...........KKK..','..........KMMMK.','..........KMTMK.','..........KSFF..',
-    '....KKKKKKKK....','...KJJJJJJJJKK..','..KJJjJJJJJJJKK.','KKWWWWKJJJJKK...',
-    'KKWWwWKKKKKK....','KKKKKK....KKKK..',
+    '........KKKKKK..','......KMMMMMMK..','.....KMTMMMMK...',
+    '......KMMMMMMK..','........KSSFFK..','....KKKKKKKKKK..',
+    '...KJJJJJJJJJKK.','..KJJjJJJJJJJKK.','..KJJJJJJJJJKK..',
+    'KWWWWKKJJJJJKK..','KKWWWWKKKKKK....','KKWWWWKKKKKK....',
   ],
   verticalDown: [
-    '....KKWWKK......','...KWWWWKK......','....KWWwWKK.....','.....KKWK.......',
-    '.....KJJJKK.....','..KJJJKKKKJJJ...','...KJJJJJJJKK...','....KJJjJJJKK...',
-    '.....KJJJJKK....','.....KMMMK......','.....KMTMK......','.....KSSFFF.....',
+    '................','................','.....KKKKKK.....','....KMMMMMMK....',
+    '....KMTMMMMK....','....KMMMMMMK....','.....KSSFFK.....',
+    '......KKKK......','....KKKKKKKK....','...KJJJJJJJKK...',
+    '..KJJJJJJJJJKK..','..KJJjJJJJJJKK..','...KJJJJJJJKK...',
+    '....KKWWKK......','....KWWWWK......','....KWWwWK......',
+    '....KWWWWK......','...KKWWKK.......',
   ],
   verticalUp: [
-    '.....KKKFFF.....','.....KSSMK......','.....KMMMK......','....KKJJJJKK....',
-    '...KKJJJjJJKK...','..KKJJJJJJJJKK..','..KJJJJJJJJJKK..','...KJJJKKKKJJ...',
-    '....KJJJKK......','....KKWK........','...KWWwWKK......','...KKWWWWKK.....',
+    '...KKWWKK.......','....KWWWWK......','....KWWwWK......',
+    '....KWWWWK......','...KKWWKK.......','....KJJJJJKK....',
+    '...KJJJJJJKK....','..KJJJJjJJJJKK..','..KJJJJJJJJJKK..',
+    '...KJJJJJJJKK...','....KKKKKK......','.....KKKK.......',
+    '......KSSFFK....','.....KMMMMMMK...','.....KMTMMMMK...',
+    '.....KMMMMMMK...','......KKKKKK....','................',
   ],
   diagonalDown: [
-    '....KKWWKK......','....KWWWWK......','.....KWWwWKK....','......KKWK......',
-    '......KMMMK.....','.....KSSFFK.....','....KJJjJJJKK...','...KJJJJJKK.....',
-    '..KKJJJJKK......','..KKWWWWKJJKK...','...KKWWwWKKKK...',
+    '........KKKKKK..','......KMMMMMMK..','.....KMTMMMMK...',
+    '......KMMMMMMK..','........KSSFFK..','.....KKKKKKKK...',
+    '....KJJJJJJJKK..','...KJJJJjJJJJKK.','...KJJJJJJJJJKK.',
+    '..KWWWWKJJJJKK..','.KWWWWKKJJJKK...','KKWWWWKKKK......',
+    'KKWWWWKKKK......','KKWWWWKKKK......','KKKKKKKK........',
   ],
   diagonalUp: [
-    '....KKKFFF......','....KSSMK.......','.....KMMMK......','.....KKJJJKK....',
-    '......KJJJJJKK..','.......KJJjJJJKK','......KKJJJJJKK.','.....KKJJJJKK...',
-    '....KKWWWWKJJKK.','...KKWWwWKKKK...',
+    '..KKKKKK........','..KMMMMMMK......','..KMTMMMMK......',
+    '..KMMMMMMK......','...KSSFFK.......','...KKKKKKKK.....',
+    '...KJJJJJJJKK...','..KJJJJjJJJJKK..','..KJJJJJJJJJKK..',
+    '...KJJJJJJJKK...','....KKJJJKKWWWWK','.....KKJJKKWWWWK',
+    '......KKKKKWWWWK','........KKWWWWKK','.........KKWWKK.',
   ],
 };
 for (const [name, rows] of Object.entries(PRONE_PARTS)) {
@@ -286,12 +297,38 @@ const PRONE_VIEW: Readonly<Record<FootballPlayerView, Readonly<{ part: keyof typ
 const HELD_BALL_GRID: Grid = ['..OO....','OBBBO...','OBLbO...','..OO....'];
 const POSSESSION_GLYPHS: ReadonlySet<Glyph> = new Set(['G', 'O', 'B', 'b', 'L']);
 validateSheet('held-ball', HELD_BALL_GRID, 8, 4);
-function composeProne(action: 'fall' | 'dive' | 'ground', view: FootballPlayerView): string[] {
+const PRONE_LAYOUT: Readonly<Record<keyof typeof PRONE_PARTS, Readonly<{
+  rows: number; headRows: number; headAtEnd?: boolean; start: number;
+}>>> = Object.freeze({
+  horizontal: { rows: 12, headRows: 5, start: 8 },
+  // Lengthen the trunk/legs toward the far end while leaving each helmet mask
+  // at native proportions and on the same directional end of its sheet.
+  verticalDown: { rows: 18, headRows: 5, start: 3 },
+  verticalUp: { rows: 18, headRows: 5, headAtEnd: true, start: 3 },
+  // Diagonal poses need a modest extension, not the tall treatment used by
+  // end-on views; their original oblique silhouette remains easy to read.
+  diagonalDown: { rows: 15, headRows: 5, start: 6 },
+  diagonalUp: { rows: 15, headRows: 5, start: 6 },
+});
+function composeProne(view: FootballPlayerView): string[] {
   const frame = blank(22);
   const selected = PRONE_VIEW[view];
   const rows = PRONE_PARTS[selected.part];
-  const start = action === 'dive' ? 7 : action === 'fall' ? 8 : 9;
-  overlay(frame, rows, 0, start, selected.mirror);
+  const layout = PRONE_LAYOUT[selected.part];
+  const preservedHead = layout.headAtEnd
+    ? rows.slice(rows.length - layout.headRows)
+    : rows.slice(0, layout.headRows);
+  const body = layout.headAtEnd
+    ? rows.slice(0, rows.length - layout.headRows)
+    : rows.slice(layout.headRows);
+  const bodyLength = layout.rows - layout.headRows;
+  const expandedBody = Array.from({ length: bodyLength }, (_, index) =>
+    body[Math.min(body.length - 1, Math.floor(index * body.length / bodyLength))]!,
+  );
+  const expanded = layout.headAtEnd
+    ? [...expandedBody, ...preservedHead]
+    : [...preservedHead, ...expandedBody];
+  overlay(frame, expanded, 0, layout.start, selected.mirror);
   return frame;
 }
 

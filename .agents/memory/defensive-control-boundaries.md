@@ -15,6 +15,12 @@ Defensive ACTION must retain its original immediate-on-press, nearest-eligible-d
 
 **How to apply:** Keep selection out of defensive action eligibility and routing; if no defender is eligible, do not force a dive.
 
+The user subsequently requested more effective defensive dives, no apparent sprite shrinking during dives, and smarter, more cautious defensive backs/safeties with better pursuit angles and deep-play prevention. This authorizes refining dive launches and secondary reads, not restoring manual defense or granting automatic tackles.
+
+**Why:** The user explicitly requested these defensive improvements after the controls-only restoration.
+
+**How to apply:** Preserve contact-based outcomes, committed non-homing dives, misses and recovery costs, play assignments, and shared mechanics for both teams.
+
 Keep the existing early penetration lottery and independent 20% per-lineman pressure checks beginning at **three seconds**.
 
 **Why:** The uploaded restoration brief said four seconds, but the user explicitly confirmed retaining the current three-second timing when asked.

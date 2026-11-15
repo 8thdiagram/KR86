@@ -5,7 +5,7 @@ import { franchiseAthleteFactor } from './franchise-upgrades';
 import { ELITE, eliteSlots } from './secondary';
 import { penetrationTarget } from './penetration';
 import { openFieldGain, OPEN_FIELD } from './athleticism';
-import { manAssignment, zoneTarget } from './coverage';
+import { manAssignment, safetySupportTarget, zoneTarget } from './coverage';
 import { MOMENTS, coverageMoment, runFitMoment, recognizeRouteBreak } from './execution-moments';
 import { FOOTBALL_SIDELINES } from './sidelines';
 import { pursuitPoint } from '../open-field-pursuit';
@@ -107,6 +107,12 @@ export function stepDefense(g: FootballGame, dt: number) {
             clamp(carrier.vy, -100, 100), speed, speed * ELITE.lateral / ELITE.forward,
             FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
           x = intercept.x; y = intercept.y;
+          // A back still well ahead of the runner keeps goal-side leverage
+          // while closing laterally. Release the cushion near contact, so this
+          // is an intercept angle, not endless retreat or a tackle exemption.
+          if (d.role === 'DB' && d.x > carrier.x + 32 && distance > 52) {
+            x = Math.max(x, carrier.x + clamp(Math.max(0, carrier.vx) * .4, 18, 34));
+          }
         }
         const outside = Math.abs(carrier.vy) > 8 ? Math.sign(carrier.vy) : carrier.y < 96 ? -1 : 1;
         if (role === 'contain') { x += 12; y += outside * 19; }
@@ -133,8 +139,13 @@ export function stepDefense(g: FootballGame, dt: number) {
         const receiver = manAssignment(l, d);
         role = receiver ? 'cover' : 'deep';
         observed = receiver ?? qb;
-        x = receiver ? receiver.x + receiver.vx * .13 + 4 : los + 110;
+        x = receiver ? receiver.x + receiver.vx * .13 +
+          (d.role === 'DB' ? 12 + Math.max(0, receiver.vx) * .16 : 4) : los + 110;
         y = receiver ? receiver.y + receiver.vy * .13 : d.startY;
+        if (!receiver && d.role === 'DB') {
+          const support = safetySupportTarget(l, d);
+          x = support.x; y = support.y; observed = support.threat ?? qb;
+        }
         // Match a releasing receiver, not a back still taking a handoff or a
         // receiver stalk-blocking at the line. Keep cutback insurance until
         // the ball is actually carried; aggressive front pressure can still
