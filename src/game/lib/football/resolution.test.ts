@@ -45,12 +45,12 @@ test('all renderer setTransform/resetTransform calls retain density exactly once
   assert.deepEqual(raw.getTransform(), { a: 2, b: 0, c: 0, d: 2, e: 0, f: 0 });
 });
 
-test('higher-detail players retain their original crown and foot anchors with sharp physical pixels', () => {
+test('larger helmets use finer crown pixels without moving player foot anchors', () => {
   for (const dir of [-1, 1] as const) {
     const { raw, paints } = rawContext(), ctx = highResolutionContext(raw);
     ctx.resetTransform();
     slim(ctx, 100, 100, uniformKit(KICK_TEAMS[0]!, dir));
-    assert.equal(Math.min(...paints.map(p => p.y)), 180, 'original logical crown Y90');
+    assert.equal(Math.min(...paints.map(p => p.y)), 179, 'helmet grows upward by one backing pixel');
     assert.equal(Math.max(...paints.map(p => p.y + p.h)), 214, 'original logical ground anchor Y107');
     assert(paints.some(p => p.w === 1 || p.h === 1), 'new half-world-pixel detail survives in the real backing buffer');
     for (const p of paints) for (const n of Object.values(p)) assert(Number.isInteger(n));

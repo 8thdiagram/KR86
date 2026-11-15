@@ -115,26 +115,27 @@ type Kit = FootballKit;
 // articulated white trousers and compact cleats.
 type Put = (c: string, u: number, v: number, w: number, h: number) => void;
 function helmet(put: Put, kit: Kit, hx: number, hy: number, d: 1 | -1) {
-  // Rounded, stepped primary-color shell with an open skin sightline.
+  // Slightly fuller 16-bit crown, grown upward from the original neck anchor.
   hx += 1; hy += 1;
-  if (kit.edge) put(kit.edge, hx + 1, hy - 1, 6, 1);
-  put(kit.body, hx + 1, hy + .5, 6, 4);
-  put(kit.body, hx + 2, hy, 4, .5);
-  put(kit.body, hx + 1.5, hy + 4.5, 5, .5);
-  put(kit.trim, hx + 2, hy, 3, 1);
-  put(tone(kit.body, 1.28), hx + 2, hy + 1, 3, .5);
+  if (kit.edge) put(kit.edge, hx + .5, hy - 1, 7, 1);
+  put(kit.body, hx + 1.5, hy - .5, 5.5, .5);
+  put(kit.body, hx + 1, hy, 6.5, 4);
+  put(kit.body, hx + 1.5, hy + 4, 5.5, 1);
+  put(kit.trim, hx + 2, hy - .5, 3.5, .5);
+  put(tone(kit.body, 1.28), hx + 2, hy + .5, 3.5, .5);
+  put(tone(kit.body, 1.16), hx + 1.5, hy + 1, 1, .5);
   put(tone(kit.body, .68), hx + 5.5, hy + 3, 1, 1);
-  put(kit.trim, d > 0 ? hx + 1 : hx + 6, hy + 2, 1, 2);
-  const faceX = d > 0 ? hx + 3 : hx + 2;
+  put(kit.trim, d > 0 ? hx + 1 : hx + 6.5, hy + 1.5, 1, 2);
+  const faceX = d > 0 ? hx + 3.5 : hx + 2.5;
   put(playerSkin(kit), faceX, hy + 1, 1.5, 1);
-  // The short cage is the same color as the shell, with no dark inset/outline.
-  put(kit.body, faceX - 1, hy + 1, .5, 2.5);
+  // The fine cage stays primary-color and never paints across the skin opening.
+  put(kit.body, faceX - .5, hy + 1, .5, 2.5);
   put(kit.body, faceX + 1.5, hy + 1, .5, 2.5);
-  put(kit.body, faceX - 1, hy + 2, 3, .5);
-  put(kit.body, faceX - 1, hy + 3.5, 3, .5);
+  put(kit.body, faceX - .5, hy + 2, 3, .5);
+  put(kit.body, faceX - .5, hy + 3.5, 3, .5);
   if (ART.players) { // shell highlight + darker lower back edge, inside the helmet
-    put(tone(kit.body, 1.16), hx + 1, hy + 1, 1, 1);
-    put(tone(kit.body, .78), hx + 5, hy + 4, 1, 1);
+    put(tone(kit.body, 1.16), hx + 1.5, hy + .5, 1, 1);
+    put(tone(kit.body, .78), hx + 5.5, hy + 3.5, 1, 1);
   }
 }
 function ballShape(put: Put, bx: number, by: number, d: 1 | -1, kit: Kit) {
@@ -187,6 +188,8 @@ function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: 
   R(ctx, kit.trim, px + 1.5, py + 6, .5, 1.5);
   R(ctx, kit.trim, px + 5.5, py + 6, .5, 1.5);
   R(ctx, tone(kit.trim, 1.18), px + 3, py + 7, 1, .5);
+  R(ctx, tone(kit.body, 1.16), px + 2.5, py + 7.5, .5, .5);
+  R(ctx, tone(kit.body, .72), px + 5, py + 8.5, .5, 1);
   if (ART.players) R(ctx, tone(kit.body, .88), px + 5, py + 10, 1, 1);
   // Knee highlight stays bright after jersey overlap; still inside the existing trouser silhouette.
   R(ctx, UNIFORM.pants, lx + 1, py + 11, 1, 1);
@@ -253,17 +256,22 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     hr(tone(kit.body, 1.2), 1, 2, ball ? 2 : 4, .5);
     hr(playerSkin(kit), ball ? 4 : 10, 2, 2, 1);
     // Crown overlaps the shoulder, avoiding a detached helmet at either facing.
-    hr(kit.body, 3, -4, 5, 4);
-    hr(kit.trim, 4, -4, 3, 1);
-    hr(tone(kit.body, 1.16), 4, -3, 2, 1); hr(far, 6, -1, 1, 1);
-    hr(C.ink, 3.5, -4.5, 4, .5); // exterior crown contour only
-    hr(tone(kit.body, 1.28), 4, -3, 2.5, .5);
-    hr(playerSkin(kit), 7, -2, 1, 1);
+    // Shell expands a half-unit toward the crown; its lower edge remains at
+    // the same neck/shoulder overlap so the prone silhouette stays grounded.
+    hr(kit.body, 2.5, -4.5, 5.5, 4.5);
+    hr(kit.trim, 3.5, -4.5, 3.5, .5);
+    hr(tone(kit.body, 1.16), 3.5, -3.5, 2.5, .5); hr(far, 6.5, -1, 1, 1);
+    hr(C.ink, 3, -5, 4.5, .5); // restrained exterior crown contour only
+    hr(tone(kit.body, 1.28), 4, -3.5, 2.5, .5);
+    hr(playerSkin(kit), 7.5, -2, 1, 1);
+    hr(tone(kit.body, .68), 7, -1, 1, .5);
     // Same-color cage around the tiny visible face slot; never a dark recess.
-    hr(kit.body, 6, -1, .5, 2);
-    hr(kit.body, 8.5, -1, .5, 2);
-    hr(kit.body, 6, 0, 3, 1);
-    hr(kit.body, 6, 1, 3, .5);
+    hr(kit.body, 6.5, -1, .5, 2);
+    hr(kit.body, 9, -1, .5, 2);
+    hr(kit.body, 6.5, 0, 3, .5);
+    hr(kit.body, 6.5, 1, 3, .5);
+    hr(tone(kit.body, 1.16), -1, 2, .5, .5);
+    hr(tone(kit.body, .72), 2, 3, .5, .5);
     if (ball) {
       heldBall(ctx, forward > 0 ? cx - 1 : cx - 7, by + 1);
       hr(kit.body, 3, 1, 2, 1); hr(C.ink, 3, 2, 2, 1);
@@ -280,10 +288,13 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     vr(kit.body, -3, -3, 7, 7);
     vr(light, -2, -2, 3, 1); vr(kit.trim, -2, 0, 2, 1);
     vr(C.ink, -2.5, -3.5, 6, .5);
+    vr(tone(kit.body, 1.16), -1, -1, .5, .5);
+    vr(tone(kit.body, .72), 2, 1, .5, 1);
     vr(tone(kit.body, .64), -3, 1, .5, 2);
     vr(tone(kit.body, 1.18), 1, -2, 2, .5);
     vr(far, -6, -2, 2, 5); vr(kit.body, 4, -2, 2, 4); vr(playerSkin(kit), 5, 2, 1, 1);
-    vr(kit.body, -3, 3, 8, 5); vr(kit.trim, -2, 3, 2, 1);
+    vr(kit.body, -3.5, 3, 9, 5.5); vr(kit.trim, -2, 3, 2, 1);
+    vr(tone(kit.body, 1.28), -2, 4, 3.5, .5);
     vr(tone(kit.body, 1.16), -2, 4, 3, 1); vr(far, 3, 5, 2, 1);
     vr(C.ink, -2, 2.5, 6, .5);
     vr(tone(kit.body, .72), 3, 6, 1, 1);

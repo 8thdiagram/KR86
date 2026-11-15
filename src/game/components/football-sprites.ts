@@ -12,25 +12,27 @@ export const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number
 
 function helmet(ctx: CanvasRenderingContext2D, kit: Kit, hx: number, hy: number, d: 1 | -1) {
   hx += 1; hy += 1;
-  // Stepped shell with an open, skin-colored sightline and matching-color cage.
-  if (kit.edge) R(ctx, kit.edge, hx + 1, hy - 1, 5, 1);
-  R(ctx, kit.body, hx + 2, hy, 3, .5);
-  R(ctx, kit.body, hx + 1, hy + .5, 5, 4);
-  R(ctx, kit.body, hx + 1.5, hy + 4.5, 4, .5);
-  R(ctx, kit.trim, hx + 2, hy, 3, 1);
-  R(ctx, tone(kit.body, 1.28), hx + 2, hy + 1, 2.5, .5);
-  R(ctx, tone(kit.body, .68), hx + 4.5, hy + 3, 1, 1);
-  R(ctx, kit.trim, d > 0 ? hx + 1 : hx + 5, hy + 2, 1, 2);
-  const faceX = d > 0 ? hx + 3 : hx + 2;
+  // Slightly larger crown, grown upward and outward from the same neck anchor.
+  // Half-unit clusters resolve as individual pixels on the doubled backing canvas.
+  if (kit.edge) R(ctx, kit.edge, hx + 1, hy - 1, 5.5, 1);
+  R(ctx, kit.body, hx + 1.5, hy - .5, 4.5, .5);
+  R(ctx, kit.body, hx + 1, hy, 5.5, 4);
+  R(ctx, kit.body, hx + 1.5, hy + 4, 4.5, 1);
+  R(ctx, kit.trim, hx + 2, hy - .5, 3.5, .5);
+  R(ctx, tone(kit.body, 1.28), hx + 2, hy + .5, 3, .5);
+  R(ctx, tone(kit.body, 1.16), hx + 1.5, hy + 1, 1, .5);
+  R(ctx, tone(kit.body, .68), hx + 5, hy + 3, 1, 1);
+  R(ctx, kit.trim, d > 0 ? hx + 1 : hx + 6, hy + 1.5, 1, 2);
+  const faceX = d > 0 ? hx + 3.5 : hx + 2.5;
   R(ctx, playerSkin(kit), faceX, hy + 1, 1.5, 1);
-  // Rails sit over the opening; no dark inset or contrasting face outline.
-  R(ctx, kit.body, faceX - 1, hy + 1, .5, 2.5);
+  // Fine, readable shell-color mask rails; the little skin opening stays clear.
+  R(ctx, kit.body, faceX - .5, hy + 1, .5, 2.5);
   R(ctx, kit.body, faceX + 1.5, hy + 1, .5, 2.5);
-  R(ctx, kit.body, faceX - 1, hy + 2, 3, .5);
-  R(ctx, kit.body, faceX - 1, hy + 3.5, 3, .5);
+  R(ctx, kit.body, faceX - .5, hy + 2, 3, .5);
+  R(ctx, kit.body, faceX - .5, hy + 3.5, 3, .5);
   if (ART.players) {
-    R(ctx, tone(kit.body, 1.16), hx + 5, hy + 1, 1, 1);
-    R(ctx, tone(kit.body, .78), hx + 5, hy + 4, 1, 1);
+    R(ctx, tone(kit.body, 1.16), hx + 5.5, hy + .5, 1, 1);
+    R(ctx, tone(kit.body, .78), hx + 5.5, hy + 3.5, 1, 1);
   }
 }
 export function heldBall(ctx: CanvasRenderingContext2D, bx: number, by: number) {
@@ -101,6 +103,8 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
       R(ctx, shade, view === 3 || view === 7 ? cx + 1 : cx + 2, top + 9, 1, 1);
     } else {
       R(ctx, kit.trim, left + 1, top + 8, 1, 1); // compact secondary chest mark
+      R(ctx, tone(kit.body, 1.16), left + 1.5, top + 7.5, .5, .5);
+      R(ctx, tone(kit.body, .72), left + w - 1, top + 9, .5, 1);
     }
   }
   // A higher white hip line leaves the trouser legs readable beneath the pads.
@@ -152,23 +156,25 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
       R(ctx, INK, nearX, top + 8, 2, 1);
     }
   }
-  // Five helmet profiles: shell highlight, rear shade, face opening and mask vary by view.
+  // Five hand-authored helmet profiles, enlarged around their unchanged neck line.
   if (view === 2) {
-    R(ctx, kit.body, cx - 1, top + 1, 4, 4);
-    R(ctx, kit.trim, cx, top + 1, 2, 1);
-    R(ctx, tone(kit.body, 1.16), cx, top + 2, 2, 1);
-    R(ctx, shade, cx + 2, top + 4, 1, 1);
-    const faceX = cx + (d > 0 ? 1 : -1), maskX = cx + (d > 0 ? 0 : -1);
+    R(ctx, kit.body, cx - 1, top + .5, 4.5, 4.5);
+    R(ctx, kit.trim, cx - .5, top + .5, 2.5, .5);
+    R(ctx, tone(kit.body, 1.28), cx - .5, top + 1.5, 2.5, .5);
+    R(ctx, tone(kit.body, 1.16), cx - 1, top + 2, 1, .5);
+    R(ctx, shade, cx + 2.5, top + 4, 1, 1);
+    const faceX = cx + (d > 0 ? 1.5 : -1), maskX = cx + (d > 0 ? -.5 : -1.5);
     R(ctx, playerSkin(kit), faceX, top + 2, 1.5, 1);
     R(ctx, kit.body, faceX - .5, top + 2, .5, 2);
-    R(ctx, kit.body, maskX + 2.5, top + 2, .5, 2);
-    R(ctx, kit.body, maskX, top + 3, 3, 1);
+    R(ctx, kit.body, maskX + 3, top + 2, .5, 2);
+    R(ctx, kit.body, maskX, top + 3, 3.5, .5);
   } else {
     const narrow = view === 1 || view === 3;
-    const hw = narrow ? 5 : intermediate ? 6 : 7, hx = cx - Math.floor(hw / 2);
-    R(ctx, kit.body, hx + .5, top + 1, hw - 1, 4);
-    R(ctx, kit.body, hx, top + 1.5, hw, 3);
-    R(ctx, kit.trim, hx + 1, top + 1, Math.max(1, hw - 2), 1);
+    const hw = narrow ? 5.5 : intermediate ? 7 : 8;
+    const hx = Math.round((cx - hw / 2) * 2) / 2;
+    R(ctx, kit.body, hx + .5, top + .5, hw - 1, 4.5);
+    R(ctx, kit.body, hx, top + 1, hw, 4);
+    R(ctx, kit.trim, hx + 1, top + .5, Math.max(1, hw - 2), .5);
     R(ctx, tone(kit.body, 1.16), hx + 1, top + 1, Math.max(1, hw - 3), .5);
     R(ctx, tone(kit.body, 1.3), hx + 1.5, top + 1.5, Math.max(1, hw - 3), .5);
     if (view !== 4 && view !== 8) R(ctx, kit.body, d > 0 ? hx + 1 : hx + hw - 2, top + 1, 1, 1);
@@ -180,8 +186,9 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
       const slit = narrow || view >= 6;
       R(ctx, playerSkin(kit), faceX, top + 2, 1.5, 1);
       R(ctx, kit.body, faceX - 1, top + 2, .5, 2);
+      R(ctx, tone(kit.body, 1.16), faceX - .5, top + 2, .5, .5);
       R(ctx, kit.body, faceX + (slit ? 1.5 : 2.5), top + 2, .5, 2);
-      R(ctx, kit.body, faceX - 1, top + 3, slit ? 3 : 4, 1);
+      R(ctx, kit.body, faceX - 1, top + 3, slit ? 3 : 4, .5);
       R(ctx, kit.body, faceX - 1, top + 3.5, slit ? 3 : 4, .5);
     }
   }
@@ -234,6 +241,8 @@ function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
   R(ctx, kit.trim, px + 2 + lean, py + 6, .5, 1.5);
   R(ctx, kit.trim, px + 5.5 + lean, py + 6, .5, 1.5);
   R(ctx, tone(kit.trim, 1.18), px + 3.5 + lean, py + 7, .5, 1);
+  R(ctx, tone(kit.body, 1.16), px + 2.5 + lean, py + 7, .5, .5);
+  R(ctx, tone(kit.body, .72), px + 5 + lean, py + 8.5, .5, 1);
   if (ART.players) R(ctx, tone(kit.body, .88), px + 5 + lean, py + 9, 1, 1);
   const la = -Math.sin(step * Math.PI / 2), ra = -la;
   if (p.hold) {

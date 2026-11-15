@@ -304,15 +304,17 @@ function drawKickViewPlayers(
     // the holder from the standing kicker. Leave the placed ball unobscured.
     const x = Math.round(holderPoint.x + 9), y = Math.round(holderPoint.y);
     R(ctx, '#173e27', x - 7, y, 15, 2);
-    R(ctx, '#10213a', x - 5, y - 19, 10, 8);
-    R(ctx, kickingKit.body, x - 4, y - 18, 8, 6);
-    R(ctx, tone(kickingKit.body, 1.24), x - 3.5, y - 17, 3, .5);
-    R(ctx, tone(kickingKit.body, .64), x + 2.5, y - 16, .5, 3);
-    R(ctx, '#f1e6d0', x - 3, y - 18, 5, 1);
+    R(ctx, '#10213a', x - 5.5, y - 19.5, 11, 8.5);
+    R(ctx, kickingKit.body, x - 4.5, y - 19, 9, 7);
+    R(ctx, kickingKit.body, x - 4, y - 19.5, 8, .5);
+    R(ctx, tone(kickingKit.body, 1.24), x - 3.5, y - 18, 4, .5);
+    R(ctx, tone(kickingKit.body, .64), x + 3, y - 16, .5, 3);
+    R(ctx, kickingKit.trim, x - 3, y - 19, 5.5, .5);
     R(ctx, kickingKit.body, x, y - 17, 2, 4);
-    R(ctx, kickingKit.body, x - 5, y - 16, 5, 3);
+    R(ctx, kickingKit.body, x - 5, y - 16, 5.5, 3);
     R(ctx, playerSkin(holderKit), x - 3, y - 16, 1, 1);
-    R(ctx, kickingKit.body, x - 5, y - 15, 5, 1);
+    R(ctx, kickingKit.body, x - 5, y - 15, 5.5, .5);
+    R(ctx, kickingKit.body, x - 5, y - 13.5, 5.5, .5);
     R(ctx, '#10213a', x - 5, y - 12, 12, 7);
     R(ctx, kickingKit.body, x - 4, y - 11, 10, 5);
     R(ctx, tone(kickingKit.body, 1.23), x - 3, y - 11, 4, .5);

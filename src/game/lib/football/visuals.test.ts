@@ -147,10 +147,10 @@ test('every configured team uses primary-color jerseys and helmets with white pa
       const { ctx, paints, pixels } = canvas();
       if (mode === 'classic') kickFootballArt.sprite(ctx, 100, 100, kit, 0);
       else slim(ctx, 100, 100, kit);
-      assert.equal(Math.min(...paints.map(p => p.y)), 90, `${team.name} ${mode} keeps the authored crown height`);
+      assert.equal(Math.min(...paints.map(p => p.y)), 89.5, `${team.name} ${mode} has a slightly taller crown`);
       assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `${team.name} ${mode} keeps the foot/shadow anchor`);
       assert(paints.some(p => p.c === team.body && p.y < 95 &&
-        p.w >= (mode === 'classic' ? 6 : 5) && p.h >= 4), `${team.name} primary-color helmet shell`);
+        p.w >= (mode === 'classic' ? 7 : 6) && p.h >= 4), `${team.name} enlarged primary-color helmet shell`);
       assert(paints.some(p => p.c === team.trim && p.h <= 2), `${team.name} secondary helmet accent`);
       assert.equal(pixels.has('100,89'), false, `${mode}: helmet retains its authored silhouette`);
       assert(paints.some(p => p.c === team.body && p.h >= (mode === 'classic' ? 5 : 4)), `${team.name} primary jersey`);
@@ -160,8 +160,9 @@ test('every configured team uses primary-color jerseys and helmets with white pa
     }
   }
 });
-test('nine compact turn helmets keep the same height, sharp pixels and authored facemask details', () => {
-  const shellWidths = [7, 5, 4, 5, 7, 6, 6, 6, 6];
+test('nine larger turn helmets use finer shell details without moving the ground anchor', () => {
+  const shellWidths = [8, 5.5, 4.5, 5.5, 8, 7, 7, 7, 7];
+  const formerWidths = [7, 5, 4, 5, 7, 6, 6, 6, 6];
   for (const dir of [1, -1] as const) for (let view = 0; view <= 8; view++) {
     const kit = uniformKit(KICK_TEAMS[0]!, dir);
     const { ctx, paints } = canvas();
@@ -169,13 +170,14 @@ test('nine compact turn helmets keep the same height, sharp pixels and authored 
     const bodyView = view as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
     turnSprite(ctx, 100, 100, kit, bodyView, { step: .25, ball: true });
     assert.equal(JSON.stringify(kit), before, `view ${view}/${dir} leaves the uniform untouched`);
-    assert.equal(Math.min(...paints.map(p => p.y)), kit.edge ? 92 : 93, `view ${view}/${dir} keeps the crown line`);
+    assert.equal(Math.min(...paints.map(p => p.y)), kit.edge ? 92 : 92.5, `view ${view}/${dir} raises the crown slightly`);
     assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `view ${view}/${dir} keeps the ground anchor`);
-    const shell = paints.filter(p => p.c === kit.body && p.y >= 93 && p.y + p.h <= 97 && p.h >= 3);
+    const shell = paints.filter(p => p.c === kit.body && p.y >= 92.5 && p.y + p.h <= 97 && p.h >= 3);
     assert(shell.length > 0);
     assert.equal(Math.max(...shell.map(p => p.x + p.w)) - Math.min(...shell.map(p => p.x)), shellWidths[view],
-      `view ${view} keeps the authored shell width while permitting stepped corners`);
-    assert.equal(Math.min(...shell.map(p => p.y)), 93);
+      `view ${view} uses the larger authored shell width with stepped corners`);
+    assert(shellWidths[view]! > formerWidths[view]!, `view ${view} grows the helmet, not merely its highlights`);
+    assert.equal(Math.min(...shell.map(p => p.y)), 92.5);
     assert.equal(Math.max(...shell.map(p => p.y + p.h)), 97);
     for (const p of paints) for (const n of [p.x, p.y, p.w, p.h])
       assert(Number.isInteger(n * 2), `view ${view} draws integral pixels at doubled backing resolution`);
@@ -197,7 +199,7 @@ test('running gait keyframes add distinct intermediate pixel poses without shift
       if (mode === 'classic') kickFootballArt.sprite(ctx, 100, 100, kit, step, true);
       else slim(ctx, 100, 100, kit, { step, ball: true });
       frames.add(JSON.stringify(paints));
-      assert.equal(Math.min(...paints.map(p => p.y)), 90, `${mode} step ${step} keeps the crown height`);
+      assert.equal(Math.min(...paints.map(p => p.y)), 89.5, `${mode} step ${step} keeps the enlarged helmet height`);
       assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `${mode} step ${step} keeps the foot anchor`);
       for (const p of paints) for (const n of [p.x, p.y, p.w, p.h]) assert(Number.isInteger(n * 2));
     }

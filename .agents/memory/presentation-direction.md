@@ -9,11 +9,11 @@ Kick Return ’86 should now use 16-bit-capable graphics game-wide, as close as 
 
 **How to apply:** Permit richer discrete shade ramps and finer authored pixel detail without blur or modern 3D effects. Preserve player size, animation timing, gameplay and saves. Keep title, Franchise management and supporting interfaces visually consistent; follow the separate intro/menu/audio boundaries below.
 
-Keep the current enlarged player height. Favor slightly leaner equipped bodies and smaller helmets, with fluid late-NES pixel poses rather than blur, anti-aliasing, whole-sprite compression, or altered movement physics.
+Keep the current enlarged player height and slightly leaner equipped bodies. Helmets should now be a little bigger and easier to see, with finer 16-bit-style sprite detail rather than blur, anti-aliasing, whole-sprite enlargement, or altered movement physics.
 
-**Why:** The user explicitly liked the new height but requested approximately 5–8% narrower bodies, 5–10% smaller helmets, and more natural animation while preserving all gameplay behavior.
+**Why:** The user retained the enlarged height and leaner bodies, but superseded the earlier smaller-helmet direction with “Make the helmets a little bigger and easier to see. Increase graphics resolution on the sprites to 16 bit.”
 
-**How to apply:** Refine native pixel clusters across standing, turning, spinning, diving, falling, and kicking artwork. Keep foot anchors, helmet depth, uniform details, collision geometry, speeds, and action timing intact.
+**How to apply:** Refine native pixel clusters across standing, turning, spinning, diving, falling, and kicking artwork. Enlarge helmet artwork around the neck without moving the body or feet; use finer authored pixels and discrete shading, not a scaled-up low-detail bitmap. Keep uniform identity, collision geometry, speeds, and action timing intact.
 
 Prioritize clear individual sprites: more white on pants, more primary team color on jerseys and helmets, and readable helmet-colored facemasks. Use dark definition to separate limbs and external silhouettes, not to create black face panels or cages. Do not add decorative lines around downed players.
 
