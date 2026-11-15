@@ -340,6 +340,7 @@
   width:44px;min-width:44px;height:44px;min-height:44px;margin:0;padding:0;font:900 20px/1 ui-monospace,'Space Mono',monospace;color:#fff;
   background:#0b1d36e6;border:3px solid #f1e6d0;border-radius:0;box-shadow:inset -3px -3px 0 #0f2747;cursor:pointer;grid-column:auto;grid-row:auto}
 .kr-screen>.kr-pause-tool[aria-pressed=true]{background:#f4d23c;color:#0b1d36}
+.kr-screen>.kr-pause-tool[aria-label="Show stats"],.gm-screen .gm-slot .kr-screen>.kr-pause-tool[aria-label="Show stats"]{font-size:10px;letter-spacing:0}
 .kr-screen>.kr-pause-tool:focus-visible{outline:3px solid #f4d23c;outline-offset:1px}
 .gm-screen .gm-slot .kr-game:not([data-outcome=""]) .kr-screen>.kr-pause-tool{display:none}
 .kr-arrow{display:block;font-size:34px;line-height:1;font-weight:900}

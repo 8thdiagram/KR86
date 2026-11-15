@@ -28,7 +28,7 @@ const G: Record<string, string> = {
 const C = {
   turfA: '#287d36', turfB: '#257331', line: '#fafcf1',
   ink: '#10213a', skin: '#e0a370', home: '#2f6fd0', homeTrim: '#d8e8ff', away: '#d9392b',
-  awayTrim: '#ff9a3c', ball: '#8a4a1f', lace: '#f1e6d0', shadow: 'rgba(8,40,16,.35)',
+  awayTrim: '#ff9a3c', ball: '#8a4a1f', lace: '#f1e6d0',
 };
 const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 const ease = (t: number) => t * t * (3 - 2 * t);
@@ -36,6 +36,14 @@ const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number, w: nu
   // Authored half-grid edges are mapped to the doubled backing canvas cleanly.
   ctx.fillStyle = c; ctx.fillRect(Math.round(x * 2) / 2, Math.round(y * 2) / 2, w, h);
 };
+/** Crisp, broken contact pixels keep athletes grounded without soft shadows. */
+function contactShadow(ctx: CanvasRenderingContext2D, cx: number, y: number, width: number) {
+  const left = Math.round(cx - width / 2);
+  R(ctx, 'rgba(7,31,17,.48)', left + 1, y, Math.max(2, width - 3), 1);
+  R(ctx, 'rgba(5,25,14,.34)', left, y + 1, 2, 1);
+  R(ctx, 'rgba(5,25,14,.34)', left + width - 2, y + 1, 2, 1);
+  R(ctx, 'rgba(14,48,22,.28)', left + 3, y + 1, Math.max(1, width - 6), 1);
+}
 
 function text(ctx: CanvasRenderingContext2D, s: string, x: number, y: number, c: string, px = 1, shadow = false) {
   let cx = Math.round(x);
@@ -121,10 +129,13 @@ function helmet(put: Put, kit: Kit, hx: number, hy: number, d: 1 | -1) {
   put(kit.body, hx + 1.5, hy - .5, 5.5, .5);
   put(kit.body, hx + 1, hy, 6.5, 4);
   put(kit.body, hx + 1.5, hy + 4, 5.5, 1);
+  put(kit.body, hx + 2, hy - .5, 4, .5);
   put(kit.trim, hx + 2, hy - .5, 3.5, .5);
   put(tone(kit.body, 1.28), hx + 2, hy + .5, 3.5, .5);
   put(tone(kit.body, 1.16), hx + 1.5, hy + 1, 1, .5);
   put(tone(kit.body, .68), hx + 5.5, hy + 3, 1, 1);
+  put(tone(kit.body, .58), hx + 6, hy + 2.5, .5, 1);
+  put(tone(kit.body, .78), hx + 1, hy + 2.5, .5, 1);
   put(kit.trim, d > 0 ? hx + 1 : hx + 6.5, hy + 1.5, 1, 2);
   const faceX = d > 0 ? hx + 3.5 : hx + 2.5;
   put(playerSkin(kit), faceX, hy + 1, 1.5, 1);
@@ -154,7 +165,7 @@ function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: 
   ctx.save();
   // Continuous body weight shift; crisp pixel anatomy stays local to the body.
   ctx.translate(0, -Math.round(.45 * (1 - Math.cos(step * Math.PI))));
-  R(ctx, C.shadow, px - 1, py + 13, 10, 2);
+  contactShadow(ctx, px + 4, py + 13, 10);
   const reach = shuffle ? 0 : Math.sin(step * Math.PI / 2) * 1.5;
   const lh = shuffle && f % 2 ? 2 : reach < 0 ? 2 : 3, rh = reach > 0 ? 2 : 3;
   const lx = px + 2 - reach, rx = px + 4 + reach;
@@ -168,6 +179,8 @@ function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: 
   if (rh > 2) R(ctx, UNIFORM.pants, rx + (1 - bend), py + 12, 1.5, rh - 2);
   R(ctx, C.ink, lx + (d > 0 ? 0 : -1), py + 9 + lh, 3, 1); R(ctx, C.ink, rx + (d > 0 ? 0 : -1), py + 9 + rh, 3, 1);
   if (ART.players) {
+    R(ctx, kit.body, lx + .5, py + 8.5 + lh, 1, .5);
+    R(ctx, kit.body, rx + .5, py + 8.5 + rh, 1, .5);
     R(ctx, UNIFORM.pantsShade, lx + 1, py + 11, 1, 1); R(ctx, UNIFORM.pantsShade, rx, py + 11, 1, 1);
     R(ctx, tone(UNIFORM.pants, 1.08), lx + .5, py + 10, .5, Math.max(1, lh - 1));
     R(ctx, tone(UNIFORM.pants, 1.08), rx + .5, py + 10, .5, Math.max(1, rh - 1));
@@ -217,6 +230,8 @@ function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: 
   if (ART.players) R(ctx, tone(kit.body, 1.18), px + 2 + lean, py + 5, 4, 1);
   if (kit.edge) { R(ctx, kit.edge, px + lean, py + 6, 1, 2); R(ctx, kit.edge, px + 7 + lean, py + 6, 1, 2); }
   R(ctx, UNIFORM.pants, px + 2 + lean, py + 9.5, 4, 1.5);
+  R(ctx, C.ink, px + 1 + lean, py + 6.5, .5, 1);
+  R(ctx, C.ink, px + 6.5 + lean, py + 6.5, .5, 1);
   helmet(put, kit, px + lean, py - 1, d);
   if (ball) {
     R(ctx, kit.body, px + lean + (d > 0 ? 6 : 1), py + 7, 1, 2);
@@ -233,7 +248,7 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
   const forward: 1 | -1 = Math.cos(angle) >= 0 ? 1 : -1;
   const far = tone(kit.body, .86), light = tone(kit.body, 1.16);
   const shadowW = (horizontal ? 18 : 10) - Math.min(4, Math.max(0, Math.round(lift)));
-  if (lift > 0) R(ctx, C.shadow, cx - Math.floor(shadowW / 2), Math.round(y) + (horizontal ? 2 : 7), shadowW, 2);
+  if (lift > 0) contactShadow(ctx, cx, Math.round(y) + (horizontal ? 2 : 7), shadowW);
   if (horizontal) {
     const by = cy - 2 + Math.round(crouch * .4);
     const hr = (c: string, u: number, v: number, w: number, h: number) =>
@@ -598,6 +613,9 @@ export function drawKickReturn(ctx: CanvasRenderingContext2D, attempt: KickAttem
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.restore();
   ctx.save();
+  // The world restore may return a newly resized canvas to its raw identity.
+  // Re-establish logical screen space so high-density banners stay centered.
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.imageSmoothingEnabled = false;
   if (!attempt) banner(ctx, 'KICK RETURN', Math.min(84, viewHeight * .44), C.lace, 3, viewWidth / 2);
   else if (exhausted) banner(ctx, 'GOOD GAME!', 40, C.lace, 3, viewWidth / 2);

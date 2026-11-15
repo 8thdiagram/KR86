@@ -3,11 +3,11 @@ name: Retro presentation direction
 description: User's standing visual direction and audio boundaries for Kick Return ’86.
 ---
 
-Kick Return ’86 should now use 16-bit-capable graphics game-wide, as close as possible to the supplied football screenshot, adapted for mobile rather than a modern mobile app or SaaS dashboard. Keep sharp pixel art, crisp separated colors, readable player sprites, square frames, a stadium setting, chrome/white/blue lettering, and red accents inspired by the supplied icon artwork.
+Kick Return ’86 should look as close as possible to the supplied football screenshot, adapted for mobile rather than a modern mobile app or SaaS dashboard. The latest reference brief emphasizes exceptional late-NES pixel craftsmanship: rich but disciplined colors and square, deliberately pixelated artwork, not smoother graphics. Keep crisp separated colors, readable player sprites, square frames, a stadium setting, chrome/white/blue lettering, and red accents inspired by the supplied icon artwork.
 
-**Why:** The user explicitly upgraded the former NES-only constraint to “16-bit capability” game-wide and asked to get as close as possible to the supplied football reference, with a slightly stronger camera angle.
+**Why:** After requesting finer 16-bit-capable sprites, the user supplied a graphical-only reference brief emphasizing “exceptionally advanced NES football game from approximately 1988” and “More detailed does not mean less pixelated.”
 
-**How to apply:** Permit richer discrete shade ramps and finer authored pixel detail without blur or modern 3D effects. Preserve player size, animation timing, gameplay and saves. Keep title, Franchise management and supporting interfaces visually consistent; follow the separate intro/menu/audio boundaries below.
+**How to apply:** Keep the finer authored-pixel capability, but use restrained discrete shade ramps, clear exterior outlines and readable pixel clusters without blur, modern 3D effects or extra sprite bulk. Preserve current proportions, animation timing, gameplay and saves. Keep title, Franchise management and supporting interfaces visually consistent; follow the separate intro/menu/audio boundaries below.
 
 Keep the current enlarged player height and slightly leaner equipped bodies. Helmets should now be a little bigger and easier to see, with finer 16-bit-style sprite detail rather than blur, anti-aliasing, whole-sprite enlargement, or altered movement physics.
 

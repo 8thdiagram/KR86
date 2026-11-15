@@ -2,7 +2,9 @@
  * A homography keeps yard lines straight and both sidelines horizontal. */
 import { fieldViewportFrame, type KickViewport } from '../lib/kick-return-viewport';
 import { KR } from '../lib/kick-return-engine';
-export const BROADCAST = { farScale: .88, nearScale: 1.08, top: 18, bottom: 174 } as const;
+// Retain the approved far side; a small near-side refinement gives a 1.25:1
+// width ratio without lowering the camera or sacrificing playable field height.
+export const BROADCAST = { farScale: .88, nearScale: 1.10, top: 18, bottom: 174 } as const;
 export type BroadcastView = { centerX: number };
 const active = new WeakMap<CanvasRenderingContext2D, BroadcastView>();
 

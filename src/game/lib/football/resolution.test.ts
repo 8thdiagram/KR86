@@ -5,6 +5,7 @@ import { slim } from '../../components/football-sprites';
 import { uniformKit } from '../../components/football-art';
 import { KICK_TEAMS } from '../kick-return-teams';
 import { broadcastFieldContext } from '../../components/football-broadcast';
+import { drawKickReturn } from '../../components/kick-return-renderer';
 
 function rawContext() {
   let m = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
@@ -64,4 +65,20 @@ test('the stronger field perspective stays pixel sharp through the density adapt
   assert(paints.length > 500);
   for (const p of paints) for (const n of Object.values(p))
     assert(Math.abs(n - Math.round(n)) < 1e-8);
+});
+
+test('Classic screen-space banners remain centered at high density in either orientation', () => {
+  for (const [width, height] of [[393, 500], [700, 320]]) {
+    const { raw, paints } = rawContext();
+    const target = new Proxy(raw, {
+      get: (t, key) => Reflect.has(t, key) ? Reflect.get(t, key) : () => {},
+    });
+    const before = raw.getTransform();
+    drawKickReturn(highResolutionContext(target), null, 0, false, { width: width!, height: height!, landscape: width! > height! });
+    const board = paints.find(p => p.w === 290 && p.h === 54);
+    assert(board, 'the full-size banner uses doubled backing pixels, not half-size raw coordinates');
+    assert.equal(board.x + board.w / 2, width, 'banner center matches the physical canvas center');
+    assert(board.x >= 0 && board.x + board.w <= width! * 2);
+    assert.deepEqual(raw.getTransform(), before, 'overlay transform does not leak to the next frame');
+  }
 });

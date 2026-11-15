@@ -45,28 +45,33 @@ export function tone(hex: string, f: number): string {
 type GrassPixel = { x: number; y: number; w: number; h: number; c: string };
 let grass: GrassPixel[] | null = null;
 const GRASS_SHADES = [
-  'rgba(10,48,20,.30)', 'rgba(17,60,24,.28)', 'rgba(25,76,29,.24)',
-  'rgba(148,195,93,.15)', 'rgba(194,218,119,.11)', 'rgba(46,103,36,.26)',
+  'rgba(10,45,20,.28)', 'rgba(18,58,26,.25)', 'rgba(31,79,35,.22)',
+  'rgba(120,169,75,.14)', 'rgba(164,195,91,.12)', 'rgba(38,91,39,.23)',
+  'rgba(76,126,51,.17)', 'rgba(8,38,19,.19)',
 ];
 function grassClusters(): GrassPixel[] {
   if (grass) return grass;
   const out: GrassPixel[] = [];
-  // Fine, irregular single blades and tiny stepped flecks emulate dense
-  // 16-bit turf grain without repeating large dash clusters.
-  for (let sx = FIELD_ART.goalLeft + 2; sx < FIELD_ART.goalRight - 2; sx += 4) {
+  // Deterministic world-anchored flecks: varied tiny stepped clumps, never a
+  // repeating tile. Sparse coverage keeps the painted field and players clear.
+  for (let sx = FIELD_ART.goalLeft + 2; sx < FIELD_ART.goalRight - 2; sx += 3) {
     for (let sy = FIELD_ART.turfTop + 2; sy < FIELD_ART.turfBottom - 2; sy += 3) {
       let seed = (Math.imul(sx + 31, 73856093) ^ Math.imul(sy + 17, 19349663)) >>> 0;
       seed = Math.imul(seed ^ (seed >>> 13), 1274126177) >>> 0;
-      if (seed % 100 > 37) continue;
+      if (seed % 100 > 23) continue;
       const x = sx + ((seed >>> 7) % 5 - 2), y = sy + ((seed >>> 12) % 3 - 1);
       const c = GRASS_SHADES[(seed >>> 17) % GRASS_SHADES.length]!;
+      const cluster = (seed >>> 3) & 3;
       out.push({ x, y, w: (seed & 3) === 0 ? 1.5 : 1, h: 1, c });
-      if ((seed & 7) < 4) out.push({
-        x: x + ((seed >>> 22) % 3) - 1, y: y + ((seed >>> 25) % 3) - 1,
-        w: (seed & 16) ? 1 : .5, h: 1, c: GRASS_SHADES[(seed >>> 19) % GRASS_SHADES.length]!,
+      if (cluster !== 0) out.push({
+        x: x + (cluster === 1 ? 1 : ((seed >>> 22) % 3) - 1),
+        y: y + (cluster === 2 ? 1 : ((seed >>> 25) % 3) - 1),
+        w: (seed & 16) ? 1 : .5, h: 1,
+        c: GRASS_SHADES[(seed >>> 19) % GRASS_SHADES.length]!,
       });
-      if ((seed & 15) === 3) out.push({
-        x: x + 1.5, y: y + 1, w: 1, h: 1, c: GRASS_SHADES[(seed >>> 27) % GRASS_SHADES.length]!,
+      if ((seed & 31) === 7) out.push({
+        x: x + 1, y: y + 1, w: 1, h: .5,
+        c: GRASS_SHADES[(seed >>> 27) % GRASS_SHADES.length]!,
       });
     }
   }
@@ -197,19 +202,38 @@ export function drawYardNumber(ctx: CanvasRenderingContext2D, value: string | nu
   const x = Math.round(centerX - width / 2);
   const top = Math.round(y);
   ctx.save();
-  // One-pixel navy keyline makes the paint readable over both turf shades.
-  for (const pixel of wornLettering(label, px)) {
+  // Crisp athletic numerals use a restrained turf-dark keyline, while the
+  // white strokes stay solid and legible instead of inheriting logo wear.
+  const numeral = letteringPixels.get(`yard:${px}:${label}`) ?? (() => {
+    const solid = wornLetteringSolid(label, px);
+    letteringPixels.set(`yard:${px}:${label}`, solid);
+    return solid;
+  })();
+  for (const pixel of numeral) {
     const gx = x + pixel.x, gy = top + pixel.y;
-    R(ctx, 'rgba(18,48,31,.48)', gx - 1, gy, 1, 1);
-    R(ctx, 'rgba(18,48,31,.48)', gx + 1, gy, 1, 1);
-    R(ctx, 'rgba(18,48,31,.48)', gx, gy - 1, 1, 1);
-    R(ctx, 'rgba(18,48,31,.48)', gx, gy + 1, 1, 1);
+    R(ctx, 'rgba(14,43,26,.38)', gx - 1, gy, 1, 1);
+    R(ctx, 'rgba(14,43,26,.38)', gx + 1, gy, 1, 1);
+    R(ctx, 'rgba(14,43,26,.38)', gx, gy - 1, 1, 1);
+    R(ctx, 'rgba(14,43,26,.38)', gx, gy + 1, 1, 1);
   }
-  for (const pixel of wornLettering(label, px)) {
-    ctx.globalAlpha = pixel.faded ? .86 : 1;
+  for (const pixel of numeral) {
+    ctx.globalAlpha = 1;
     R(ctx, color, x + pixel.x, top + pixel.y, 1, 1);
   }
   ctx.restore();
+}
+
+function wornLetteringSolid(s: string, px: number): PaintPixel[] {
+  const pixels: PaintPixel[] = [];
+  let cx = 0;
+  for (const ch of s) {
+    const g = glyph(ch);
+    for (let r = 0; r < GLYPH_H; r++) for (let c = 0; c < g[r]!.length; c++) if (g[r]![c] === '#')
+      for (let dy = 0; dy < px; dy++) for (let dx = 0; dx < px; dx++)
+        pixels.push({ x: cx + c * px + dx, y: r * px + dy, faded: false });
+    cx += (g[0]!.length + 1) * px;
+  }
+  return pixels;
 }
 
 /* ---------- Stage 1: permanent fixtures (rear lines, posts, pylons) ---------- */

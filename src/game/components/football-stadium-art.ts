@@ -32,47 +32,56 @@ export function drawBroadcastStadium(
 ) {
   const teams = kickMatchupTeams(matchup);
   const home = teams.player, away = teams.opponent;
-  const shirts = [home.body, home.trim, away.body, away.trim, home.body, away.body, '#d8d6c6'];
-  const start = Math.floor(left / 6) * 6;
-  const end = Math.ceil(right / 6) * 6;
+  const shirts = [home.body, away.body, home.body, away.body, home.trim, away.trim, '#d8d6c6'];
+  const start = Math.floor(left / 8) * 8;
+  const end = Math.ceil(right / 8) * 8;
 
   R(ctx, INK, left, 0, right - left, 16);
   R(ctx, '#172039', left, 0, right - left, 1);
   R(ctx, '#202d4a', left, 5, right - left, 1);
   R(ctx, '#172039', left, 11, right - left, 2);
 
-  // Compact, individually shaded spectators: head silhouettes, necks,
-  // team-color shoulder blocks and changing arm poses fill the broadcast stand.
+  // Separate miniature spectators: each has a stepped head, visible neck,
+  // shaped shoulders and a dark seat-gap around the figure. Offset rows avoid
+  // the linked-dash look while the broad pattern remains world anchored.
   for (let row = 0; row < 2; row++) {
-    const headY = row === 0 ? 1 : 7;
-    for (let x = start; x <= end; x += 6) {
-      const index = Math.floor(x / 6);
+    const headY = row === 0 ? 1 : 6;
+    const rowOffset = row === 0 ? 0 : 4;
+    for (let x = start + rowOffset; x <= end; x += 8) {
+      const index = Math.floor((x - rowOffset) / 8);
       const seed = hash(index * 37 + row * 173);
-      if (seed % 19 === 0) continue;
+      if (seed % 13 === 0) continue;
       const skin = SKIN_TONES[(seed >>> 5) % SKIN_TONES.length]!;
-      const shirt = shirts[(seed >>> 10) % shirts.length]!;
+      // Keep a visible, balanced home/visitor mix at every scroll position;
+      // other seats inherit trim and neutral shades for a natural crowd.
+      const shirt = index % 6 === 0 ? home.body
+        : index % 6 === 1 ? away.body : shirts[(seed >>> 10) % shirts.length]!;
       const raised = cheering && ((index + Math.floor(seconds * 2) + row) % 6 === 0);
       const shirtY = headY + 2;
-      // Stepped hair/head outline, lit cheek, collar, torso and sleeves.
+      // Hair cap, face planes, dark neck, torso inset and small sleeve corners.
       R(ctx, INK, x - 1, headY, 4, 2);
       R(ctx, INK, x, headY - .5, 2, .5);
       R(ctx, skin, x, headY, 2, 2);
       R(ctx, tone(skin, 1.12), x, headY, 1, 1);
       R(ctx, tone(skin, .72), x + 1.5, headY + 1, .5, 1);
       R(ctx, INK, x, headY + 2, 2, 1);
-      R(ctx, INK, x - 2, shirtY, 6, 3);
-      R(ctx, shirt, x - 1, shirtY, 4, 2);
-      R(ctx, tone(shirt, 1.2), x - .5, shirtY, 2, .5);
-      R(ctx, tone(shirt, .68), x + 2, shirtY + 1, 1, 1);
-      R(ctx, tone(home.trim, .84), x, shirtY, 1, .5);
+      R(ctx, INK, x - 1, shirtY, 4, 3);
+      R(ctx, shirt, x, shirtY, 2, 2.5);
+      R(ctx, tone(shirt, 1.18), x, shirtY, 1, .5);
+      R(ctx, tone(shirt, .68), x + 1.5, shirtY + 1, .5, 1);
+      R(ctx, tone((index % 2 ? away : home).trim, .9), x, shirtY, 1, .5);
       if (raised) {
-        R(ctx, shirt, x - 2, headY, 1, 2);
-        R(ctx, skin, x - 2, headY - 1, 1, 1);
-        R(ctx, shirt, x + 4, headY, 1, 2);
-        R(ctx, skin, x + 4, headY - 1, 1, 1);
+        R(ctx, INK, x - 2, headY + 1, 1, 3);
+        R(ctx, shirt, x - 2, headY + 1, 1, 2);
+        R(ctx, skin, x - 2, headY, 1, 1);
+        R(ctx, INK, x + 3, headY + 1, 1, 3);
+        R(ctx, shirt, x + 3, headY + 1, 1, 2);
+        R(ctx, skin, x + 3, headY, 1, 1);
       } else {
-        R(ctx, shirt, x - 2, shirtY + .5, 1, 2);
-        R(ctx, shirt, x + 4, shirtY + .5, 1, 2);
+        R(ctx, INK, x - 2, shirtY + 1, 1, 2);
+        R(ctx, shirt, x - 2, shirtY + 1, 1, 1);
+        R(ctx, INK, x + 3, shirtY + 1, 1, 2);
+        R(ctx, shirt, x + 3, shirtY + 1, 1, 1);
       }
     }
   }

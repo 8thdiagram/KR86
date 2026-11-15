@@ -4,11 +4,19 @@ import { FOOTBALL_ART_STAGES as ART, tone } from './football-deluxe-art';
 import { drawPixelEnlarged } from './football-pixel-scale';
 import { withBroadcastAnchor } from './football-broadcast';
 export type Kit = FootballKit;
-const INK = '#10213a', SHADOW = 'rgba(8,40,16,.35)', GOLD = '#f4d23c';
+const INK = '#10213a', GOLD = '#f4d23c';
 export const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number, w: number, h: number) => {
   // Half-world-pixel authored edges survive the high-resolution canvas pass.
   ctx.fillStyle = c; ctx.fillRect(Math.round(x * 2) / 2, Math.round(y * 2) / 2, w, h);
 };
+/** Broken, crisp turf-contact pixels; deliberately not a soft oval or outline. */
+function contactShadow(ctx: CanvasRenderingContext2D, cx: number, y: number, width = 9) {
+  const left = Math.round(cx - width / 2);
+  R(ctx, 'rgba(8,34,18,.48)', left + 1, y, Math.max(2, width - 3), 1);
+  R(ctx, 'rgba(6,27,15,.34)', left, y + 1, 2, 1);
+  R(ctx, 'rgba(6,27,15,.34)', left + width - 2, y + 1, 2, 1);
+  R(ctx, 'rgba(15,50,23,.3)', left + 3, y + 1, Math.max(1, width - 6), 1);
+}
 
 function helmet(ctx: CanvasRenderingContext2D, kit: Kit, hx: number, hy: number, d: 1 | -1) {
   hx += 1; hy += 1;
@@ -18,10 +26,14 @@ function helmet(ctx: CanvasRenderingContext2D, kit: Kit, hx: number, hy: number,
   R(ctx, kit.body, hx + 1.5, hy - .5, 4.5, .5);
   R(ctx, kit.body, hx + 1, hy, 5.5, 4);
   R(ctx, kit.body, hx + 1.5, hy + 4, 4.5, 1);
+  // Stepped crown and a tiny shaded rear shell edge round the hard silhouette.
+  R(ctx, kit.body, hx + 2, hy - .5, 4, .5);
   R(ctx, kit.trim, hx + 2, hy - .5, 3.5, .5);
   R(ctx, tone(kit.body, 1.28), hx + 2, hy + .5, 3, .5);
   R(ctx, tone(kit.body, 1.16), hx + 1.5, hy + 1, 1, .5);
   R(ctx, tone(kit.body, .68), hx + 5, hy + 3, 1, 1);
+  R(ctx, tone(kit.body, .58), hx + 5.5, hy + 2.5, .5, 1);
+  R(ctx, tone(kit.body, .78), hx + 1, hy + 2.5, .5, 1);
   R(ctx, kit.trim, d > 0 ? hx + 1 : hx + 6, hy + 1.5, 1, 2);
   const faceX = d > 0 ? hx + 3.5 : hx + 2.5;
   R(ctx, playerSkin(kit), faceX, hy + 1, 1.5, 1);
@@ -59,7 +71,7 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
   const phase = options.step ?? 0;
   const d = kit.dir, f = (1 - Math.cos(phase * Math.PI)) / 2, ball = !!options.ball;
   const shade = tone(kit.body, .86), light = tone(kit.body, 1.16);
-  R(ctx, SHADOW, cx - (view === 2 ? 4 : 5), Math.round(y) + 5, view === 2 ? 8 : 10, 2);
+  contactShadow(ctx, cx, Math.round(y) + 5, view === 2 ? 8 : 10);
   const rearView = view === 3 || view === 4 || view === 7 || view === 8;
   const intermediate = view >= 5;
   const ballSide: 1 | -1 = rearView ? (d > 0 ? -1 : 1) : d;
@@ -206,7 +218,7 @@ function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
   const px = Math.round(x) - 4, py = Math.round(y) - 8 + (p.crouch ? 1 : 0);
   ctx.save();
   ctx.translate(0, -Math.round(.4 * (1 - Math.cos(step * Math.PI))));
-  R(ctx, SHADOW, px, py + 13, 9, 2);
+  contactShadow(ctx, px + 4, py + 13, 9);
   const reach = Math.sin(step * Math.PI / 2) * 1.6;
   if (p.kick !== undefined) {
     // plant leg + swinging leg (kick 0 = cocked back, 1 = follow-through)
@@ -226,6 +238,8 @@ function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
     const leftToe = lx + (d > 0 ? 0 : -1), rightToe = rx + (d > 0 ? 0 : -1);
     R(ctx, INK, leftToe, py + 10 + lh, 2, 1); R(ctx, INK, rightToe, py + 10 + rh, 2, 1);
     if (ART.players) {
+      R(ctx, kit.body, lx + .5, py + 9.5 + lh, 1, .5);
+      R(ctx, kit.body, rx + .5, py + 9.5 + rh, 1, .5);
       // Tiny cleat catches sit inside the original boot footprint.
       R(ctx, tone(INK, 1.28), leftToe + (d > 0 ? 0 : 1), py + 10 + lh, 1, 1);
       R(ctx, tone(INK, 1.28), rightToe + (d > 0 ? 0 : 1), py + 10 + rh, 1, 1);
@@ -273,6 +287,8 @@ function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
   if (ART.players) R(ctx, tone(kit.body, 1.18), px + 2 + lean, py + 5, 4, 1);
   if (kit.edge) { R(ctx, kit.edge, px + lean, py + 6, 1, 2); R(ctx, kit.edge, px + 8 + lean, py + 6, 1, 2); }
   R(ctx, kit.body, px + 3 + lean, py + 6, 2, 1);
+  R(ctx, INK, px + 1 + lean, py + 6.5, .5, 1);
+  R(ctx, INK, px + 6.5 + lean, py + 6.5, .5, 1);
   if (ART.players) {
     R(ctx, tone(kit.body, 1.16), px + 3 + lean, py + 6, 1, 1);
     // Shoulder-pad undersides and two short jersey folds add volume without
