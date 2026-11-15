@@ -136,7 +136,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
       const width = stage.clientWidth, height = stage.clientHeight;
       if (width < 80 || height < 80) return;
       stage.style.setProperty('--fb-touchdown-width',
-        `${Math.max(72, Math.min(520, width * .9, (height * .84 - 28) * TD_W / TD_H))}px`);
+        `${Math.max(72, Math.min(560, width * .94, (height * .84 - 28) * TD_W / TD_H))}px`);
       const slot = shell.current?.closest('.gm-slot')?.getBoundingClientRect();
       const next = kickViewport(width, height, slot?.width ?? window.innerWidth, slot?.height ?? window.innerHeight);
       const v = { ...(next.landscape ? next : { ...next, height: KR.height }),

@@ -9,6 +9,12 @@ Kick Return ’86 should look like a believable late-NES football game from roug
 
 **How to apply:** Keep title, Franchise management, and supporting interfaces visually consistent. Keep browser audio activation restrictions in mind and preserve existing gameplay sounds. Follow the intro/menu audio boundaries below.
 
+Keep the current enlarged player height. Favor slightly leaner equipped bodies and smaller helmets, with fluid late-NES pixel poses rather than blur, anti-aliasing, whole-sprite compression, or altered movement physics.
+
+**Why:** The user explicitly liked the new height but requested approximately 5–8% narrower bodies, 5–10% smaller helmets, and more natural animation while preserving all gameplay behavior.
+
+**How to apply:** Refine native pixel clusters across standing, turning, spinning, diving, falling, and kicking artwork. Keep foot anchors, helmet depth, uniform details, collision geometry, speeds, and action timing intact.
+
 For app icons, preserve the latest supplied artwork and use a subtle, sharp iPhone-style edge finish.
 
 **Why:** The user requested this finish for replacement app icons.
@@ -68,3 +74,9 @@ The TOUCHDOWN sign uses separate, visibly spaced NES pixel bulbs, not connected 
 **Why:** The user refined the earlier pixelated-letter request to specifically require an individual-bulb stadium sign and a longer two-stage celebration.
 
 **How to apply:** Share the bulb artwork and palette threshold across Classic and Full Game. Preserve touchdown scoring and sounds; the longer presentation must not consume game-clock time.
+
+Give TOUCHDOWN lettering clear dark space inside its individual-bulb outline on all four sides; enlarge the board, not the border thickness.
+
+**Why:** The user found the illuminated letters too close to the frame, especially at normal iPhone size.
+
+**How to apply:** Preserve separate lamps, restrained brightness variation, letter spacing, two-stage timing, and responsive portrait/landscape fitting.

@@ -21,7 +21,8 @@ export function drawTackle(ctx: CanvasRenderingContext2D, g: FootballGame,
       dir: carrier ? dir : s.carrier.x < s.defender.x ? -1 : 1 };
     if (frame <= 1) {
       slim(ctx, x, y, kit, { ball: carrier && !carrierFumbled, crouch: frame === 1,
-        lean: frame === 0 ? (carrier ? -dir : kit.dir) : 0, hold: !carrier });
+        lean: frame === 0 ? (carrier ? -dir : kit.dir) : 0, hold: !carrier,
+        view: frame === 1 ? (carrier ? 5 : 6) : undefined });
       return;
     }
     // Contact keyframes descend into custom horizontal anatomy; no whole-sprite

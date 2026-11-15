@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { drawTouchdownMarquee, touchdownGlyphDots, touchdownArt, TD_ART_RECTS, TD_W, TD_H } from '../../components/football-touchdown-art';
+import { drawTouchdownMarquee, touchdownGlyphDots, touchdownArt, TD_ART_RECTS, TD_W, TD_H, TD_PAD_X, TD_PAD_Y } from '../../components/football-touchdown-art';
 import { drawKickReturn } from '../../components/kick-return-renderer';
 import { createKickAttempt } from '../kick-return-engine';
 
@@ -19,11 +19,30 @@ test('all TOUCHDOWN pixels fit a genuinely low-resolution shared SVG/canvas boar
   assert(letters.length > 70);
   for (const p of letters)
     assert(p.x >= 3 && p.x <= TD_W - 3 && p.y >= 3 && p.y <= TD_H - 3);
-  assert(TD_W < 180 && TD_H < 32);
+  assert.equal(TD_W, 180);
+  assert.equal(TD_H, 42);
   for (const r of TD_ART_RECTS) {
     for (const coordinate of [r.x, r.y, r.w, r.h]) assert(Number.isInteger(coordinate));
     assert(r.x >= 0 && r.y >= 0 && r.x + r.w <= TD_W && r.y + r.h <= TD_H);
     assert.match(r.color, /^#[0-9a-f]{6}$/i, 'only opaque palette colors, no glow');
+  }
+});
+test('expanded board leaves dark breathing room on every side without enlarging lamps or letters', () => {
+  const dots = touchdownGlyphDots();
+  const left = Math.min(...dots.map(p => p.x)) - 1;
+  const right = Math.max(...dots.map(p => p.x)) + 1;
+  const top = Math.min(...dots.map(p => p.y)) - 1;
+  const bottom = Math.max(...dots.map(p => p.y)) + 1;
+  assert.equal(left, TD_PAD_X);
+  assert.equal(top, TD_PAD_Y);
+  for (const gap of [left - 4, TD_W - 4 - right, top - 4, TD_H - 4 - bottom])
+    assert(gap >= 7, 'at least seven native dark pixels between letters and border lamps');
+  for (const maxWidth of [124, 300, 360, 560]) {
+    const { ctx, paints } = recordingCanvas();
+    const centerY = Math.max(52, Math.ceil(maxWidth * TD_H / TD_W / 2) + 8);
+    drawTouchdownMarquee(ctx, maxWidth / 2 + 10, centerY, maxWidth, .4);
+    assert(paints.every(p => p.x >= 10 && p.x + p.width <= maxWidth + 10));
+    assert(paints.every(p => p.y >= 0 && p.y + p.height <= 192));
   }
 });
 test('separate bulb clusters switch once from dim to bright with deterministic texture', () => {

@@ -15,8 +15,10 @@ export const TD_GLYPHS: Record<string, string> = {
 export const TD_WORD = 'TOUCHDOWN';
 /** One authored bulb occupies two square pixels, with a one-pixel dark gap. */
 export const TD_CELL = 1;
-export const TD_PAD_X = 5;
-export const TD_PAD_Y = 5;
+// Keep the lamps and letter pitch unchanged; expand the dark interior instead
+// of thickening the two-pixel perimeter lamps.
+export const TD_PAD_X = 11;
+export const TD_PAD_Y = 11;
 const BULB = 2;
 const PITCH = 3;
 const LETTER_ADVANCE = 18;

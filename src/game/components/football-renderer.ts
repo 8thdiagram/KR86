@@ -8,7 +8,7 @@ import { fieldGoalHeight } from '../lib/football/field-goal-geometry';
 import { highlightedReceiver } from '../lib/football/passing';
 import { primaryPlayer } from '../lib/football/execution';
 import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
-import { slim, carrierMark, airBall, landingMark, goalPosts, heldBall, R, type Kit, type BodyView } from './football-sprites';
+import { slim, carrierMark, airBall, landingMark, goalPosts, heldBall, R, movementBodyView as motionView, type Kit } from './football-sprites';
 import { uniformKit } from './football-art';
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
 import { isTackleActor } from '../lib/football/tackle-scene';
@@ -23,12 +23,6 @@ const { field, moveSprite, prone, referee, football, crowd } = kickFootballArt;
 const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 const LACE = '#f1e6d0', INK = '#10213a', FIRST = '#f4d23c', LOS = '#7fc8ff', ORANGE = '#ff8a2a';
 const SNAP = .18, CATCH_HOLD = .38;
-const motionView = (vx: number, vy: number, facing: 1 | -1): BodyView | undefined => {
-  if (Math.hypot(vx, vy) < 3 || Math.abs(vy) < Math.abs(vx) * .55) return undefined;
-  if (Math.abs(vx) < 3) return vy > 0 ? 0 : 4;
-  const lateral = Math.sign(vx) === facing;
-  return vy > 0 ? (lateral ? 1 : 3) : (lateral ? 3 : 1);
-};
 export const spotX = (spot: number) => 100 + spot * 10;
 /** Match Classic's ahead-of-carrier composition, not a centered new football camera. */
 export function footballCameraX(focus: number, viewW: number, scale: number, landscape: boolean, direction: 1 | -1 = 1) {
@@ -244,7 +238,9 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
       prone(ctx, a.x, a.y, kit, angle, Math.sin(Math.min(1, b.time / .42) * Math.PI) * 4);
     } else if (a.dive) {
       const d = a.dive;
-      prone(ctx, a.x, a.y, kit, d.angle, d.phase === 'airborne' ? Math.sin(Math.PI * d.elapsed / .28) * 4 : 0);
+      if (d.phase === 'windup') slim(ctx, a.x, a.y, kit,
+        { crouch: true, hold: true, view: d.elapsed >= .04 ? 6 : undefined });
+      else prone(ctx, a.x, a.y, kit, d.angle, d.phase === 'airborne' ? Math.sin(Math.PI * d.elapsed / .28) * 4 : 0);
     } else if (hasBall && holding && ic && a.id === ic.catcher) {
       slim(ctx, ic.catchX, ic.catchY, { ...kit, dir: dir === 1 ? -1 : 1 }, { hold: true, crouch: ic.age < .24 });
       heldBall(ctx, Math.round(ic.catchX) - 4 * dir, Math.round(ic.catchY) - 2);

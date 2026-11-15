@@ -1,5 +1,5 @@
 .fb-play-result.fb-play-result--field-goal{top:50%;bottom:auto;transform:translate(-50%,-50%)}
-.fb-play-result.fb-play-result--touchdown{width:min(90%,var(--fb-touchdown-width,520px));max-width:calc(100% - 20px);padding:0;background:none;border:0;box-shadow:none;text-shadow:none;border-radius:0}
+.fb-play-result.fb-play-result--touchdown{width:min(94%,var(--fb-touchdown-width,560px));max-width:calc(100% - 20px);padding:0;background:none;border:0;box-shadow:none;text-shadow:none;border-radius:0}
 /* Kick Return 86 full football: same handheld palette as the classic cabinet. */
 .fb-game{position:relative}
 .fb-game>.fbp-root,.fb-game>.fbp-clock,
