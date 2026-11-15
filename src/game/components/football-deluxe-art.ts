@@ -44,27 +44,42 @@ export function tone(hex: string, f: number): string {
 }
 
 /* ---------- Stage 2: static world-anchored turf ---------- */
-type Dot = { x: number; y: number; w: number; c: string };
-let dots: Dot[] | null = null;
-const TURF_DARK = 'rgba(14,60,26,.2)', TURF_LIGHT = 'rgba(200,235,160,.09)';
-function turfDots(): Dot[] {
-  if (dots) return dots;
-  const out: Dot[] = [];
-  for (let x = FIELD_ART.goalLeft + 3; x < FIELD_ART.goalRight; x++)
-    for (let y = FIELD_ART.turfTop + 1; y < FIELD_ART.turfBottom - 1; y++) {
-      let h = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663)) >>> 0;
-      h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
-      const r = h % 997;
-      if (r < 14) out.push({ x, y, w: r < 4 ? 2 : 1, c: TURF_DARK });
-      else if (r < 19) out.push({ x, y, w: 1, c: TURF_LIGHT });
+type GrassPixel = { x: number; y: number; w: number; h: number; c: string };
+let grass: GrassPixel[] | null = null;
+const GRASS_SHADES = [
+  'rgba(13,54,23,.25)', 'rgba(17,67,29,.22)', 'rgba(185,222,133,.10)',
+  'rgba(123,183,91,.12)',
+];
+function grassClusters(): GrassPixel[] {
+  if (grass) return grass;
+  const out: GrassPixel[] = [];
+  // Fixed world-space seeds keep each tiny, irregular patch pinned to the turf.
+  // Cluster spacing and low alpha preserve clean reads beneath players and paint.
+  for (let sx = FIELD_ART.goalLeft + 6; sx < FIELD_ART.goalRight - 4; sx += 11) {
+    for (let sy = FIELD_ART.turfTop + 5; sy < FIELD_ART.turfBottom - 5; sy += 9) {
+      let seed = (Math.imul(sx + 31, 73856093) ^ Math.imul(sy + 17, 19349663)) >>> 0;
+      seed = Math.imul(seed ^ (seed >>> 13), 1274126177) >>> 0;
+      if (seed % 100 > 41) continue;
+      const ox = (seed >>> 7) % 5 - 2, oy = (seed >>> 12) % 4 - 1;
+      const c = GRASS_SHADES[(seed >>> 17) % GRASS_SHADES.length]!;
+      const x = sx + ox, y = sy + oy;
+      out.push({ x, y, w: 2 + ((seed >>> 22) % 3), h: 1, c });
+      // An occasional offset second blade makes a small connected, non-grid cluster.
+      if ((seed & 7) < 4) out.push({
+        x: x + ((seed >>> 25) % 3), y: y + 1 + ((seed >>> 27) % 2),
+        w: 1 + ((seed >>> 29) % 2), h: 1, c: GRASS_SHADES[(seed >>> 19) % GRASS_SHADES.length]!,
+      });
     }
-  return (dots = out);
+  }
+  return (grass = out.sort((a, b) => a.x - b.x));
 }
 export function drawDeluxeTurf(ctx: CanvasRenderingContext2D, x0: number, x1: number) {
-  const d = turfDots();
+  const d = grassClusters();
   let lo = 0, hi = d.length;
-  while (lo < hi) { const m = (lo + hi) >> 1; if (d[m]!.x < x0 - 2) lo = m + 1; else hi = m; }
-  for (let i = lo; i < d.length && d[i]!.x <= x1; i++) { const p = d[i]!; R(ctx, p.c, p.x, p.y, p.w, 1); }
+  while (lo < hi) { const m = (lo + hi) >> 1; if (d[m]!.x < x0 - 4) lo = m + 1; else hi = m; }
+  for (let i = lo; i < d.length && d[i]!.x <= x1; i++) {
+    const p = d[i]!; R(ctx, p.c, p.x, p.y, p.w, p.h);
+  }
 }
 
 /* ---------- Stage 2: condensed athletic end-zone pixel lettering ---------- */
@@ -171,6 +186,30 @@ export function drawEndZoneLettering(ctx: CanvasRenderingContext2D, name: string
   ctx.rotate(rotation);
   lines.forEach((l, i) => drawLine(ctx, l, -Math.round(lineW(l) * px / 2),
     -Math.round(total / 2) + i * (GLYPH_H * px + gap), px, color));
+  ctx.restore();
+}
+
+/** Large, crisp bitmap yard numerals for parent field renderers. */
+export function drawYardNumber(ctx: CanvasRenderingContext2D, value: string | number,
+  centerX: number, y: number, color = '#f3f1dc', pixelSize = 3) {
+  const label = String(value);
+  const px = Math.max(1, Math.round(pixelSize));
+  const width = lineW(label) * px;
+  const x = Math.round(centerX - width / 2);
+  const top = Math.round(y);
+  ctx.save();
+  // One-pixel navy keyline makes the paint readable over both turf shades.
+  for (const pixel of wornLettering(label, px)) {
+    const gx = x + pixel.x, gy = top + pixel.y;
+    R(ctx, 'rgba(18,48,31,.48)', gx - 1, gy, 1, 1);
+    R(ctx, 'rgba(18,48,31,.48)', gx + 1, gy, 1, 1);
+    R(ctx, 'rgba(18,48,31,.48)', gx, gy - 1, 1, 1);
+    R(ctx, 'rgba(18,48,31,.48)', gx, gy + 1, 1, 1);
+  }
+  for (const pixel of wornLettering(label, px)) {
+    ctx.globalAlpha = pixel.faded ? .86 : 1;
+    R(ctx, color, x + pixel.x, top + pixel.y, 1, 1);
+  }
   ctx.restore();
 }
 

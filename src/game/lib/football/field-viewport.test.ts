@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fieldViewportFrame } from '../kick-return-viewport';
 import { kickRenderCamera } from '../../components/kick-return-renderer';
+import { broadcastViewportFrame } from '../../components/football-broadcast';
 
 test('field shifts below the HUD at full scale whenever the referee apron has enough room', () => {
   for (const height of [280, 320, 390, 430, 600]) for (const topClearance of [30, 34, 38]) {
@@ -35,6 +36,6 @@ test('portrait and Classic without an overlay keep the original scale and vertic
 
 test('historical Full Game kickoff rendering uses the same scoreboard clearance', () => {
   const view = { width: 700, height: 300, landscape: true, topClearance: 34 };
-  const frame = fieldViewportFrame(view), camera = kickRenderCamera(null, view.width, true, view);
+  const frame = broadcastViewportFrame(view), camera = kickRenderCamera(null, view.width, true, view);
   assert.equal(camera.scale, frame.scale); assert.equal(camera.offY, frame.offsetY);
 });

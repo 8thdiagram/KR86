@@ -1,6 +1,6 @@
 import { KR } from '../lib/kick-return-engine';
 import { kickMatchupTeams } from '../lib/kick-return-teams';
-import { fieldViewportFrame, type KickViewport } from '../lib/kick-return-viewport';
+import type { KickViewport } from '../lib/kick-return-viewport';
 import type { Athlete, FootballGame, LivePlay, SpecialTeams } from '../lib/football/types';
 import { fieldGoalAllowed, PLAYBOOK } from '../lib/football/playbook';
 import { fieldGoalSequence } from '../lib/football/special-teams';
@@ -17,6 +17,7 @@ import { attackDirection, playTravelDirection, worldX } from '../lib/football/di
 import { drawRegularSeasonMidfield } from '../../platform/midfield-logo';
 import { PLAYER_TARGET_PIXELS, PLAYER_TARGET_WHITE, PLAYER_TARGET_YELLOW } from '../lib/football/player-target';
 import { drawFieldGoalFlight } from './football-field-goal';
+import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
 
 /** Presentation only. Reads the engine state; never mutates it and never samples randomness. */
 const { field, moveSprite, prone, referee, football, crowd } = kickFootballArt;
@@ -140,7 +141,7 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
     return;
   }
   const viewW = view?.width ?? KR.width, viewH = view?.height ?? KR.height;
-  const { scale, offsetY } = fieldViewportFrame(view);
+  const { scale, offsetY } = broadcastViewportFrame(view);
   const visibleW = viewW / scale;
   const live = g.live, sp = g.special;
   const focus = footballFocusX(g);
@@ -155,58 +156,66 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   const { home, away } = kits(g);
   // Stadium ends belong to teams throughout a quarter, not current possession.
   const leftSide = attackDirection(g, 'home') === 1 ? 'home' : 'away';
-  field(ctx, camX, camX + visibleW + 1, leftSide === 'home' ? g.teams : { player: g.teams.opponent, opponent: g.teams.player });
-  drawRegularSeasonMidfield(ctx, g);
+  const projection = { centerX: camX + visibleW / 2 }, range = broadcastVisibleRange(camX, visibleW);
+  withBroadcastWorld(ctx, projection, () => {
+  const ground = broadcastFieldContext(ctx, projection);
+  field(ground, range.left, range.right, leftSide === 'home' ? g.teams : { player: g.teams.opponent, opponent: g.teams.player });
+  drawRegularSeasonMidfield(ground, g);
   if (g.franchise?.playoff) {
     // Painted midfield emblem, behind players and ball; it never affects play.
-    ctx.save(); ctx.globalAlpha = .68;
-    R(ctx, '#173e34', 571, 70, 58, 54);
-    R(ctx, '#eac453', 586, 76, 28, 17);
-    R(ctx, '#ffe8a0', 590, 76, 5, 13);
-    R(ctx, '#eac453', 582, 78, 4, 13); R(ctx, '#eac453', 614, 78, 4, 13);
-    R(ctx, '#eac453', 586, 91, 28, 4); R(ctx, '#eac453', 593, 95, 14, 4);
-    R(ctx, '#eac453', 598, 99, 4, 10); R(ctx, '#eac453', 590, 109, 20, 4);
-    ctx.globalAlpha = .9; ctx.fillStyle = '#fff0b8'; ctx.font = '6px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('PLAYOFFS', 600, 121); ctx.restore();
+    ground.save(); ground.globalAlpha = .68;
+    R(ground, '#173e34', 571, 70, 58, 54);
+    R(ground, '#eac453', 586, 76, 28, 17);
+    R(ground, '#ffe8a0', 590, 76, 5, 13);
+    R(ground, '#eac453', 582, 78, 4, 13); R(ground, '#eac453', 614, 78, 4, 13);
+    R(ground, '#eac453', 586, 91, 28, 4); R(ground, '#eac453', 593, 95, 14, 4);
+    R(ground, '#eac453', 598, 99, 4, 10); R(ground, '#eac453', 590, 109, 20, 4);
+    ground.globalAlpha = .9;
+    kickFootballArt.text(ground, 'PLAYOFFS', 584, 116, '#fff0b8'); ground.restore();
   }
-  crowd(ctx, camX, camX + visibleW + 1, g.phase === 'final' && g.winner === 'home', seconds);
+  crowd(ground, range.left, range.right, g.phase === 'final' && g.winner === 'home', seconds, g.teams);
 
   if (g.tackleScene?.space === 'legacy-return' && g.returnAttempt) {
     for (const d of g.returnAttempt.defenders) if (!isTackleActor(g, d, 'legacy-return'))
       slim(ctx, d.x, d.y, positionKit({ ...(g.kickReceiver === 'home' ? away : home), dir: -1 }, classicSkinPosition(d)));
-  } else if (sp) drawSpecial(ctx, g, sp, home, away, seconds);
-  else drawScrimmage(ctx, g, home, away, seconds);
+  } else if (sp) drawSpecial(ctx, g, sp, home, away, seconds, ground);
+  else drawScrimmage(ctx, g, home, away, seconds, ground);
   drawTackle(ctx, g, home, away);
   referee(ctx, clamp(focus + 34, 18, KR.worldWidth - 18), seconds, g.lastResult.startsWith('TOUCHDOWN') && ['play-dead', 'final'].includes(g.phase));
   if ((g.turnoverNotice ?? 0) > 0) {
     // Referee's directional possession signal; never invent a kick on downs.
     const rx = clamp(focus + 34, 18, KR.worldWidth - 18);
+    withBroadcastAnchor(ctx, rx, 185, () => {
     ctx.save(); ctx.translate(rx, 0); ctx.scale(attackDirection(g), 1); ctx.translate(-rx, 0);
     R(ctx, '#f1e6d0', rx + 3, 178, 12, 2); R(ctx, '#e0a370', rx + 14, 178, 3, 2);
     R(ctx, FIRST, rx + 18, 177, 5, 1); R(ctx, FIRST, rx + 21, 175, 2, 5);
     ctx.restore();
+    });
   }
+  });
   ctx.restore();
 
 }
 
 /** The exact shared eight-rectangle targeting symbol. */
 function playerTarget(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
+  withBroadcastAnchor(ctx, x, y, () => {
   for (const [dx, dy, width, height] of PLAYER_TARGET_PIXELS)
     R(ctx, color, x + dx, y + dy, width, height);
+  });
 }
 
-function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number) {
+function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number, ground: CanvasRenderingContext2D) {
   const live = g.live;
   const dir = g.fieldFrame ?? 1;
   const los = worldX(spotX(live?.snapSpot ?? g.spot), dir);
   const rangeX = worldX(100 + (117 - g.profiles[g.possession].kickMax) * 10, dir);
-  if (fieldGoalAllowed(g) && rangeX > 100 && rangeX < 1100) for (let y = 20; y < 172; y += 8) R(ctx, LACE, rangeX, y, 1, 3);
-  R(ctx, LOS, los, 18, 2, 156);
+  if (fieldGoalAllowed(g) && rangeX > 100 && rangeX < 1100) for (let y = 20; y < 172; y += 8) R(ground, LACE, rangeX, y, 1, 3);
+  R(ground, LOS, los, 18, 2, 156);
   if (g.target < 100 && !(live?.mode === 'kick') && !(g.turnoverNotice! > 0)) {
     const fx = worldX(spotX(g.target), dir);
-    R(ctx, FIRST, fx, 18, 2, 156);
-    R(ctx, ORANGE, fx - 2, 8, 6, 8); R(ctx, INK, fx, 4, 2, 12);
+    R(ground, FIRST, fx, 18, 2, 156);
+    R(ground, ORANGE, fx - 2, 8, 6, 8); R(ground, INK, fx, 4, 2, 12);
   }
   // Deluxe: posts are permanent shared field fixtures; original conditional post kept for rollback.
   if (!FOOTBALL_ART_STAGES.geometry && (live?.play === 'field-goal' || live?.mode === 'kick')) goalPosts(ctx, worldX(1194, dir));
@@ -242,8 +251,10 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
         { crouch: true, hold: true, view: d.elapsed >= .04 ? 6 : undefined });
       else prone(ctx, a.x, a.y, kit, d.angle, d.phase === 'airborne' ? Math.sin(Math.PI * d.elapsed / .28) * 4 : 0);
     } else if (hasBall && holding && ic && a.id === ic.catcher) {
+      withBroadcastAnchor(ctx, ic.catchX, ic.catchY, () => {
       slim(ctx, ic.catchX, ic.catchY, { ...kit, dir: dir === 1 ? -1 : 1 }, { hold: true, crouch: ic.age < .24 });
       heldBall(ctx, Math.round(ic.catchX) - 4 * dir, Math.round(ic.catchY) - 2);
+      });
     } else if (hasBall && (live.mode === 'run' || live.mode === 'scramble') && moveSprite(ctx, a.x, a.y, kit, t, { ...live.movement, player: { x: a.x, y: a.y } })) { /* original move pose */ }
     else if (snap && a.role === 'OL' && a === centerOf(live)) slim(ctx, a.x, a.y, kit, { crouch: true, hold: live.time <= 0 });
     else if (snap && a.role === 'QB') slim(ctx, a.x, a.y, kit, { hold: true });
@@ -257,7 +268,8 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
     // Small ground tick links the primary diagram to the opening assignment,
     // then disappears. No live labels, arrows, halos or permanent HUD additions.
     if (g.phase === 'live' && !ic && !snap && a.id === primary && a.id !== read &&
-        live.time < PLAYBOOK[live.play].develop + .55) R(ctx, LACE, a.x - 3, a.y + 7, 6, 1);
+        live.time < PLAYBOOK[live.play].develop + .55)
+      withBroadcastAnchor(ctx, a.x, a.y, () => R(ctx, LACE, a.x - 3, a.y + 7, 6, 1));
     ctx.restore();
     if (hasBall) carrierAt = holding && ic ? { x: ic.catchX, y: ic.catchY } : a;
   }
@@ -273,14 +285,14 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
   }
 }
 
-function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: SpecialTeams, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number) {
+function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: SpecialTeams, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number, ground: CanvasRenderingContext2D) {
   const fg = sp.kind === 'field-goal';
   const dir = g.fieldFrame ?? 1;
   // athletes: offense = kicking team, defense = receiving team.
   const kickKit: Kit = { ...(sp.kicking === 'home' ? home : away), dir: (fg ? dir : -dir) as 1 | -1 };
   const recvKit: Kit = { ...(sp.receiver === 'home' ? home : away), dir: (fg ? -dir : dir) as 1 | -1 };
   if (!FOOTBALL_ART_STAGES.geometry && fg) goalPosts(ctx, worldX(1194, dir));
-  R(ctx, LOS, Math.round(sp.fromX), 18, 2, 156);
+  R(ground, LOS, Math.round(sp.fromX), 18, 2, 156);
   const ret = sp.stage === 'return';
   const sorted = [...sp.athletes].sort((a, b) => a.y - b.y);
   const st = sp.stage, age = sp.stageAge, t = sp.age * 9;
@@ -323,8 +335,10 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       slim(ctx, a.x, a.y, { ...kit, dir: sp.ball.x < a.x ? -1 : 1 }, { step: secured ? 0 : t, ball: secured, hold: !secured });
     } else if (a.id === sp.recovery && (st === 'recovery' || st === 'resolved')) {
       const from = sp.recoveryFrom ?? a, ang = Math.atan2(sp.ball.y - from.y, sp.ball.x - from.x);
+      withBroadcastAnchor(ctx, a.x, a.y, () => {
       prone(ctx, a.x, a.y, kit, ang, st === 'recovery' ? Math.sin(clamp(age / .42, 0, 1) * Math.PI) * 4 : 0);
       if (st !== 'recovery' || age >= .32) heldBall(ctx, Math.round(a.x + Math.cos(ang) * 6) - 2, Math.round(a.y + Math.sin(ang) * 6) - 2);
+      });
     } else {
       const fielding = a.id === sp.returner && (st === 'flight' || st === 'bounce') && Math.hypot(a.x - sp.ball.x, a.y - sp.ball.y) < 26;
       const actualFacing = fielding ? (sp.ball.x < a.x ? -1 : 1) : facing;
@@ -341,7 +355,7 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
   if (st === 'flight') landingMark(ctx, sp.toX, sp.toY, seconds);
   if (recovered) return;
   if (ballHeld && sp.kind !== 'punt' && !fg) { // tee
-    R(ctx, ORANGE, b.x - 1, b.y + 1, 3, 2);
+    R(ground, ORANGE, b.x - 1, b.y + 1, 3, 2);
     airBall(ctx, b.x, b.y, 3, 1);
   } else airBall(ctx, b.x, b.y, b.z, st === 'flight' || st === 'bounce' ? sp.age : 0);
 }

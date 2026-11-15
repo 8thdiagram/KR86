@@ -2,6 +2,7 @@
 import { drawFootballBall, playerSkin, UNIFORM, type FootballKit } from './football-art';
 import { FOOTBALL_ART_STAGES as ART, tone } from './football-deluxe-art';
 import { drawPixelEnlarged } from './football-pixel-scale';
+import { withBroadcastAnchor } from './football-broadcast';
 export type Kit = FootballKit;
 const INK = '#10213a', SHADOW = 'rgba(8,40,16,.35)', GOLD = '#f4d23c';
 export const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number, w: number, h: number) => {
@@ -185,7 +186,13 @@ function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
     R(ctx, UNIFORM.pantsShade, lx, py + 10, 1, 1); R(ctx, UNIFORM.pantsShade, rx, py + 10, 1, 1);
     R(ctx, UNIFORM.pants, lx, py + 10 + (lh < 3 ? 0 : 1), 2, lh - (lh < 3 ? 0 : 1) + 1);
     R(ctx, UNIFORM.pants, rx, py + 10 + (rh < 3 ? 0 : 1), 2, rh - (rh < 3 ? 0 : 1) + 1);
-    R(ctx, INK, lx + (d > 0 ? 0 : -1), py + 10 + lh, 2, 1); R(ctx, INK, rx + (d > 0 ? 0 : -1), py + 10 + rh, 2, 1);
+    const leftToe = lx + (d > 0 ? 0 : -1), rightToe = rx + (d > 0 ? 0 : -1);
+    R(ctx, INK, leftToe, py + 10 + lh, 2, 1); R(ctx, INK, rightToe, py + 10 + rh, 2, 1);
+    if (ART.players) {
+      // Tiny cleat catches sit inside the original boot footprint.
+      R(ctx, tone(INK, 1.28), leftToe + (d > 0 ? 0 : 1), py + 10 + lh, 1, 1);
+      R(ctx, tone(INK, 1.28), rightToe + (d > 0 ? 0 : 1), py + 10 + rh, 1, 1);
+    }
   }
   R(ctx, kit.body, px + 2 + lean, py + 6, 4, 5);
   R(ctx, kit.trim, px + 3 + lean, py + 8, 1, 1);
@@ -208,7 +215,13 @@ function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
   R(ctx, kit.body, px + 3 + lean, py + 6, 2, 1);
   if (ART.players) {
     R(ctx, tone(kit.body, 1.16), px + 3 + lean, py + 6, 1, 1);
+    // Shoulder-pad undersides and two short jersey folds add volume without
+    // widening the slim chest or shifting its established foot anchor.
+    R(ctx, tone(kit.body, .68), px + 2 + lean, py + 6, 1, 1);
+    R(ctx, tone(kit.body, .68), px + 5 + lean, py + 6, 1, 1);
     R(ctx, tone(kit.body, .68), px + 4 + lean, py + 7, 1, 2);
+    R(ctx, tone(kit.body, .78), px + 3 + lean, py + 9, 1, 1);
+    R(ctx, tone(kit.body, .72), px + 4 + lean, py + 10, 1, 1);
     R(ctx, UNIFORM.pantsShade, px + 2 + lean, py + 11, 1, 1);
     R(ctx, UNIFORM.pantsShade, px + 6 + lean, py + 11, 1, 1);
   }
@@ -221,16 +234,21 @@ export function slim(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
 }
 /** Gold chevron + under-foot bar that marks the ball carrier. */
 export function carrierMark(ctx: CanvasRenderingContext2D, x: number, y: number, seconds: number) {
+  withBroadcastAnchor(ctx, x, y, () => {
   const bob = Math.floor(seconds * 4) % 2, cx = Math.round(x), cy = Math.round(y) - 15 - bob;
   R(ctx, INK, cx - 3, cy - 1, 7, 4);
   R(ctx, GOLD, cx - 2, cy, 5, 1); R(ctx, GOLD, cx - 1, cy + 1, 3, 1); R(ctx, GOLD, cx, cy + 2, 1, 1);
   R(ctx, GOLD, cx - 4, Math.round(y) + 7, 9, 1);
+  });
 }
 /** Ball in the air: shadow on the turf, ball raised by z. */
 export function airBall(ctx: CanvasRenderingContext2D, x: number, y: number, z: number, spin: number) {
   drawFootballBall(ctx, x, y, { z, spin, small: true, shadow: true });
 }
 export function landingMark(ctx: CanvasRenderingContext2D, x: number, y: number, seconds: number) {
+  withBroadcastAnchor(ctx, x, y, () => landingMarkAtAnchor(ctx, x, y, seconds));
+}
+function landingMarkAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number, seconds: number) {
   const r = 4 + (Math.floor(seconds * 6) % 2), c = 'rgba(244,210,60,.8)';
   const cx = Math.round(x), cy = Math.round(y);
   for (let i = 1; i <= 2; i++) { R(ctx, c, cx - r + i, cy - 2 + i, 1, 1); R(ctx, c, cx + r - i, cy - 2 + i, 1, 1); R(ctx, c, cx - r + i, cy + 2 - i, 1, 1); R(ctx, c, cx + r - i, cy + 2 - i, 1, 1); }

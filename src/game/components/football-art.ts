@@ -1,4 +1,6 @@
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
+import { withBroadcastAnchor } from './football-broadcast';
+import { sharpPixelRect } from './football-pixel-scale';
 /** Shared kit policy: body is the primary jersey/shell; trim is a restrained secondary mark. */
 export type FootballKit = { body: string; trim: string; dir: 1 | -1; edge?: string; skin?: string };
 export const UNIFORM = { pants: '#fffdf5', pantsShade: '#d8dfe2', ink: '#10213a' } as const;
@@ -65,10 +67,14 @@ export function footballPixels(put: PixelPut, x: number, y: number, held = false
 }
 export function drawFootballBall(ctx: CanvasRenderingContext2D, x: number, y: number,
   options: { held?: boolean; small?: boolean; z?: number; spin?: number; shadow?: boolean } = {}) {
+  return withBroadcastAnchor(ctx, x, y, () => ballAtAnchor(ctx, x, y, options));
+}
+function ballAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
+  options: { held?: boolean; small?: boolean; z?: number; spin?: number; shadow?: boolean }) {
   const held = !!options.held, small = held || !!options.small;
   const z = options.z ?? 0, tall = !held && Math.floor((options.spin ?? 0) * 8) % 2 !== 0;
   const width = tall ? small ? 5 : 7 : small ? 9 : 11, height = tall ? small ? 9 : 11 : small ? 5 : 7;
-  const put: PixelPut = (c, u, v, w, h) => { ctx.fillStyle = c; ctx.fillRect(Math.round(u), Math.round(v), w, h); };
+  const put: PixelPut = (c, u, v, w, h) => { ctx.fillStyle = c; sharpPixelRect(ctx, Math.round(u), Math.round(v), w, h); };
   if (options.shadow) {
     const w = Math.max(3, 8 - Math.round(z / 14));
     put('rgba(8,40,16,.35)', x - w / 2, y + 2, w, 2);

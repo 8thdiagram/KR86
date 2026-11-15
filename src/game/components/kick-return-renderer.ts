@@ -3,9 +3,11 @@ import { kickMatchupTeams } from '../lib/kick-return-teams';
 import { drawTouchdownMarquee } from './football-touchdown-art';
 import { kickDivePose } from '../lib/kick-return-dive';
 import { kickDiveBallReach, kickDiveRules } from '../lib/kick-return-burst';
-import { fieldViewportFrame, type KickViewport } from '../lib/kick-return-viewport';
+import type { KickViewport } from '../lib/kick-return-viewport';
 import { drawFootballBall, footballPixels, playerSkin, positionKit, classicSkinPosition, uniformKit, UNIFORM, type FootballKit } from './football-art';
-import { FOOTBALL_ART_STAGES as ART, drawDeluxeTurf, drawEndZoneLettering, drawFieldFixtures, tone } from './football-deluxe-art';
+import { FOOTBALL_ART_STAGES as ART, drawDeluxeTurf, drawEndZoneLettering, drawFieldFixtures, drawYardNumber, tone } from './football-deluxe-art';
+import { drawBroadcastStadium } from './football-stadium-art';
+import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
 import { heldBall, turnSprite, movementBodyView as motionView, type BodyView } from './football-sprites';
 import { drawPixelEnlarged } from './football-pixel-scale';
 
@@ -22,7 +24,7 @@ const G: Record<string, string> = {
   '8': '111101111101111', '9': '111101111001111',
 };
 const C = {
-  turfA: '#348e43', turfB: '#286f38', line: '#e8f0e0',
+  turfA: '#287d36', turfB: '#257331', line: '#fafcf1',
   ink: '#10213a', skin: '#e0a370', home: '#2f6fd0', homeTrim: '#d8e8ff', away: '#d9392b',
   awayTrim: '#ff9a3c', ball: '#8a4a1f', lace: '#f1e6d0', shadow: 'rgba(8,40,16,.35)',
 };
@@ -87,11 +89,10 @@ function field(ctx: CanvasRenderingContext2D, x0: number, x1: number, matchup?: 
   }
   R(ctx, C.line, 99, 16, 3, 160); R(ctx, C.line, 1099, 16, 3, 160);
   for (let yd = 10; yd <= 50; yd += 10) {
-    for (const wx of [100 + yd * 10, 1100 - yd * 10]) {
+    for (const wx of new Set([100 + yd * 10, 1100 - yd * 10])) {
       if (wx + 16 < x0 || wx - 16 > x1) continue;
-      const s = String(yd);
-      text(ctx, s, wx - textW(s, 2) / 2, 30, C.line, 2);
-      text(ctx, s, wx - textW(s, 2) / 2, 150, C.line, 2);
+      drawYardNumber(ctx, yd, wx, 25, C.line, 2);
+      drawYardNumber(ctx, yd, wx, 153, C.line, 2);
     }
   }
   // The top of each name faces its back line, readable when approaching from midfield.
@@ -191,6 +192,8 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     const by = cy - 2 + Math.round(crouch * .4);
     const hr = (c: string, u: number, v: number, w: number, h: number) =>
       R(ctx, c, cx + (forward > 0 ? u : -u - w), by + v, w, h);
+    // A single connected turf-contact cluster, not an outline or impact rays.
+    if (lift <= 0) hr('#173923', -3, 3, 8, 1);
     hr(UNIFORM.pants, -8, 1, 5, 3);
     hr(UNIFORM.pantsShade, -7, 3, 3, 1);
     hr(kit.body, -3, -1, 6, 4);
@@ -212,6 +215,7 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     const down: 1 | -1 = Math.sin(angle) >= 0 ? 1 : -1;
     const vr = (c: string, u: number, v: number, w: number, h: number) =>
       R(ctx, c, cx + u, cy + (down > 0 ? v : -v - h), w, h);
+    if (lift <= 0) vr('#173923', -2, 7, 5, 1);
     vr(UNIFORM.pants, -2, -7, 3, 5);
     vr(UNIFORM.pants, 1, -7, 3, 5);
     vr(kit.body, -3, -3, 7, 7);
@@ -252,12 +256,15 @@ function diving(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit,
   else if (pose.amount < .5) prone(ctx, ix, iy + 1, kit, ang(-1.0), lift, 1);
   else prone(ctx, ix, iy + 1, kit, ang(-.7), lift);
 }
-function football(ctx: CanvasRenderingContext2D, x: number, y: number, ground: boolean, spin = 0) {
-  drawFootballBall(ctx, x, y, { shadow: ground, spin });
+function football(ctx: CanvasRenderingContext2D, x: number, y: number, ground: boolean, spin = 0, z = 0) {
+  drawFootballBall(ctx, x, y, { shadow: ground, spin, z });
 }
 
 // Visual-only evasion poses. Reads a.moves, never mutates. Returns false for normal running.
 function moveSprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, t: number, a: KickAttempt): boolean {
+  return withBroadcastAnchor(ctx, x, y, () => moveSpriteAtAnchor(ctx, x, y, kit, t, a));
+}
+function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, t: number, a: KickAttempt): boolean {
   if (a.phase !== 'returning') return false;
   const m = a.moves;
   if (!m) return false;
@@ -331,6 +338,9 @@ function moveSprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
 const BLOCKERS = [[22, 46], [14, 78], [22, 134], [14, 160], [34, 30]];
 
 function referee(ctx: CanvasRenderingContext2D, x: number, celebration: number, touchdown: boolean) {
+  return withBroadcastAnchor(ctx, x, 185, () => refereeAtAnchor(ctx, x, celebration, touchdown));
+}
+function refereeAtAnchor(ctx: CanvasRenderingContext2D, x: number, celebration: number, touchdown: boolean) {
   const y = 185;
   R(ctx, '#f7f7f2', x - 4, y - 5, 8, 7);
   for (const stripe of [-3, 0, 3]) R(ctx, '#15191d', x + stripe, y - 5, 1, 7);
@@ -347,18 +357,8 @@ function referee(ctx: CanvasRenderingContext2D, x: number, celebration: number, 
   }
 }
 
-function crowd(ctx: CanvasRenderingContext2D, left: number, right: number, cheering: boolean, seconds: number) {
-  for (let x = Math.floor(left / 16) * 16 + 8; x < right; x += 16) {
-    const index = Math.floor(x / 16);
-    const raised = cheering && Math.floor(seconds * 3 + index % 3) % 2 === 0;
-    const shirt = ['#f3e8ca', '#4aa9df', '#edaa4e'][Math.abs(index) % 3]!;
-    R(ctx, C.skin, x - 1, 3, 3, 3);
-    R(ctx, shirt, x - 2, 6, 5, 5);
-    for (const side of [-1, 1]) {
-      R(ctx, shirt, x + side * 4, raised ? 3 : 7, 2, 4);
-      R(ctx, C.skin, x + side * 4, raised ? 1 : 10, 2, 2);
-    }
-  }
+function crowd(ctx: CanvasRenderingContext2D, left: number, right: number, cheering: boolean, seconds: number, matchup?: KickAttempt['teams']) {
+  drawBroadcastStadium(ctx, left, right, matchup, cheering, seconds);
 }
 
 function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number) {
@@ -451,18 +451,18 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number) {
       for (let i = 1; i <= 5; i++) {
         const f = clamp((a.time - .35) / 1.05, 0, 1) * (1 - i * .06);
         if (f <= 0) continue;
-        const ax = 1060 + (a.landing.x - 1060) * f, ay = 96 + (a.landing.y - 96) * f - Math.sin(f * Math.PI) * 42;
-        R(ctx, C.lace, ax, ay, 1, 1);
+        const ax = 1060 + (a.landing.x - 1060) * f, gy = 96 + (a.landing.y - 96) * f;
+        withBroadcastAnchor(ctx, ax, gy, () => R(ctx, C.lace, ax, gy - Math.sin(f * Math.PI) * 42, 1, 1));
       }
     }
-    football(ctx, b.x, b.y - b.height, b.height < 1, a.time);
+    football(ctx, b.x, b.y, b.height < 1, a.time, b.height);
   }
   // No selection/catch ring, halo, or overhead player marker in any state.
   if (a.phase === 'touchdown') {
     for (let i = 0; i < 24; i++) {
       const sx = p.x + ((i * 37) % 90) - 45 + Math.sin(cel * 2 + i) * 6;
       const sy = ((i * 53 + cel * 40) % 150) + 20;
-      R(ctx, i % 3 === 0 ? home.trim : i % 3 === 1 ? away.trim : C.lace, sx, sy, 2, 2);
+      withBroadcastAnchor(ctx, sx, sy, () => R(ctx, i % 3 === 0 ? home.trim : i % 3 === 1 ? away.trim : C.lace, sx, sy, 2, 2));
     }
   }
   referee(ctx, Math.min(a.player.x + 34, KR.worldWidth - 18), cel, a.phase === 'touchdown');
@@ -474,7 +474,7 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number) {
 export function kickRenderCamera(attempt: KickAttempt | null, viewWidth: number = KR.width, immersive = false,
   viewport?: KickViewport) {
   if (viewport?.landscape) {
-    const { scale, offsetY } = fieldViewportFrame(viewport);
+    const { scale, offsetY } = broadcastViewportFrame(viewport);
     const visibleWidth = viewWidth / scale;
     const player = attempt?.player ?? { x: 118, y: 96 };
     // Follow progress downfield only. Both sidelines stay fixed while the returner
@@ -506,10 +506,15 @@ export function drawKickReturn(ctx: CanvasRenderingContext2D, attempt: KickAttem
   const { scale, camX, camY, offY } = kickRenderCamera(attempt, viewWidth, !!viewport, viewport);
   ctx.setTransform(scale, 0, 0, scale, -camX * scale, offY - camY * scale);
   ctx.beginPath(); ctx.rect(0, 0, KR.worldWidth, KR.height); ctx.clip();
-  field(ctx, camX, camX + viewWidth / scale + 1, attempt?.teams ?? matchup);
-  fieldOverlay?.(ctx);
-  crowd(ctx, camX, camX + viewWidth / scale + 1, attempt?.phase === 'touchdown', celebrationSeconds);
-  if (attempt) world(ctx, attempt, celebrationSeconds);
+  const visible = viewWidth / scale, range = broadcastVisibleRange(camX, visible);
+  const projection = { centerX: camX + visible / 2 };
+  withBroadcastWorld(ctx, projection, () => {
+    const ground = broadcastFieldContext(ctx, projection);
+    field(ground, range.left, range.right, attempt?.teams ?? matchup);
+    fieldOverlay?.(ground);
+    crowd(ground, range.left, range.right, attempt?.phase === 'touchdown', celebrationSeconds, attempt?.teams ?? matchup);
+    if (attempt) world(ctx, attempt, celebrationSeconds);
+  });
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.restore();
   ctx.save();
@@ -525,4 +530,4 @@ export function drawKickReturn(ctx: CanvasRenderingContext2D, attempt: KickAttem
 }
 
 /** Read-only anatomy shared by both modes; uniform and ball refinements apply everywhere. */
-export const kickFootballArt = { field, sprite, moveSprite, prone, referee, football, crowd };
+export const kickFootballArt = { field, sprite, moveSprite, prone, referee, football, crowd, text };

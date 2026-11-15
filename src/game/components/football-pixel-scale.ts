@@ -1,3 +1,4 @@
+import { withBroadcastAnchor } from './football-broadcast';
 /** Player-art magnification only; never changes world positions or hitboxes. */
 export const PLAYER_ART_SCALE = 1.125;
 type PixelDraw = (ctx: CanvasRenderingContext2D, x: number, y: number) => void;
@@ -18,6 +19,11 @@ export function sharpPixelRect(ctx: CanvasRenderingContext2D, x: number, y: numb
  * Canvas state/methods forward to the real context, preserving pose animation. */
 export function drawPixelEnlarged(
   ctx: CanvasRenderingContext2D, x: number, y: number, draw: PixelDraw, footOffset = 0,
+) {
+  return withBroadcastAnchor(ctx, x, y, () => drawEnlargedPixels(ctx, x, y, draw, footOffset));
+}
+function drawEnlargedPixels(
+  ctx: CanvasRenderingContext2D, x: number, y: number, draw: PixelDraw, footOffset: number,
 ) {
   const ax = Math.round(x), ay = Math.round(y), foot = ay + footOffset;
   // Symmetric half-pixel rounding preserves mirrored rectangle silhouettes.
