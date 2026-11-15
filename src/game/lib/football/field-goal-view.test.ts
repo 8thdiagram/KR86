@@ -10,6 +10,7 @@ import { fieldGoalFrame, fieldGoalSample, fieldGoalVerdictVisible, projectFieldG
 import { kickMatchupTeams } from '../kick-return-teams';
 import { isFootballGame } from './storage';
 import { FIELD_GOAL_FLIGHT_SCALE } from './celebration-timing';
+import { FIELD_GOAL_PADDING_COLORS } from '../../components/football-field-goal-padding';
 
 function kick(accuracy: number | undefined = undefined, distance = 35, hash = 96, side: 'home' | 'away' = 'home') {
   const g = createFootball(1986);
@@ -112,6 +113,46 @@ test('close camera follows the real high arc without hiding the ball or changing
         assert.equal(frame.focal, aim.focal, 'no zoom or horizontal aim change during flight');
       }
     }
+  }
+});
+test('crowd seats remain anchored to the field through camera follow instead of generating extra fans', () => {
+  for (const [width, height] of [[393, 500], [852, 270]]) {
+    const g = kick(.5, 20), s = g.special!;
+    const base = fieldGoalFrame(width!, height!, s);
+    const initial = context(); drawFootball(initial.ctx, g, { width, height }, 0);
+    const seats = (rects: typeof initial.rects) => rects.filter(r => r.color === '#10131b' && r.w === 4 && r.h === 3 &&
+      r.y >= 37 && r.y < base.stadiumHorizon);
+    const initialSeats = seats(initial.rects);
+    assert(initialSeats.length > 0);
+    let followed = false;
+    for (const t of [.15, .35, .55, .75, 1]) {
+      s.stage = 'flight'; s.ball = { x: s.fromX + (s.toX - s.fromX) * t, y: s.toY, z: fieldGoalHeight(g, t) };
+      const f = fieldGoalFrame(width!, height!, s);
+      const drawing = context(), moves: number[][] = [];
+      drawing.ctx.translate = (x, y) => { moves.push([x, y]); };
+      const before = JSON.stringify(g);
+      drawFootball(drawing.ctx, g, { width, height }, 0);
+      assert.deepEqual(seats(drawing.rects), initialSeats, 'the exact same fans occupy the same seats');
+      assert.deepEqual(moves[0], [0, f.cameraLift], 'stadium moves in world space by precisely the field camera offset');
+      assert.equal(f.stadiumHorizon, base.stadiumHorizon);
+      const goal = projectFieldGoal({ y: 96, z: 0, depth: 1 }, f);
+      const initialGoal = projectFieldGoal({ y: 96, z: 0, depth: 1 }, base);
+      assert(Math.abs(goal.y - initialGoal.y - f.cameraLift) < 1e-8);
+      assert.equal(JSON.stringify(g), before);
+      if (f.cameraLift > 0) followed = true;
+    }
+    assert(followed, 'test includes a high kick that actually activates camera follow');
+  }
+});
+test('projected perimeter padding appears below the seating bowl without altering kick state', () => {
+  for (const distance of [20, 35, 55]) for (const [width, height] of [[393, 500], [852, 270]]) {
+    const g = kick(undefined, distance), before = JSON.stringify(g), { ctx, rects } = context();
+    drawFootball(ctx, g, { width, height }, 0);
+    for (const color of Object.values(FIELD_GOAL_PADDING_COLORS))
+      assert(rects.some(r => r.color === color), 'pad faces, seams and highlights are rendered');
+    const pixels = rects.filter(r => Object.values(FIELD_GOAL_PADDING_COLORS).includes(r.color as typeof FIELD_GOAL_PADDING_COLORS.face));
+    assert(pixels.every(r => [r.x, r.y, r.w, r.h].every(Number.isInteger)), 'padding uses crisp integer raster edges');
+    assert.equal(JSON.stringify(g), before);
   }
 });
 test('human slider, left/right hashes, actual trajectory and scoring use the same opening', () => {

@@ -14,3 +14,9 @@ Short attempts must look visibly close; long attempts should get harder through 
 **Why:** The user reported that an attempt under 30 yards still looked far away and explicitly requested continuous distance-based difficulty.
 
 **How to apply:** Calibrate from actual launch/post coordinates, never add snap and end-zone distance to the already announced distance. Keep the aiming track stable and left/right hashes aligned with the actual posts. A close camera must keep the full ball arc visible by moving the whole scene together, not changing only the drawn ball or the scoring outcome.
+
+Fans must remain fixed relative to the field when the kick camera follows the ball; they must not appear attached to the camera.
+
+**Why:** The user specifically corrected crowd behavior during airborne field goals.
+
+**How to apply:** Keep the crowd and stadium anchored to the same world as the turf and posts. Camera follow must not change the seating layout or spectator count.

@@ -7,6 +7,7 @@ import { fieldGoalDistance } from '../lib/football/playbook';
 import { kickMatchupTeams } from '../lib/kick-return-teams';
 import { uniformKit } from './football-art';
 import { slim, R, type Kit, type Pose } from './football-sprites';
+import { drawFieldGoalPadding } from './football-field-goal-padding';
 
 /** Camera and timing constants are presentation-only; scoring remains engine-owned. */
 export const GOAL_VIEW = { halfWidth: 20, crossbar: 10, top: 46, followThrough: .22, continuation: .26 } as const;
@@ -32,7 +33,7 @@ export function fieldGoalFrame(width: number, height: number, s?: SpecialTeams) 
     const ball = fieldGoalSample(s);
     const d = Math.max(8, FIELD_GOAL.near + range * ball.depth);
     const ballY = horizon + (168 - horizon) * FIELD_GOAL.near / d - ball.z * focal / d;
-    lift = Math.max(0, targetTop - ballY);
+    lift = Math.ceil(Math.max(0, targetTop - ballY));
   }
   return {
     scale,
@@ -41,6 +42,8 @@ export function fieldGoalFrame(width: number, height: number, s?: SpecialTeams) 
     focal,
     ground: 168 + lift,
     horizon: horizon + lift,
+    stadiumHorizon: horizon,
+    cameraLift: lift,
     near: FIELD_GOAL.near,
     range,
     fromX,
@@ -90,17 +93,21 @@ function hash(n: number) {
 }
 
 function drawCrowd(ctx: CanvasRenderingContext2D, frame: ReturnType<typeof fieldGoalFrame>, home: Kit, away: Kit) {
-  const { width } = frame;
-  R(ctx, '#091321', 0, 0, width, frame.horizon + 3);
+  const { width, stadiumHorizon: horizon } = frame;
+  // Seats are authored once in stadium coordinates. Camera follow translates
+  // the existing stand with the field; it never grows new rows of spectators.
+  ctx.save();
+  ctx.translate(0, frame.cameraLift);
+  R(ctx, '#091321', 0, 0, width, horizon + 3);
   // Upper deck, shadowed fascia, and a second seating bowl establish stadium depth.
   R(ctx, '#17283b', 0, 8, width, 2);
   R(ctx, '#263a4c', 0, 10, width, 1);
   R(ctx, '#122033', 0, 29, width, 3);
   R(ctx, '#26384a', 0, 32, width, 2);
   R(ctx, '#0b1726', 0, 34, width, 4);
-  R(ctx, '#17283a', 0, frame.horizon - 5, width, 2);
-  R(ctx, '#34475a', 0, frame.horizon - 3, width, 1);
-  R(ctx, '#26384a', 0, frame.horizon - 2, width, 2);
+  R(ctx, '#17283a', 0, horizon - 5, width, 2);
+  R(ctx, '#34475a', 0, horizon - 3, width, 1);
+  R(ctx, '#26384a', 0, horizon - 2, width, 2);
   // Blocky floodlight banks, tiny warm bulbs against the blue-black night.
   for (const lx of [Math.round(width * .08), Math.round(width * .92)]) {
     R(ctx, '#314458', lx - 8, 5, 16, 3);
@@ -108,7 +115,7 @@ function drawCrowd(ctx: CanvasRenderingContext2D, frame: ReturnType<typeof field
   }
   const shirts = [home.body, home.body, home.trim, away.body, away.body, away.trim, '#d8d2bd', '#65727c'];
   let index = 0;
-  for (let row = 0; row < Math.floor((frame.horizon - 37) / 6); row++) {
+  for (let row = 0; row < Math.floor((horizon - 37) / 6); row++) {
     const y = 37 + row * 6;
     let x = row % 2 ? -3 : 1;
     while (x < width + 8) {
@@ -135,9 +142,10 @@ function drawCrowd(ctx: CanvasRenderingContext2D, frame: ReturnType<typeof field
   }
   // Recessed aisle breaks and sparse rail glints keep the crowd from reading as static.
   for (let x = 18; x < width; x += 74) {
-    R(ctx, '#0c1928', x, 13, 2, Math.max(1, frame.horizon - 19));
-    R(ctx, '#526174', x, frame.horizon - 4, 7, 1);
+    R(ctx, '#0c1928', x, 13, 2, Math.max(1, horizon - 19));
+    R(ctx, '#526174', x, horizon - 4, 7, 1);
   }
+  ctx.restore();
 }
 
 function groundAtDepth(frame: ReturnType<typeof fieldGoalFrame>, depth: number) {
@@ -391,6 +399,7 @@ export function drawFieldGoalFlight(ctx: CanvasRenderingContext2D, g: FootballGa
   ctx.imageSmoothingEnabled = false;
   drawCrowd(ctx, frame, home, away);
   drawField(ctx, frame);
+  drawFieldGoalPadding(ctx, frame, projectFieldGoal);
 
   const drawBall = () => {
     if (ball.ground < height / frame.scale)
