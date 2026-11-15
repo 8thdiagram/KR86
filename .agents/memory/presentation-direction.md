@@ -39,9 +39,9 @@ The supplied intro video is for visuals only: no original sound and no “hut”
 
 **How to apply:** Keep source video audio out of playback. Prevent ready/visibility events from replaying a completed theme or stacking music. Start automatically with sound enabled; never display a “Start with sound” option or block the intro waiting for audio. Where browsers require a gesture, use the first ordinary tap/key to unlock sound without a separate prompt or restarting the intro. Respect browser restrictions and preserve gameplay cadence. Stop title music for replay, gameplay or a hidden page. Do not display skip-intro or mute-sound options.
 
-The opening video should recreate a natural catch and return with bolder, sharp NES-inspired pixel art. Prefer the actual game sprites and movement language over filtering the old supplied video. Preserve aspect-fit presentation without stretching, aggressive cropping, teal frames or decorative padding.
+The opening video should use visibly low-resolution, sharp pixels and a limited NES-inspired palette, with no teal frame or decorative padding. Preserve the original composition and timing rather than stretching or aggressively cropping it.
 
-**Why:** The user explicitly asked to redo the intro with bolder colors, recreated 8-bit graphics and catch/return timing more like the game.
+**Why:** The user wanted the supplied opening to match the rest of the late-NES presentation rather than look high-resolution and smooth.
 
 **How to apply:** Use nearest-neighbor enlargement of genuinely lower-resolution artwork, not a blur filter. Preserve important title/player artwork when fitting different screen shapes.
 
