@@ -1,7 +1,7 @@
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
-/** One uniform policy for every Classic/Full Game pose. body = jersey, trim = helmet. */
+/** Shared kit policy: body is the primary jersey/shell; trim is a restrained secondary mark. */
 export type FootballKit = { body: string; trim: string; dir: 1 | -1; edge?: string };
-export const UNIFORM = { pants: '#faf8ef', pantsShade: '#c3cbd4', ink: '#10213a' } as const;
+export const UNIFORM = { pants: '#fffdf5', pantsShade: '#d8dfe2', ink: '#10213a' } as const;
 type TeamPalette = { body: string; trim?: string };
 function luminance(hex: string) {
   const channels = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)

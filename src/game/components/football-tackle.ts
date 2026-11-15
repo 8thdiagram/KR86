@@ -49,15 +49,4 @@ export function drawTackle(ctx: CanvasRenderingContext2D, g: FootballGame,
       R(pixels, '#10213a', arm, y, 2, 1);
     });
   }
-  if (frame === 0) {
-    const x = Math.round((cx + dx) / 2), y = Math.round((cy + dy) / 2) - 4;
-    // Two short impact ticks, not a large arcade explosion.
-    R(ctx, '#f1e6d0', x - 3, y - 6, 2, 2);
-    R(ctx, '#f1e6d0', x + 3, y - 3, 2, 1);
-    R(ctx, s.defender.team === 'home' ? home.body : away.body, x - 2, y, 4, 2);
-  }
-  if (frame === 3) {
-    R(ctx, '#b5ae74', cx - 8, cy + 8, 2, 1);
-    R(ctx, '#b5ae74', cx + 9, cy + 7, 2, 1);
-  }
 }

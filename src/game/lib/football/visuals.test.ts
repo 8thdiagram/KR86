@@ -140,7 +140,7 @@ test('Full Game airborne balls keep carried size; passes stay horizontal while k
   assert.deepEqual(bounds(0, 40), { width: 9, height: 5 });
   assert.deepEqual(bounds(.15, 40), { width: 5, height: 9 });
 });
-test('every configured team uses its primary jersey, secondary helmet and white pants in both modes', () => {
+test('every configured team uses primary-color jerseys and helmets with white pants in both modes', () => {
   for (const team of KICK_TEAMS) for (const dir of [-1, 1] as const) {
     const kit = uniformKit(team, dir);
     for (const mode of ['classic', 'full'] as const) {
@@ -149,10 +149,11 @@ test('every configured team uses its primary jersey, secondary helmet and white 
       else slim(ctx, 100, 100, kit);
       assert.equal(Math.min(...paints.map(p => p.y)), 90, `${team.name} ${mode} keeps the authored crown height`);
       assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `${team.name} ${mode} keeps the foot/shadow anchor`);
-      assert(paints.some(p => p.c === team.trim && p.x === (mode === 'classic' ? 98 : 99) && p.y === 90 &&
-        p.w === (mode === 'classic' ? 7 : 6) && p.h === 6), `${team.name} narrower secondary helmet`);
+      assert(paints.some(p => p.c === team.body && p.y < 95 &&
+        p.w >= (mode === 'classic' ? 6 : 5) && p.h >= 4), `${team.name} primary-color helmet shell`);
+      assert(paints.some(p => p.c === team.trim && p.h <= 2), `${team.name} secondary helmet accent`);
       assert.equal(pixels.has('100,89'), false, `${mode}: helmet retains its authored silhouette`);
-      assert(paints.some(p => p.c === team.body && p.h === (mode === 'classic' ? 6 : 4)), `${team.name} primary jersey`);
+      assert(paints.some(p => p.c === team.body && p.h >= (mode === 'classic' ? 5 : 4)), `${team.name} primary jersey`);
       assert([UNIFORM.pants, UNIFORM.pantsShade].includes(pixels.get('98,103') as typeof UNIFORM.pants),
         `${team.name} white pants or their far-leg shade, ${mode}`);
       assert([...pixels.values()].includes(UNIFORM.pants), `${team.name} retains white near-leg pixels, ${mode}`);
@@ -170,8 +171,8 @@ test('nine compact turn helmets keep the same height, sharp pixels and authored 
     assert.equal(JSON.stringify(kit), before, `view ${view}/${dir} leaves the uniform untouched`);
     assert.equal(Math.min(...paints.map(p => p.y)), kit.edge ? 92 : 93, `view ${view}/${dir} keeps the crown line`);
     assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `view ${view}/${dir} keeps the ground anchor`);
-    assert(paints.some(p => p.c === kit.trim && p.y === 93 && p.h === 4 && p.w === shellWidths[view]),
-      `view ${view} has its hand-authored compact shell`);
+    assert(paints.some(p => p.c === kit.body && p.y === 93 && p.h === 4 && p.w === shellWidths[view]),
+      `view ${view} has its hand-authored primary-color shell`);
     for (const p of paints) for (const n of [p.x, p.y, p.w, p.h])
       assert(Number.isInteger(n), `view ${view} draws integral pixel rectangles`);
     const repeat = canvas();

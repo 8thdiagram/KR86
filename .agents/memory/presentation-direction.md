@@ -15,6 +15,12 @@ Keep the current enlarged player height. Favor slightly leaner equipped bodies a
 
 **How to apply:** Refine native pixel clusters across standing, turning, spinning, diving, falling, and kicking artwork. Keep foot anchors, helmet depth, uniform details, collision geometry, speeds, and action timing intact.
 
+Prioritize clear individual sprites: more white on pants, more primary team color on jerseys and helmets, and restrained dark definition for facemasks and separating players. Do not add decorative lines around downed players.
+
+**Why:** The user found the detailed sprites and lines around grounded players messy and asked for simpler, clearer uniforms and individual silhouettes.
+
+**How to apply:** Use broad readable color clusters, small secondary accents, minimal internal shading, and clean grounded poses. Keep gameplay, height, and animation timing unchanged; increase artwork resolution only if clarity requires it.
+
 For app icons, preserve the latest supplied artwork and use a subtle, sharp iPhone-style edge finish.
 
 **Why:** The user requested this finish for replacement app icons.
@@ -56,6 +62,12 @@ Preserve the supplied ’86 field lettering design. Treat it as slightly faded, 
 **Why:** The user explicitly liked the existing lettering and requested restrained wear rather than a redesign.
 
 **How to apply:** Keep regular-season Franchise placement and playoff exclusions; use sparse deterministic missing pixels and modest fading without making the lettering unrecognizable.
+
+End-zone team names should also look like worn, textured field paint, matching the midfield logo rather than clean outlined decals.
+
+**Why:** The user explicitly requested worn/texturized end-zone names like the midfield logo.
+
+**How to apply:** Preserve readable team lettering and colors, using subtle fading and fixed native-pixel scuffs that do not shimmer as the camera moves.
 
 Call the championship game **Super Cup**, not Super Bowl.
 

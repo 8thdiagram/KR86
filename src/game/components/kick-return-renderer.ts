@@ -107,24 +107,22 @@ function field(ctx: CanvasRenderingContext2D, x0: number, x1: number, matchup?: 
 }
 
 type Kit = FootballKit;
-// Shared anatomy (all poses): compact 6x5 helmet shell with preserved mask,
-// 6x2 shoulder pads, 4px jersey under a 5px outline, split legs and boots.
+// Shared anatomy (all poses): compact primary-color helmet, visible mask,
+// team-colored jersey, bright split pants and small dark boots.
 type Put = (c: string, u: number, v: number, w: number, h: number) => void;
 function helmet(put: Put, kit: Kit, hx: number, hy: number, d: 1 | -1) {
-  // Narrow shell by one native pixel; retain the original crown and neck line.
+  // The helmet shell reads as the primary kit color; trim is only a small band.
   hx += 1; hy += 1;
   if (kit.edge) put(kit.edge, hx + 1, hy - 1, 6, 1);
-  put(C.ink, hx + 1, hy, 6, 1);
-  put(C.ink, hx, hy + 1, 8, 3);
-  put(C.ink, hx + 1, hy + 4, 6, 1);
-  put(kit.trim, hx + 1, hy, 6, 5); put(kit.body, hx + 3, hy, 1, 1);
-  put(kit.body, d > 0 ? hx + 1 : hx + 5, hy + 2, 1, 2);
+  put(kit.body, hx + 1, hy, 6, 5);
+  put(kit.trim, hx + 2, hy, 3, 1);
+  put(kit.trim, d > 0 ? hx + 1 : hx + 6, hy + 2, 1, 2);
   put(C.skin, d > 0 ? hx + 3 : hx + 2, hy + 1, 2, 2);
   put(C.ink, d > 0 ? hx + 3 : hx + 2, hy + 3, 2, 1);
   put(C.ink, d > 0 ? hx + 6 : hx + 1, hy + 1, 1, 3);
   if (ART.players) { // shell highlight + darker lower back edge, inside the helmet
-    put(tone(kit.trim, 1.3), d > 0 ? hx + 2 : hx + 4, hy, 1, 1);
-    put(tone(kit.trim, .7), d > 0 ? hx + 1 : hx + 5, hy + 4, 1, 1);
+    put(tone(kit.body, 1.16), hx + 1, hy + 1, 1, 1);
+    put(tone(kit.body, .78), hx + 5, hy + 4, 1, 1);
   }
 }
 function ballShape(put: Put, bx: number, by: number, d: 1 | -1) {
@@ -150,14 +148,13 @@ function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: 
   R(ctx, UNIFORM.pants, lx, py + 10, 2, lh); R(ctx, UNIFORM.pants, rx, py + 10, 2, rh);
   R(ctx, C.ink, lx + (d > 0 ? 0 : -1), py + 9 + lh, 3, 1); R(ctx, C.ink, rx + (d > 0 ? 0 : -1), py + 9 + rh, 3, 1);
   if (ART.players) { R(ctx, UNIFORM.pantsShade, lx + 1, py + 11, 1, 1); R(ctx, UNIFORM.pantsShade, rx, py + 11, 1, 1); }
-  R(ctx, C.ink, px + 1, py + 6, 5, 5);
-  R(ctx, kit.body, px + 2, py + 6, 4, 5);
+  R(ctx, kit.body, px + 1, py + 6, 5, 5);
   if (ART.players) {
     R(ctx, tone(kit.body, 1.16), px + 3, py + 6, 1, 1);
-    R(ctx, tone(kit.body, .68), px + 5, py + 7, 1, 3);
+    R(ctx, tone(kit.body, .88), px + 5, py + 7, 1, 3);
   }
-  R(ctx, kit.trim, px + 2, py + 8, 4, 1);
-  if (ART.players) { R(ctx, tone(kit.body, .78), px + 2, py + 10, 1, 1); R(ctx, tone(kit.body, .78), px + 5, py + 10, 1, 1); }
+  R(ctx, kit.trim, px + 2, py + 8, 1, 1);
+  if (ART.players) R(ctx, tone(kit.body, .88), px + 5, py + 10, 1, 1);
   const la = -Math.sin(step * Math.PI / 2), ra = -la;
   R(ctx, C.ink, px + 1 + lean, py + 7 + la, 1, 3);
   R(ctx, tone(kit.body, .76), px + 1 + lean, py + 7 + la, 1, 2);
@@ -185,24 +182,24 @@ function sprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, s
 function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, angle: number, lift: number, crouch = 0, ball = false) {
   const cx = Math.round(x), cy = Math.round(y - lift), horizontal = Math.abs(Math.cos(angle)) >= Math.abs(Math.sin(angle));
   const forward: 1 | -1 = Math.cos(angle) >= 0 ? 1 : -1;
-  const far = tone(kit.body, .68), light = tone(kit.body, 1.16);
+  const far = tone(kit.body, .86), light = tone(kit.body, 1.16);
   const shadowW = (horizontal ? 18 : 10) - Math.min(4, Math.max(0, Math.round(lift)));
-  R(ctx, C.shadow, cx - Math.floor(shadowW / 2), Math.round(y) + (horizontal ? 2 : 7), shadowW, 2);
+  if (lift > 0) R(ctx, C.shadow, cx - Math.floor(shadowW / 2), Math.round(y) + (horizontal ? 2 : 7), shadowW, 2);
   if (horizontal) {
     const by = cy - 2 + Math.round(crouch * .4);
     const hr = (c: string, u: number, v: number, w: number, h: number) =>
       R(ctx, c, cx + (forward > 0 ? u : -u - w), by + v, w, h);
-    hr(C.ink, -9, 2, 3, 2); hr(UNIFORM.pants, -8, 1, 5, 2);
-    hr(far, -7, 3, 4, 1); hr(C.ink, -8, 4, 3, 1);
-    hr(C.ink, -4, -2, 7, 6); hr(kit.body, -3, -1, 6, 4);
-    hr(light, -3, -1, 3, 1); hr(kit.trim, 0, -1, 1, 4);
+    hr(UNIFORM.pants, -8, 1, 5, 3);
+    hr(UNIFORM.pantsShade, -7, 3, 3, 1);
+    hr(kit.body, -3, -1, 6, 4);
+    hr(light, -3, -1, 3, 1); hr(kit.trim, 0, -1, 1, 2);
     hr(far, -1, -3, ball ? 5 : 9, 2);
     hr(kit.body, 0, 2, ball ? 5 : 9, 2);
     hr(C.skin, ball ? 4 : 10, 2, 2, 1);
     // Crown overlaps the shoulder, avoiding a detached helmet at either facing.
-    hr(C.ink, 3, -4, 5, 1); hr(C.ink, 2, -3, 6, 3); hr(C.ink, 3, 0, 5, 1);
-    hr(kit.trim, 3, -4, 5, 3);
-    hr(tone(kit.trim, 1.28), 4, -4, 3, 1); hr(far, 6, -1, 1, 1);
+    hr(kit.body, 3, -4, 5, 4);
+    hr(kit.trim, 4, -4, 3, 1);
+    hr(tone(kit.body, 1.16), 4, -3, 2, 1); hr(far, 6, -1, 1, 1);
     hr(C.skin, 7, -2, 1, 2); hr(C.ink, 7, 0, 2, 1);
     if (ball) {
       heldBall(ctx, forward > 0 ? cx - 1 : cx - 7, by + 1);
@@ -212,13 +209,13 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     const down: 1 | -1 = Math.sin(angle) >= 0 ? 1 : -1;
     const vr = (c: string, u: number, v: number, w: number, h: number) =>
       R(ctx, c, cx + u, cy + (down > 0 ? v : -v - h), w, h);
-    vr(C.ink, -3, -8, 3, 5); vr(UNIFORM.pants, -2, -7, 2, 5);
-    vr(C.ink, 1, -8, 3, 5); vr(UNIFORM.pants, 1, -7, 2, 5);
-    vr(C.ink, -3, -3, 7, 7); vr(kit.body, -2, -2, 6, 5);
-    vr(light, -2, -2, 3, 1); vr(kit.trim, -3, 0, 6, 1);
+    vr(UNIFORM.pants, -2, -7, 3, 5);
+    vr(UNIFORM.pants, 1, -7, 3, 5);
+    vr(kit.body, -3, -3, 7, 7);
+    vr(light, -2, -2, 3, 1); vr(kit.trim, -2, 0, 2, 1);
     vr(far, -6, -2, 2, 5); vr(kit.body, 4, -2, 2, 4); vr(C.skin, 5, 2, 2, 1);
-    vr(C.ink, -3, 3, 8, 5); vr(kit.trim, -2, 3, 6, 3);
-    vr(tone(kit.trim, 1.28), -2, 3, 3, 1); vr(far, 3, 5, 2, 1);
+    vr(kit.body, -3, 3, 8, 5); vr(kit.trim, -2, 3, 2, 1);
+    vr(tone(kit.body, 1.16), -2, 4, 3, 1); vr(far, 3, 5, 2, 1);
     if (ball) {
       heldBall(ctx, kit.dir > 0 ? cx + 1 : cx - 7, cy + down);
       vr(kit.body, kit.dir > 0 ? 4 : -6, 0, 2, 2);
@@ -387,7 +384,6 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number) {
     actors.push({ x, y, draw: () => {
       if (kick) {
         sprite(ctx, x, y, away, a.time > .1 ? t + d.id : 0);
-        if (d.id === 10 && a.time >= .28 && a.time <= .42) R(ctx, away.trim, x - 7, y + 1, 7, 2);
       }
       else if (kickDivePose(a, d, cel)) {
         diving(ctx, d.x, d.y, away, kickDivePose(a, d, cel)!);
@@ -399,16 +395,13 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number) {
         sprite(ctx, d.x + lean + (tackling ? lunge(d.x) : 0), d.y + (tackling ? 2 : 0), { ...away, dir: m.facing },
           speed > 3 && a.phase === 'returning' ? m.stride : 0, false, shuffling ? 1 : 0, 0,
           a.phase === 'returning' ? motionView(m.vx, m.vy, m.facing) : undefined);
-        if (tackling) R(ctx, away.trim, d.x + lunge(d.x) + m.facing * 5 - 2, d.y - 2, 4, 2);
       } else if (d.roamer) {
         const facing = tackling ? (p.x >= d.x ? 1 : -1) : d.roamer.vx > 2 ? 1 : -1;
         sprite(ctx, d.x + (tackling ? lunge(d.x) : 0), d.y + (tackling ? 1 : 0), { ...away, dir: facing },
           d.active && a.phase === 'returning' ? d.roamer.stride : 0);
-        if (tackling) R(ctx, away.trim, d.x + lunge(d.x) + facing * 5 - 2, d.y - 2, 4, 2);
       } else
       if (tackling) {
         sprite(ctx, d.x + lunge(d.x), d.y + 1, away, 0);
-        R(ctx, away.trim, d.x + lunge(d.x) + Math.sign(p.x - d.x) * 5 - 2, d.y - 2, 4, 2);
       }
       else sprite(ctx, d.x, d.y, away, d.active ? t + d.id : 0);
     } });
@@ -422,10 +415,6 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number) {
         sprite(ctx, p.x, p.y + 1, home, 0, true, 1, home.dir, 5);
       }
       else { lying(ctx, p.x, p.y + 2, home); football(ctx, p.x + 9 + Math.round((1 - imp) * 3), p.y + 5 - Math.round(Math.sin(imp * Math.PI) * 3), imp > .8); }
-      if (imp > 0 && imp < .7) {
-        const r = 4 + Math.round(imp * 4);
-        for (let i = 0; i < 2; i++) R(ctx, i % 2 ? C.lace : away.trim, p.x + Math.cos(i * Math.PI / 2 + .8) * r, p.y - 3 + Math.sin(i * Math.PI / 2 + .8) * r, 2, 2);
-      }
     }
     else if (a.phase === 'touchdown') {
       const active = a.moves?.active;
@@ -463,8 +452,6 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number) {
     football(ctx, b.x, b.y - b.height, b.height < 1, a.time);
   }
   // No selection/catch ring, halo, or overhead player marker in any state.
-  // down marker
-  if (a.phase === 'tackled') R(ctx, C.lace, Math.round(p.x), 16, 2, 160);
   if (a.phase === 'touchdown') {
     for (let i = 0; i < 24; i++) {
       const sx = p.x + ((i * 37) % 90) - 45 + Math.sin(cel * 2 + i) * 6;

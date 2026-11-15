@@ -114,22 +114,44 @@ const glyph = (ch: string) => F[ch] ?? F[' ']!;
 const lineW = (s: string) => [...s].reduce((w, ch) => w + glyph(ch)[0]!.length + 1, 0) - 1;
 const GLYPH_H = 7, AVAIL = 140, CAP = 3;
 
-function drawLine(ctx: CanvasRenderingContext2D, s: string, x: number, y: number, px: number, color: string, ink: string) {
-  for (const pass of [0, 1]) {
-    let cx = x;
-    for (const ch of s) {
-      const g = glyph(ch);
-      for (let r = 0; r < GLYPH_H; r++) for (let c = 0; c < g[r]!.length; c++) if (g[r]![c] === '#') {
-        const gx = cx + c * px, gy = y + r * px;
-        if (pass === 0) { R(ctx, ink, gx - 1, gy, px + 2, px); R(ctx, ink, gx, gy - 1, px, px + 2); }
-        else R(ctx, color, gx, gy, px, px);
+type PaintPixel = { x: number; y: number; faded: boolean };
+const letteringPixels = new Map<string, PaintPixel[]>();
+/** Authored coordinates, not screen coordinates: scuffs never crawl with the camera. */
+function wornLettering(s: string, px: number): PaintPixel[] {
+  const key = `${px}:${s}`, cached = letteringPixels.get(key);
+  if (cached) return cached;
+  const pixels: PaintPixel[] = [];
+  let cx = 0;
+  for (const ch of s) {
+    const g = glyph(ch);
+    for (let r = 0; r < GLYPH_H; r++) for (let c = 0; c < g[r]!.length; c++) if (g[r]![c] === '#') {
+      for (let dy = 0; dy < px; dy++) for (let dx = 0; dx < px; dx++) {
+        const x = cx + c * px + dx, y = r * px + dy;
+        const seed = (Math.imul(x + 17, 73856093) ^ Math.imul(y + 31, 19349663)) >>> 0;
+        // Sparse missing paint at larger sizes; preserve tiny one-pixel strokes.
+        if (px > 1 && seed % 101 < 6) continue;
+        pixels.push({ x, y, faded: seed % 19 < 3 });
       }
-      cx += (g[0]!.length + 1) * px;
     }
+    cx += (g[0]!.length + 1) * px;
   }
+  // Bounded cache, including custom Franchise names.
+  if (letteringPixels.size >= 128) letteringPixels.clear();
+  letteringPixels.set(key, pixels);
+  return pixels;
 }
-/** Fitted, crisp whole-pixel lettering centred in the end zone. */
-export function drawEndZoneLettering(ctx: CanvasRenderingContext2D, name: string, color: string, centerX: number, rotation: number, ink: string) {
+function drawLine(ctx: CanvasRenderingContext2D, s: string, x: number, y: number, px: number, color: string) {
+  ctx.save();
+  const alpha = ctx.globalAlpha;
+  ctx.fillStyle = color;
+  for (const pixel of wornLettering(s, px)) {
+    ctx.globalAlpha = alpha * (pixel.faded ? .54 : .84);
+    ctx.fillRect(Math.round(x + pixel.x), Math.round(y + pixel.y), 1, 1);
+  }
+  ctx.restore();
+}
+/** Fitted whole-pixel field paint, lightly faded and scuffed like the midfield logo. */
+export function drawEndZoneLettering(ctx: CanvasRenderingContext2D, name: string, color: string, centerX: number, rotation: number, _ink: string) {
   const label = name.toUpperCase();
   let lines = [label];
   let px = Math.max(1, Math.min(CAP, Math.floor(AVAIL / lineW(label))));
@@ -148,7 +170,7 @@ export function drawEndZoneLettering(ctx: CanvasRenderingContext2D, name: string
   ctx.translate(centerX, FIELD_ART.centerY);
   ctx.rotate(rotation);
   lines.forEach((l, i) => drawLine(ctx, l, -Math.round(lineW(l) * px / 2),
-    -Math.round(total / 2) + i * (GLYPH_H * px + gap), px, color, ink));
+    -Math.round(total / 2) + i * (GLYPH_H * px + gap), px, color));
   ctx.restore();
 }
 

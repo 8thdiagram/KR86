@@ -10,20 +10,17 @@ export const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number
 
 function helmet(ctx: CanvasRenderingContext2D, kit: Kit, hx: number, hy: number, d: 1 | -1) {
   hx += 1; hy += 1;
-  // Preserve the crown and neck contact while stepping the shell down one
-  // native pixel in width; the mask and layered trim remain legible.
+  // The team's primary color is the shell; secondary color stays an accent.
   if (kit.edge) R(ctx, kit.edge, hx + 1, hy - 1, 5, 1);
-  R(ctx, INK, hx + 1, hy, 5, 1);
-  R(ctx, INK, hx, hy + 1, 7, 3);
-  R(ctx, INK, hx + 1, hy + 4, 5, 1);
-  R(ctx, kit.trim, hx + 1, hy, 5, 5); R(ctx, kit.body, hx + 3, hy, 1, 1);
-  R(ctx, kit.body, d > 0 ? hx + 1 : hx + 5, hy + 2, 1, 2);
+  R(ctx, kit.body, hx + 1, hy, 5, 5);
+  R(ctx, kit.trim, hx + 2, hy, 3, 1);
+  R(ctx, kit.trim, d > 0 ? hx + 1 : hx + 5, hy + 2, 1, 2);
   R(ctx, SKIN, d > 0 ? hx + 3 : hx + 2, hy + 1, 2, 2);
   R(ctx, INK, d > 0 ? hx + 3 : hx + 2, hy + 3, 2, 1);
   R(ctx, INK, d > 0 ? hx + 5 : hx + 1, hy + 1, 1, 3);
   if (ART.players) {
-    R(ctx, tone(kit.trim, 1.3), d > 0 ? hx + 2 : hx + 4, hy, 1, 1);
-    R(ctx, tone(kit.trim, .7), d > 0 ? hx + 1 : hx + 5, hy + 4, 1, 1);
+    R(ctx, tone(kit.body, 1.16), hx + 1, hy + 1, 1, 1);
+    R(ctx, tone(kit.body, .78), hx + 5, hy + 4, 1, 1);
   }
 }
 export function heldBall(ctx: CanvasRenderingContext2D, bx: number, by: number) {
@@ -49,7 +46,7 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
   // small intermediate silhouette without changing the cycle duration.
   const phase = options.step ?? 0;
   const d = kit.dir, f = (1 - Math.cos(phase * Math.PI)) / 2, ball = !!options.ball;
-  const shade = tone(kit.body, .72), light = tone(kit.body, 1.16);
+  const shade = tone(kit.body, .86), light = tone(kit.body, 1.16);
   R(ctx, SHADOW, cx - (view === 2 ? 4 : 5), Math.round(y) + 5, view === 2 ? 8 : 10, 2);
   const rearView = view === 3 || view === 4 || view === 7 || view === 8;
   const intermediate = view >= 5;
@@ -80,17 +77,15 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
   } else {
     const narrow = view === 1 || view === 3;
     const w = narrow ? 3 : intermediate ? 4 : 5, left = cx - Math.floor(w / 2);
-    R(ctx, INK, left - 1, top + 6, w + 2, 5);
-    R(ctx, shade, left, top + 6, 1, 4);
-    R(ctx, kit.body, left + 1, top + 6, w - 1, 4);
-    R(ctx, light, left + 1, top + 6, Math.max(1, w - 3), 1);
+    R(ctx, INK, left, top + 6, w, 5);
+    R(ctx, kit.body, left, top + 6, w, 4);
+    R(ctx, light, left + 1, top + 6, Math.max(1, w - 2), 1);
     if (rearView) {
       R(ctx, kit.trim, cx - 1, top + 8, 2, 1); // back yoke / number block
       R(ctx, kit.trim, cx + 1, top + 7, 1, 1);
-      R(ctx, shade, view === 3 || view === 7 ? cx + 1 : cx + 2, top + 9,
-        view === 3 || view === 7 ? 1 : 2, 1);
+      R(ctx, shade, view === 3 || view === 7 ? cx + 1 : cx + 2, top + 9, 1, 1);
     } else {
-      R(ctx, kit.trim, left + 1, top + 8, w - 2, 1); // front stripe / chest seam
+      R(ctx, kit.trim, left + 1, top + 8, 1, 1); // compact secondary chest mark
     }
   }
   // Bulky shoulder pads retain their silhouette as the chest turns away.
@@ -132,28 +127,22 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
   }
   // Five helmet profiles: shell highlight, rear shade, face opening and mask vary by view.
   if (view === 2) {
-    R(ctx, INK, cx - 1, top + 1, 4, 1);
-    R(ctx, INK, cx - 2, top + 2, 5, 3);
-    R(ctx, INK, cx - 1, top + 5, 4, 1);
-    R(ctx, kit.trim, cx - 1, top + 1, 4, 4);
-    R(ctx, tone(kit.trim, 1.28), cx, top + 1, 2, 1);
-    R(ctx, kit.body, cx, top + 1, 1, 1);
+    R(ctx, kit.body, cx - 1, top + 1, 4, 4);
+    R(ctx, kit.trim, cx, top + 1, 2, 1);
+    R(ctx, tone(kit.body, 1.16), cx, top + 2, 2, 1);
     R(ctx, shade, cx + 2, top + 4, 1, 1);
     R(ctx, SKIN, cx + (d > 0 ? 1 : -1), top + 2, 2, 2);
     R(ctx, INK, cx + (d > 0 ? 2 : -1), top + 3, 1, 2);
   } else {
     const narrow = view === 1 || view === 3;
     const hw = narrow ? 5 : intermediate ? 6 : 7, hx = cx - Math.floor(hw / 2);
-    R(ctx, INK, hx, top + 1, hw, 1);
-    R(ctx, INK, hx - 1, top + 2, hw + 1, 3);
-    R(ctx, INK, hx, top + 5, hw, 1);
-    R(ctx, kit.trim, hx, top + 1, hw, 4);
-    R(ctx, tone(kit.trim, 1.28), hx + 1, top + 1, Math.max(1, hw - 3), 1);
+    R(ctx, kit.body, hx, top + 1, hw, 4);
+    R(ctx, kit.trim, hx + 1, top + 1, Math.max(1, hw - 2), 1);
+    R(ctx, tone(kit.body, 1.16), hx + 1, top + 2, Math.max(1, hw - 3), 1);
     if (view !== 4 && view !== 8) R(ctx, kit.body, d > 0 ? hx + 1 : hx + hw - 2, top + 1, 1, 1);
     R(ctx, shade, hx + hw - 2, top + 4, 1, 1);
     if (view === 4 || view === 8) {
-      R(ctx, kit.body, cx - 1, top + 1, 2, 1); // rear stripe; no face on the back
-      R(ctx, INK, hx, top + 4, hw, 1);
+      R(ctx, kit.trim, cx - 1, top + 2, 2, 1); // rear stripe; no face on the back
     } else {
       const faceX = d > 0 ? hx + Math.floor(hw / 2) : hx + 1;
       const slit = narrow || view >= 6;
@@ -189,13 +178,13 @@ function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
     const lx = px + 2 - reach, rx = px + 5 + reach;
     const lh = reach < 0 ? 2 : 3, rh = reach > 0 ? 2 : 3;
     R(ctx, UNIFORM.pantsShade, lx, py + 10, 1, 1); R(ctx, UNIFORM.pantsShade, rx, py + 10, 1, 1);
-    R(ctx, UNIFORM.pants, lx, py + 10 + (lh < 3 ? 0 : 1), 1, lh - (lh < 3 ? 0 : 1) + 1); R(ctx, UNIFORM.pants, rx, py + 10 + (rh < 3 ? 0 : 1), 1, rh - (rh < 3 ? 0 : 1) + 1);
+    R(ctx, UNIFORM.pants, lx, py + 10 + (lh < 3 ? 0 : 1), 2, lh - (lh < 3 ? 0 : 1) + 1);
+    R(ctx, UNIFORM.pants, rx, py + 10 + (rh < 3 ? 0 : 1), 2, rh - (rh < 3 ? 0 : 1) + 1);
     R(ctx, INK, lx + (d > 0 ? 0 : -1), py + 10 + lh, 2, 1); R(ctx, INK, rx + (d > 0 ? 0 : -1), py + 10 + rh, 2, 1);
   }
-  R(ctx, INK, px + 2 + lean, py + 6, 4, 5);
-  R(ctx, kit.body, px + 3 + lean, py + 6, 3, 4);
-  R(ctx, kit.trim, px + 3 + lean, py + 8, 3, 1);
-  if (ART.players) { R(ctx, tone(kit.body, .78), px + 3 + lean, py + 9, 1, 1); R(ctx, tone(kit.body, .78), px + 5 + lean, py + 9, 1, 1); }
+  R(ctx, kit.body, px + 2 + lean, py + 6, 4, 5);
+  R(ctx, kit.trim, px + 3 + lean, py + 8, 1, 1);
+  if (ART.players) R(ctx, tone(kit.body, .88), px + 5 + lean, py + 9, 1, 1);
   const la = -Math.sin(step * Math.PI / 2), ra = -la;
   if (p.hold) {
     R(ctx, kit.body, px + (d > 0 ? 6 : 1) + lean, py + 7, 2, 1); R(ctx, SKIN, px + (d > 0 ? 8 : 0) + lean, py + 7, 1, 1);
@@ -220,11 +209,6 @@ function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
   }
   helmet(ctx, kit, px + 1 + lean + (d > 0 ? 0 : 0), py - 1, d);
   if (p.ball) heldBall(ctx, d > 0 ? px + 5 + lean : px - 1 + lean, py + 7);
-  if (p.engaged) { // contact box ~9x10, corner ticks only
-    const bx = Math.round(x) - 5, by = Math.round(y) - 5, c = 'rgba(241,230,208,.85)';
-    R(ctx, c, bx, by, 2, 1); R(ctx, c, bx, by, 1, 2); R(ctx, c, bx + 8, by, 2, 1); R(ctx, c, bx + 9, by, 1, 2);
-    R(ctx, c, bx, by + 10, 2, 1); R(ctx, c, bx, by + 9, 1, 2); R(ctx, c, bx + 8, by + 10, 2, 1); R(ctx, c, bx + 9, by + 9, 1, 2);
-  }
   ctx.restore();
 }
 export function slim(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, p: Pose = {}) {
