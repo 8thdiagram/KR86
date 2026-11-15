@@ -246,3 +246,25 @@ mtime_ms = 1794698677748
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/15c331cc-b8e5-4a73-8047-e56fede945b2/be2c0079-c399-4825-a1bd-3831f2924782"
 storage_version_token = "1794698784926124"
 content_type = "image/png"
+
+[[outputs]]
+id = "lJYJNtYNqfYgGB_UIJqqn"
+uri = "file://attached_assets/generated_audio/super-cup-menu-32bit.mp3"
+type = "audio"
+title = "Super Cup console menu theme"
+description = "Generated music: Original instrumental Super Cup championship menu theme for Kick Return '86, a fictional retro American football videogame. Energetic and celebratory early 32-bit console sports soun…"
+logical_id = "2595cbf9-9de8-475c-b73c-1365152e20cf"
+
+[[outputs]]
+id = "AByvIAyOUEDVkckwwUrYE"
+uri = "file://src/platform/assets/super-cup-menu.mp3"
+type = "audio"
+title = "Super Cup — Menu Theme"
+description = "Original 48-second retro-console championship theme with chip melody, synth bass, brass-style accents and drums. This is the track used on the menu."
+logical_id = "a09d762d-3a28-45a2-8c8a-347e11a7fbc6"
+content_hash = "sha256:8abe450e01038ecdf4b7cb6673a1a45a7cc671efaba88556b62b48b080d55db4"
+size = 768429
+mtime_ms = 1794764445689
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/a09d762d-3a28-45a2-8c8a-347e11a7fbc6/f6b179b9-afd7-4bcf-9082-1a4b7cccb899"
+storage_version_token = "1794764844865776"
+content_type = "audio/mpeg"

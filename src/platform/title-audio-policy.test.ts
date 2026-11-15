@@ -9,11 +9,11 @@ test('intro has no music, skip or mute control; music belongs to the menu lifecy
   assert.doesNotMatch(host, /playIntroSound\('theme'\)|onSoundToggle/);
   assert.doesNotMatch(host, /playIntroSound\('hut'\)|onTitleHut=/);
   assert.doesNotMatch(title, /onIntroTheme|prepareTitleHut|onTitleHut/);
-  assert.doesNotMatch(title.slice(title.indexOf('const onVideoPlaying'), title.indexOf('const onVideoError')), /onTitleHut|playIntroSound/);
   assert.match(title, /if \(!announced && retroAudioState\(\) === 'ready'\)[\s\S]*announced = true;[\s\S]*startMenuMusic\(\)/);
   assert.match(title, /if \(stage !== 'menu'\) return;[\s\S]*startMenuMusic\(\)/);
   assert.match(title, /return \(\) => \{[\s\S]*stopMenuMusic\(\)/);
-  assert.match(title, /autoPlay muted playsInline/);
+  assert.doesNotMatch(title, /<video|kick-return-intro\.mp4|onVideoError|tryPlayVideo|loadTimer/);
+  assert.match(title, /OPENING_DURATION_MS/);
   assert.doesNotMatch(title, /startup-sound-gate|button-start-with-sound|START WITH SOUND|awaitingSound|audioAttempt/);
   assert.match(read('./retro-theme.css'), /\[data-testid="button-football-sound"\],[\s\S]*\[data-testid="kick-return-sound"\],[\s\S]*\.kr-pause-sound\s*\{\s*display: none !important/);
 });
@@ -32,7 +32,7 @@ test('startup attempts sound automatically and ordinary gestures unlock audio wi
   assert.match(title, /\[playIntro, replayToken, finishIntro\]/);
 });
 
-test('menu victory theme is upbeat, bass-forward, nine seconds, resolved and never loops', () => {
+test('archived nine-second chip cue stays intact; active menu playback remains single-play', () => {
   const audio = read('./retro-audio.ts');
   const composer = read('../../scripts/compose-menu-music.mts');
   const wav = fs.readFileSync(new URL('./assets/menu-sports.wav', import.meta.url));
@@ -43,7 +43,7 @@ test('menu victory theme is upbeat, bass-forward, nine seconds, resolved and nev
   let peak = 0;
   for (let i = 44; i < wav.length; i += 2) peak = Math.max(peak, Math.abs(wav.readInt16LE(i) / 32768));
   assert(peak > .05 && peak * .18 < .08, 'fanfare has quiet headroom below game effects');
-  assert.match(audio, /gain\.gain\.value = \.18/);
+  assert.match(audio, /gain\.gain\.value = \.3/);
   assert.match(composer, /bpm = 120/);
   assert.match(composer, /'pulse' \| 'triangle'/);
   assert.match(composer, /'kick' \| 'snare' \| 'hat' \| 'tom'/);

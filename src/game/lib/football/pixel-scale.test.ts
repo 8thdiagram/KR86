@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { drawPixelEnlarged, PLAYER_ART_SCALE, sharpPixelRect } from '../../components/football-pixel-scale';
 
-test('player pixels grow 12.5 percent around an unchanged foot anchor with shared edges and no readback', () => {
+test('player pixels use the modest 1.035 scale around an unchanged foot anchor with shared edges and no readback', () => {
   const rects: number[][] = [];
   const drawing = {
     fillStyle: '',
@@ -16,8 +16,8 @@ test('player pixels grow 12.5 percent around an unchanged foot anchor with share
     pixels.fillRect(x - 8, y - 10, 8, 16);
     pixels.fillRect(x, y - 10, 8, 16);
   }, 6);
-  assert.equal(PLAYER_ART_SCALE, 1.125);
-  assert.deepEqual(rects, [[91, 88, 9, 18], [100, 88, 9, 18]]);
+  assert.equal(PLAYER_ART_SCALE, 1.035);
+  assert.deepEqual(rects, [[91.5, 89.5, 8.5, 16.5], [100, 89.5, 8.5, 16.5]]);
   assert.equal(rects[0]![1]! + rects[0]![3]!, 106, 'feet do not slide');
   assert.equal(rects[0]![0]! + rects[0]![2]!, rects[1]![0], 'adjacent pixels do not separate');
   assert.equal(drawing.fillStyle, '#ff0000', 'styles are forwarded to the real context');

@@ -1,4 +1,4 @@
-/** Local sound effects and a short, once-per-title chip football fanfare. */
+/** Local sound effects and an original once-per-title Super Cup console theme. */
 export type MenuSound = 'move' | 'confirm' | 'locked' | 'transition';
 type Voice = { oscillator: OscillatorNode; gain: GainNode; intro: boolean };
 let context: AudioContext | undefined;
@@ -99,7 +99,7 @@ export function startMenuMusic() {
     || (typeof document !== 'undefined' && document.hidden)) return;
   const generation = menuGeneration, audioContext = context;
   menuLoading = true;
-  menuBuffer ??= loadAudio(new URL('./assets/menu-sports.wav', import.meta.url).href)
+  menuBuffer ??= loadAudio(new URL('./assets/super-cup-menu.mp3', import.meta.url).href)
     ?.catch(error => { menuBuffer = undefined; throw error; });
   void menuBuffer?.then(buffer => {
     if (generation !== menuGeneration || !enabled || audioContext.state !== 'running'
@@ -107,7 +107,8 @@ export function startMenuMusic() {
     const source = audioContext.createBufferSource(), gain = audioContext.createGain();
     source.buffer = buffer;
     source.loop = false;
-    gain.gain.value = .18;
+    // Mastered at -18 LUFS; keep the championship theme behind menu effects.
+    gain.gain.value = .3;
     source.connect(gain); gain.connect(audioContext.destination);
     const voice = { source, gain };
     menuVoice = voice;

@@ -28,7 +28,8 @@ test('TV treatment stays faint and static, with no double video scanlines', () =
   assert.equal(alphas.length, 2);
   assert(alphas.every(alpha => alpha > 0 && alpha <= .08), 'Individual effects must remain subtle.');
   assert.doesNotMatch(css, /animation:|filter:|backdrop-filter:|mix-blend-mode:|transform:/);
-  assert.match(source('./retro-theme.css'), /\.kr-film-scan\s*\{\s*display:\s*none/);
+  assert.doesNotMatch(source('./TitleExperience.tsx'), /className="kr-film-scan"/);
+  assert.doesNotMatch(source('./OpeningSceneCanvas.tsx'), /scanline|repeating-linear-gradient/);
 });
 
 test('accessibility preferences can remove the decorative overlay', () => {

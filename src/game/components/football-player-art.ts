@@ -116,24 +116,37 @@ export function drawFootballPlayer(ctx: CanvasRenderingContext2D, x: number, y: 
   put(INK, cx - 1.5 + lean, ground - 7, 3, 0.5);
   put(skin, cx - 0.5 + lean, ground - 7, 1.5, 0.5);
 
-  // Shell is secondary-color, with a fine outside contour and matching cage.
+  // A stepped, secondary-color shell reads as a helmet rather than a round head.
   const headY = ground - 12;
   const headW = side ? 5.5 : narrow ? 6 : 6.5;
   const headX = cx - headW / 2 + (kit.dir > 0 ? 0.35 : -0.35);
   put(INK, headX + 1, headY - 0.5, headW - 2, 0.5);
-  put(INK, headX + 0.5, headY, headW - 1, 4);
+  put(INK, headX + 0.5, headY, headW - 1, 3.5);
+  put(INK, headX + 1, headY + 3.5, headW - 2, 1);
   put(INK, headX + 1, headY + 4, headW - 2, 0.5);
   put(shell, headX + 1, headY, headW - 2, 0.5);
-  put(shell, headX + 0.5, headY + 0.5, headW - 1, 3);
+  put(shell, headX + 0.5, headY + 0.5, headW - 1, 1);
+  put(shell, headX + 0.5, headY + 1.5, headW - 1.5, 2);
   put(shell, headX + 1, headY + 3.5, headW - 2, 0.5);
+  put(tone(shell, 1.16), headX + 1.5, headY + .5, headW - 3, .5);
   // Back view gets no face; every other view has a stable, small skin slit.
   if (!back) {
     const faceX = kit.dir > 0 ? headX + headW - 2 : headX + 0.5;
+    // Skin is an actual opening in a small, clearly separated cage: brow,
+    // cheek rails and chin rail all match the shell, never a dark face panel.
+    put(shell, faceX - 0.5, headY + 1.5, 3, 0.5);
     put(skin, faceX, headY + 2, 1.5, 1);
-    put(shell, faceX - 0.5, headY + 1.5, 0.5, 2);
-    put(shell, faceX + 1.5, headY + 1.5, 0.5, 2);
+    put(shell, faceX - 0.5, headY + 2, 0.5, 1.5);
+    put(shell, faceX + 1.5, headY + 2, 0.5, 1.5);
     put(shell, faceX - 0.5, headY + 3, 3, 0.5);
+    // Extend the cage beyond the shell so the field shows through its opening.
+    // A slit painted on the helmet alone disappears at actual phone scale.
+    const cageLeft = kit.dir > 0 ? faceX + 1.5 : faceX - 2.5;
+    const cageFront = kit.dir > 0 ? cageLeft + 2 : cageLeft;
+    put(shell, cageLeft, headY + 2, 2.5, .5);
+    put(shell, cageFront, headY + 2.5, .5, 1.5);
+    put(shell, cageLeft, headY + 3.5, 2.5, .5);
   } else {
-    put(shell, cx - 1, headY + 2, 2, 0.5);
+    put(shell, cx - 1.5, headY + 2, 3, 0.5);
   }
 }

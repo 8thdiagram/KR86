@@ -1,6 +1,6 @@
 import { withBroadcastAnchor } from './football-broadcast';
-/** Player-art magnification only; never changes world positions or hitboxes. */
-export const PLAYER_ART_SCALE = 1.125;
+/** Slightly compact player art only; never changes world positions or hitboxes. */
+export const PLAYER_ART_SCALE = 1.035;
 type PixelDraw = (ctx: CanvasRenderingContext2D, x: number, y: number) => void;
 
 /** Snap projected axis-aligned edges to real canvas pixels, including camera
@@ -26,11 +26,11 @@ function drawEnlargedPixels(
   ctx: CanvasRenderingContext2D, x: number, y: number, draw: PixelDraw, footOffset: number,
 ) {
   const ax = Math.round(x), ay = Math.round(y), foot = ay + footOffset;
-  // Keep original whole-pixel silhouette edges exactly where they were.
-  // Newly authored half-grid details use the extra backing-buffer resolution.
+  // Compact every authored edge around the fixed anchor, then snap to the
+  // doubled canvas grid. The foot stays planted while half-pixel details remain crisp.
   const edge = (v: number, anchor: number) => {
-    const delta = v - anchor, grid = Number.isInteger(delta) ? 1 : 2;
-    return anchor + Math.sign(delta) * Math.round(Math.abs(delta) * PLAYER_ART_SCALE * grid) / grid;
+    const delta = v - anchor;
+    return anchor + Math.sign(delta) * Math.round(Math.abs(delta) * PLAYER_ART_SCALE * 2) / 2;
   };
   const mapX = (v: number) => edge(v, ax);
   const mapY = (v: number) => edge(v, foot);

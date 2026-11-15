@@ -370,6 +370,10 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
     : phase === 'ready' ? { label: 'START', run: begin, testId: 'kick-return-start' }
     : phase === 'tackled' ? { label: `PLAY ${kickDownName(progress.attempts + 1).toUpperCase()}`, run: begin, testId: 'kick-return-retry' }
     : null;
+  // Fit the fixed landscape rail without shortening the accessible name.
+  const compactActionLabel = phase === 'tackled' && !progress.outcome
+    ? `${progress.attempts + 1}${['ST', 'ND', 'RD', 'TH'][Math.min(progress.attempts, 3)]} DOWN`
+    : primaryAction?.label;
   const toggleSound = () => {
     const enabled = !soundOn;
     if (!writeSound('classic', enabled)) return;
@@ -500,9 +504,13 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
     </section>
     <div className="kr-actions kr-main-actions">
       <button type="button" className="kr-primary kr-action-slot" onClick={primaryAction?.run}
+        aria-label={primaryAction?.label}
         data-testid={primaryAction?.testId ?? 'kick-return-action-placeholder'} disabled={!primaryAction}
         aria-hidden={!primaryAction} tabIndex={primaryAction ? 0 : -1}
-        style={{ visibility: primaryAction ? 'visible' : 'hidden' }}>{primaryAction?.label ?? 'START'}</button>
+        style={{ visibility: primaryAction ? 'visible' : 'hidden' }}>
+        <span className="kr-action-full">{primaryAction?.label ?? 'START'}</span>
+        <span className="kr-action-compact" aria-hidden="true">{compactActionLabel ?? 'START'}</span>
+      </button>
       {showContinue && <button type="button" className="kr-primary kr-action-slot" onClick={finish} data-testid="kick-return-continue"
         disabled={!progress.outcome} aria-hidden={!progress.outcome} tabIndex={progress.outcome ? 0 : -1}
         style={{ visibility: progress.outcome ? 'visible' : 'hidden' }}>CONTINUE</button>}
