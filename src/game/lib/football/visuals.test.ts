@@ -9,31 +9,32 @@ import { createFootball } from './engine';
 import { startField } from './field';
 import { drawFootball } from '../../components/football-renderer';
 import { fieldGoalSequence } from './special-teams';
-import { controlledDefenderId } from './user-defense';
 
-test('defensive target uses offense pixel corners: white idle, yellow pressed, white released without save mutations', () => {
+test('defense has no selection target while offensive receiver highlighting remains intact', () => {
   for (const defense of ['pass', 'man', 'prevent'] as const) {
     const g = createFootball(86);
     g.phase = 'live'; g.possession = 'away'; g.spot = 40;
     g.live = startField(g, 'post', defense); g.live.time = 1;
-    const d = g.live.athletes.find(a => a.id === controlledDefenderId(g.live!))!;
+    const d = g.live.athletes.find(a => a.role === 'LB')!;
     d.x = 700; d.y = 96;
     const before = JSON.stringify(g);
-    for (const active of [false, true, false]) {
+    for (const side of ['away', 'home'] as const) {
+      g.possession = side;
       const marks: { color: string; rect: number[] }[] = [];
       const target = {
         fillStyle: '',
         fillRect(x: number, y: number, w: number, h: number) {
-          if ((x === 692 || x === 708) && (y === 80 || y === 98) && w === 1 && h === 5)
+          if (w === 1 && h === 5 && ['#f1e6d0', '#f4d23c'].includes(this.fillStyle))
             marks.push({ color: this.fillStyle, rect: [x, y, w, h] });
         },
       };
       const ctx = new Proxy(target, { get: (t, key) => Reflect.has(t, key) ? Reflect.get(t, key) : () => {} }) as unknown as CanvasRenderingContext2D;
-      drawFootball(ctx, g, { width: 393, height: 500 }, .5, active);
-      assert.equal(marks.length, 4, defense);
-      assert(marks.every(m => m.color === (active ? '#f4d23c' : '#f1e6d0')));
-      assert.equal(JSON.stringify(g), before, 'visual input never changes saved gameplay state');
+      const state = JSON.stringify(g);
+      drawFootball(ctx, g, { width: 393, height: 500 }, .5);
+      assert.equal(marks.length, side === 'home' ? 4 : 0, defense);
+      assert.equal(JSON.stringify(g), state, 'drawing never changes saved gameplay state');
     }
+    g.possession = 'away'; assert.equal(JSON.stringify(g), before);
   }
 });
 

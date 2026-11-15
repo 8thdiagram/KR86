@@ -10,21 +10,15 @@ export function createFootballControls() {
   const defensivePresses = new Set<string>();
   let owner: { id: string; since: number; scrambled?: boolean } | undefined;
   let scramble = false;
-  const steering = new Map<string, -1 | 1>();
-  let steeringPulse: { direction: -1 | 1; until: number } | undefined;
   let press = false, target: number | undefined, cancel = false, release: FootballInput['passRelease'], kick = false;
   const enter = (id: string, control: KickControl | null, now: number, g: FootballGame) => {
     if (control !== 'juke') defensivePresses.delete(id);
-    steering.delete(id);
-    if (control === 'up' || control === 'down') {
-      steering.set(id, control === 'up' ? -1 : 1); steeringPulse = undefined;
-    }
     if (owner?.id === id) {
       if (control === 'juke') return;
       owner = undefined; press = false; cancel = true; consumed.delete(id);
     } else if (consumed.has(id)) return;
     if (control === 'juke' && canDefensiveAction(g)) {
-      movement.release(id, now, true); // Sliding from an arrow must release its steering.
+      movement.release(id, now, true);
       defensivePresses.add(id);
       kick = true; consumed.add(id); return;
     }
@@ -54,7 +48,6 @@ export function createFootballControls() {
     has: (id: string) => movement.has(id) || owner?.id === id || consumed.has(id),
     release(id: string, now: number, canceled = false) {
       defensivePresses.delete(id);
-      steering.delete(id);
       if (owner?.id === id) {
         if (canceled) { cancel = true; press = false; }
         else {
@@ -68,19 +61,16 @@ export function createFootballControls() {
       if (consumed.delete(id)) return;
       movement.release(id, now, canceled);
     },
-    clear() { movement.clear(); owner = undefined; defensivePresses.clear(); steering.clear(); steeringPulse = undefined; consumed.clear(); press = false; target = undefined; cancel = false; release = undefined; kick = false; scramble = false; },
+    clear() { movement.clear(); owner = undefined; defensivePresses.clear(); consumed.clear(); press = false; target = undefined; cancel = false; release = undefined; kick = false; scramble = false; },
     tapJuke: () => movement.tapJuke(),
     tapDirection(direction: -1 | 1, now: number) {
-      movement.tapDirection(direction, now); steeringPulse = { direction, until: now + 160 };
+      movement.tapDirection(direction, now);
     },
     sample(now: number, consume = true) {
       const s = movement.sample(now, consume);
-      const defenseDirection: FootballInput['defenseDirection'] = [...steering.values()].at(-1) ??
-        (steeringPulse && now < steeringPulse.until ? steeringPulse.direction : 0);
       const startScramble = scramble || !!owner && !owner.scrambled && now - owner.since >= QB_SCRAMBLE_MS;
       if (consume && startScramble && owner) owner.scrambled = true;
       const result = { ...s, action: kick || s.juke, passPress: press, passTarget: target, passRelease: release, passCancel: cancel,
-        defenseDirection,
         qbScramble: startScramble,
         bulletReady: !!owner && !owner.scrambled && now - owner.since >= PASS_HOLD_MS && now - owner.since < QB_SCRAMBLE_MS,
         pressed: { ...s.pressed, juke: s.pressed.juke || !!owner || defensivePresses.size > 0 } };

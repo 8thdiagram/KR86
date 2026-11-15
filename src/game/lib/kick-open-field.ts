@@ -1,4 +1,4 @@
-import type { KickAttempt, KickDefender, KickDirection } from './kick-return-engine';
+import type { KickAttempt, KickDefender } from './kick-return-engine';
 import { pursuitPoint } from './open-field-pursuit';
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -7,7 +7,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
  * Lanes organize the approach, but never imprison a nearby or beaten tackler.
  */
 export function stepOpenFieldCoverage(a: KickAttempt, d: KickDefender, dt: number,
-  speed = d.speed, lateral = d.lateralSpeed, strafe: KickDirection = 0): KickDefender {
+  speed = d.speed, lateral = d.lateralSpeed): KickDefender {
   const m = d.motion ?? { vx: 0, vy: 0, targetX: d.x, targetY: d.y,
     reactionLeft: 0, stride: 0, facing: -1 as const };
   let left = m.reactionLeft - dt, tx = m.targetX, ty = m.targetY;
@@ -31,15 +31,14 @@ export function stepOpenFieldCoverage(a: KickAttempt, d: KickDefender, dt: numbe
     if (n > .01 && n < 12) { sx += dx / n * (12 - n) * .75; sy += dy / n * (12 - n) * .75; }
   }
   const arrival = Math.max(dt, Math.abs(tx - d.x) / Math.max(.001, speed), Math.abs(ty - d.y) / Math.max(.001, lateral));
-  const wantedX = strafe ? 0 : clamp((tx - d.x) / arrival + sx, -speed, speed);
-  const wantedY = strafe ? strafe * lateral : clamp((ty - d.y) / arrival + sy, -lateral, lateral);
+  const wantedX = clamp((tx - d.x) / arrival + sx, -speed, speed);
+  const wantedY = clamp((ty - d.y) / arrival + sy, -lateral, lateral);
   const dx = wantedX - m.vx, dy = wantedY - m.vy, change = Math.hypot(dx, dy);
   const fraction = Math.min(1, 650 * dt / Math.max(.001, change));
-  const vx = strafe ? wantedX : m.vx + dx * fraction;
-  const vy = strafe ? wantedY : m.vy + dy * fraction;
+  const vx = m.vx + dx * fraction, vy = m.vy + dy * fraction;
   return { ...d, active: true, x: clamp(d.x + vx * dt, 8, 1180),
     y: clamp(d.y + vy * dt, minY, 168), motion: {
-       vx, vy, targetX: tx, targetY: ty, reactionLeft: strafe ? 0 : left,
+       vx, vy, targetX: tx, targetY: ty, reactionLeft: left,
       stride: m.stride + Math.hypot(vx, vy) * dt / 5,
       facing: vx < 0 ? -1 : 1,
     } };

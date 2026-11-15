@@ -20,7 +20,6 @@ import { MOMENTS, primaryMoment, momentRoute, interiorBlockBonus, canSeal, carri
 import { FOOTBALL_SIDELINES, outsideFootballSideline } from './sidelines';
 import { resolveReception } from './receiving';
 import { routePoint } from './route-geometry';
-import { prepareUserDefense } from './user-defense';
 export { routePoint } from './route-geometry';
 export { releasePass } from './passing';
 import { clamp, isBlitz, other, random, type Athlete, type Defense, type FootballGame, type FootballInput, type LivePlay, type PlayId } from './types';
@@ -112,7 +111,6 @@ export function contactFumble(g: FootballGame, runner: Athlete, defender: Athlet
 
 export function stepField(g: FootballGame, input: FootballInput, dt: number): FieldResult | undefined {
   const l = g.live!, p = executionPlay(l.play, l.defense), profile = g.profiles[g.possession], defenseProfile = g.profiles[other(g.possession)];
-  prepareUserDefense(g, input);
   if (input.passCancel) { l.holdingPass = false; l.lockedReceiver = undefined; }
   if (input.passPress && canForwardPass(l) && !l.holdingPass) {
     l.holdingPass = true; l.holdStarted = l.time;

@@ -2,23 +2,30 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const read = (path: string) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
-test('selection targets exist only on the live field, not defensive play diagrams', () => {
-  const diagrams = read('../game/lib/football/diagrams.ts'), preplay = read('../game/components/football-preplay.tsx');
-  assert.doesNotMatch(diagrams, /controlledDefenderId|controlled:/);
-  assert.doesNotMatch(preplay, /fbp-controlled|PLAYER_TARGET_PIXELS|DIAGRAM_TARGET_SCALE/);
+
+test('only the original offensive receiver has a player selection target', () => {
   const renderer = read('../game/components/football-renderer.ts');
-  assert.match(renderer, /controlledDefenderId\(live\)/);
-  assert.match(renderer, /a\.id === sp\.kicker && isUserKickoffCoverage\(g\)/);
-  assert.match(renderer, /playerTarget\(ctx, a\.x, a\.y, manualDefense \? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE\)/);
-  assert.match(renderer, /playerTarget\(ctx, a\.x, a\.y, live\.holdingPass \? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE\)/);
-  assert.match(renderer, /for \(const \[dx, dy, width, height\] of PLAYER_TARGET_PIXELS\)/);
-  assert.doesNotMatch(renderer, /#f0443e/);
+  assert.doesNotMatch(renderer, /controlledDefenderId|isUserKickoffCoverage|manualDefense/);
+  assert.equal([...renderer.matchAll(/playerTarget\(ctx,/g)].length, 1);
+  assert.match(renderer, /a\.id === read && g\.possession === 'home'/);
+  assert.match(renderer, /live\.holdingPass \? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE/);
+  assert.doesNotMatch(read('../game/lib/football/diagrams.ts'), /controlledDefenderId|controlled:/);
+  assert.doesNotMatch(read('../game/components/football-preplay.tsx'), /fbp-controlled|PLAYER_TARGET_PIXELS/);
 });
-test('only arrows color the defensive target, and there is no ACTION tap/hold movement system', () => {
-  const game = read('../game/components/football-game.tsx'), controls = read('../game/lib/football/controls.ts');
-  assert.match(game, /!!controls\.defenseDirection\)/);
-  assert.doesNotMatch(game, /controls\.pressed\.juke \|\| controls\.defenseDirection|Hold: pursue/);
-  assert.doesNotMatch(controls, /defenseOwner|defenseTap|DEFENSE_HOLD_MS|defenseHold/);
+
+test('defensive selection, manual movement, restoration and kicker override machinery are absent', () => {
+  const files = ['../game/lib/football/pursuit.ts', '../game/lib/football/field.ts',
+    '../game/lib/football/controls.ts', '../game/lib/football/special-teams.ts',
+    '../game/lib/kick-return-engine.ts', '../game/lib/kick-full-coverage.ts',
+    '../game/lib/kick-open-field.ts', '../game/lib/football/types.ts',
+    '../game/components/football-game.tsx'];
+  for (const file of files)
+    assert.doesNotMatch(read(file), /defenseDirection|userDefense|user-defense|prepareUserDefense|consumeDefenseRelease|coverageInput|KickCoverageInput|strafe/i, file);
+  assert.equal(fs.existsSync(new URL('../game/lib/football/user-defense.ts', import.meta.url)), false);
+  const game = read('../game/components/football-game.tsx');
+  assert.match(game, /disabled=\{!controlsActive\}/);
+  const controls = read('../game/lib/football/controls.ts');
   assert.match(controls, /control === 'juke' && canDefensiveAction\(g\)/);
   assert.match(controls, /kick = true; consumed\.add\(id\); return/);
+  assert.doesNotMatch(controls, /defenseOwner|defenseTap|DEFENSE_HOLD_MS|defenseHold/);
 });

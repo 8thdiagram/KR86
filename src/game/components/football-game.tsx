@@ -14,7 +14,6 @@ import type { FootballGame as Game, FootballStats } from '../lib/football/types'
 import { drawFootball } from './football-renderer';
 import { createFootballWhistle } from './football-audio';
 import { canDefensiveAction, defensiveActionKind } from '../lib/football/defensive-action';
-import { isUserDefensivePlay } from '../lib/football/user-defense';
 import { footballSoundEvents, soundSnapshot, type SoundSnapshot } from '../lib/football/sound-events';
 import { FootballPreplay, FootballPlayClock, FootballPenalty } from './football-preplay';
 import './football-game.css';
@@ -87,10 +86,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
   const draw = (seconds = 0) => {
     const ctx = canvas.current?.getContext('2d');
     if (ctx && gRef.current) {
-      // Only strafe arrows turn the defensive target yellow; ACTION remains independent.
-      const controls = input.current.sample(performance.now(), false);
-      drawFootball(ctx, footballFormationPreview(gRef.current), view.current, seconds,
-        !!controls.defenseDirection);
+      drawFootball(ctx, footballFormationPreview(gRef.current), view.current, seconds);
     }
   };
   const clearInput = () => {
@@ -191,7 +187,6 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
     : phase === 'kickoff' ? gRef.current?.kickReceiver : gRef.current?.possession;
   const controlsActive = running && controlledSide === 'home';
   const defenseActive = running && !!gRef.current && canDefensiveAction(gRef.current);
-  const userDefenseActive = running && !!gRef.current && isUserDefensivePlay(gRef.current);
   const ticking = !!gRef.current && shouldTick(gRef.current) && !paused && !gameMode?.paused;
 
   // Fixed 60 Hz simulation driven by requestAnimationFrame.
@@ -306,7 +301,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
       contextGesture.current = { id: e.pointerId, phase: gRef.current.phase, event: gRef.current.event, run: context.run };
       setPressed(p => ({ ...p, juke: true })); return;
     }
-    if (!controlsActive && !userDefenseActive && !(control === 'juke' && defenseActive)) return;
+    if (!controlsActive && !(control === 'juke' && defenseActive)) return;
     e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId);
     unlock(); input.current.enter(`pointer:${e.pointerId}`, control, performance.now(), gRef.current!);
     setPressed(input.current.sample(performance.now(), false).pressed);
@@ -361,8 +356,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
   const ctxAction = contextual();
   const jukeLabel = 'ACTION';
   const jukeHint = running
-    ? userDefenseActive ? 'ACTION: nearest defender · ▲▼ strafe'
-    : defenseActive ? `Tap: ${defensiveActionKind(g) === 'intercept' ? 'intercept / break up pass' : defensiveActionKind(g) === 'recover' ? 'dive for loose ball' : 'nearest defender tackles'}`
+    ? defenseActive ? `Tap: ${defensiveActionKind(g) === 'intercept' ? 'intercept / break up pass' : defensiveActionKind(g) === 'recover' ? 'dive for loose ball' : 'nearest defender tackles'}`
     : !controlsActive ? 'Watch the play'
     : g.special?.stage === 'return' || live?.mode === 'return' ? 'Tap: burst · hold: hesitate'
     : live && canForwardPass(live) ? live.mode === 'scramble'
@@ -508,7 +502,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
       {qbHelp && <small className="fb-qb-help">{jukeHint}</small>}
       <div className="fb-steer">
         {([-1, 1] as const).map(d => <button key={d} type="button" className="fb-pad" data-control={d < 0 ? 'up' : 'down'} data-game-pointer-input
-          disabled={!controlsActive && !userDefenseActive} data-pressed={d < 0 ? pressed.up : pressed.down} data-testid={d < 0 ? 'button-up' : 'button-down'}
+          disabled={!controlsActive} data-pressed={d < 0 ? pressed.up : pressed.down} data-testid={d < 0 ? 'button-up' : 'button-down'}
           onPointerDown={e => press(d < 0 ? 'up' : 'down', e)} onPointerUp={e => release(e)}
           onPointerCancel={e => release(e, true)} onLostPointerCapture={e => release(e, true)}
           onClick={e => { if (e.detail === 0 && running) input.current.tapDirection(d, performance.now()); }}

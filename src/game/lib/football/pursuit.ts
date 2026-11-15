@@ -11,7 +11,6 @@ import { FOOTBALL_SIDELINES } from './sidelines';
 import { pursuitPoint } from '../open-field-pursuit';
 import { coachingAssignment } from './coaching-execution';
 import { containmentTarget } from './containment';
-import { consumeDefenseRelease, userDefenseTarget, userDefenseVelocity } from './user-defense';
 
 type Role = NonNullable<Athlete['pursuit']>['role'];
 /** Bounded interception horizon from observed motion, never from the next control input. */
@@ -58,7 +57,6 @@ export function stepDefense(g: FootballGame, dt: number) {
   for (const d of defense) {
     if (stepAthleteDive(d, dt)) continue;
     if (d.engaged > l.time) { d.vx *= .6; d.vy *= .6; continue; }
-    const userTarget = userDefenseTarget(g, d);
     const coverage = d.role === 'DB' || d.role === 'LB' && !isBlitz(l.defense) && l.defense !== 'run' && !goal;
     const holdCoverage = coverage && qbBehindLine && !(d.role === 'LB' && l.defense === 'contain');
     const pursueCarrier = carrying && !holdCoverage;
@@ -83,11 +81,10 @@ export function stepDefense(g: FootballGame, dt: number) {
     speed *= (1 + MOMENTS.coverSpeed * exceptionalCoverage) * (1 + .05 * exceptionalFit);
     const openGain = d.role === 'DB' ? openFieldGain(d, offense, dt, !d.dive && d.engaged <= l.time) : 1;
     speed *= openGain * franchiseAthleteFactor(g, d);
-    if (!userTarget && !openField && l.time < .28 && l.defense !== 'run' && !goal) speed *= .35;
+    if (!openField && l.time < .28 && l.defense !== 'run' && !goal) speed *= .35;
     // Repair a resumed pre-crossing scramble's cached run target as well.
     if (holdCoverage && d.pursuit && !['cover', 'deep'].includes(d.pursuit.role)) delete d.pursuit;
-    const released = consumeDefenseRelease(g, d);
-    if (!d.pursuit || d.pursuit.until <= l.time || released) {
+    if (!d.pursuit || d.pursuit.until <= l.time) {
       let x: number, y: number, role: Role;
       let observed = carrying ? carrier : qb;
       const contain=containmentTarget(g,d);
@@ -224,11 +221,8 @@ export function stepDefense(g: FootballGame, dt: number) {
     const lateral = speed * ELITE.lateral / ELITE.forward;
     const arrival = Math.max(dt, Math.abs(dx) / speed, Math.abs(dy) / lateral);
     const independentAxes = elite || runPursuit;
-    // Manual movement replaces the entire assignment/avoidance/spacing vector,
-    // not just its initial destination. Physical blocking and dives still apply.
-    const manual = userTarget ? userDefenseVelocity(userTarget.direction, lateral) : undefined;
-    const wantedX = manual ? manual.x : independentAxes ? clamp(dx / arrival + (space ? sx * spacing : 0), -speed, speed) : intentX * cap;
-    const wantedY = manual ? manual.y : independentAxes ? clamp(dy / arrival + (space ? sy * spacing : 0), -lateral, lateral) : intentY * cap;
+    const wantedX = independentAxes ? clamp(dx / arrival + (space ? sx * spacing : 0), -speed, speed) : intentX * cap;
+    const wantedY = independentAxes ? clamp(dy / arrival + (space ? sy * spacing : 0), -lateral, lateral) : intentY * cap;
     const close = carrying && Math.hypot(d.x - carrier.x, d.y - carrier.y) < 48;
     const acceleration = elite ? close ? ELITE.closeAcceleration : ELITE.acceleration
        : (close ? 650 : 180 + (coverage ? profile.coverage : profile.rush) * 130) * EXECUTION.defenseAcceleration;
@@ -239,12 +233,8 @@ export function stepDefense(g: FootballGame, dt: number) {
         (exceptionalCoverage ? MOMENTS.coverAcceleration : exceptionalFit ? 1.06 : 1);
     const changeX = wantedX - d.vx, changeY = wantedY - d.vy, change = Math.hypot(changeX, changeY);
     const fraction = change > maxTurn ? maxTurn / change : 1;
-    // Match the carrier's direct directional response, not cached AI steering.
-    // Keep this defender's computed speed; existing blocks/committed dives above
-    // still own their animations. Releasing arrows takes the unmodified AI path.
-    if (manual) { d.vx = manual.x; d.vy = manual.y; }
-    else { d.vx += changeX * fraction; d.vy += changeY * fraction; }
+    d.vx += changeX * fraction; d.vy += changeY * fraction;
     d.x = clamp(d.x + d.vx * dt, 8, 1180); d.y = clamp(d.y + d.vy * dt, openField ? FOOTBALL_SIDELINES.minY : 24, 168);
-    if (pressureGap && !userTarget && d.x < los + 4) { d.x = los + 4; d.vx = Math.max(0, d.vx); }
+    if (pressureGap && d.x < los + 4) { d.x = los + 4; d.vx = Math.max(0, d.vx); }
   }
 }

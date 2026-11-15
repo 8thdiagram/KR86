@@ -5,7 +5,6 @@ import type { Athlete, FootballGame, LivePlay, SpecialTeams } from '../lib/footb
 import { fieldGoalDistance, fieldGoalAllowed, PLAYBOOK } from '../lib/football/playbook';
 import { highlightedReceiver } from '../lib/football/passing';
 import { primaryPlayer } from '../lib/football/execution';
-import { controlledDefenderId, isUserKickoffCoverage } from '../lib/football/user-defense';
 import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
 import { slim, carrierMark, airBall, landingMark, goalPosts, heldBall, R, type Kit } from './football-sprites';
 import { uniformKit } from './football-art';
@@ -103,7 +102,7 @@ function kits(g: FootballGame) {
   return { home, away };
 }
 
-export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, view: KickViewport | undefined, seconds: number, manualDefense = false) {
+export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, view: KickViewport | undefined, seconds: number) {
   // Keep the original leg follow-through and the complete kick-block window.
   if (g.special?.kind === 'field-goal' && (g.special.stage === 'resolved' ||
       g.special.stage === 'flight' && g.special.stageAge >= GOAL_VIEW.followThrough)) {
@@ -150,8 +149,8 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   if (g.tackleScene?.space === 'legacy-return' && g.returnAttempt) {
     for (const d of g.returnAttempt.defenders) if (!isTackleActor(g, d, 'legacy-return'))
       slim(ctx, d.x, d.y, { ...(g.kickReceiver === 'home' ? away : home), dir: -1 });
-  } else if (sp) drawSpecial(ctx, g, sp, home, away, seconds, manualDefense);
-  else drawScrimmage(ctx, g, home, away, seconds, manualDefense);
+  } else if (sp) drawSpecial(ctx, g, sp, home, away, seconds);
+  else drawScrimmage(ctx, g, home, away, seconds);
   drawTackle(ctx, g, home, away);
   referee(ctx, clamp(focus + 34, 18, KR.worldWidth - 18), seconds, g.lastResult.startsWith('TOUCHDOWN') && ['play-dead', 'final'].includes(g.phase));
   if ((g.turnoverNotice ?? 0) > 0) {
@@ -190,7 +189,7 @@ function playerTarget(ctx: CanvasRenderingContext2D, x: number, y: number, color
     R(ctx, color, x + dx, y + dy, width, height);
 }
 
-function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number, manualDefense: boolean) {
+function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number) {
   const live = g.live;
   const dir = g.fieldFrame ?? 1;
   const los = worldX(spotX(live?.snapSpot ?? g.spot), dir);
@@ -213,8 +212,6 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
   const ic = live.interception, holding = !!ic && ic.age < CATCH_HOLD;
   const read = highlightedReceiver(live);
   const primary = primaryPlayer(live);
-  const controlled = g.phase === 'live' && (live.offense ?? g.possession) === 'away' &&
-    !['return', 'kick', 'loose'].includes(live.mode) ? controlledDefenderId(live) : undefined;
   const sorted = [...live.athletes].sort((a, b) => a.y - b.y);
   let carrierAt: { x: number; y: number } | undefined;
   for (const a of sorted) {
@@ -249,9 +246,6 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
     // then disappears. No live labels, arrows, halos or permanent HUD additions.
     if (g.phase === 'live' && !ic && !snap && a.id === primary && a.id !== read &&
         live.time < PLAYBOOK[live.play].develop + .55) R(ctx, LACE, a.x - 3, a.y + 7, 6, 1);
-    if (a.id === controlled) {
-      playerTarget(ctx, a.x, a.y, manualDefense ? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE);
-    }
     ctx.restore();
     if (hasBall) carrierAt = holding && ic ? { x: ic.catchX, y: ic.catchY } : a;
   }
@@ -267,7 +261,7 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
   }
 }
 
-function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: SpecialTeams, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number, manualDefense: boolean) {
+function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: SpecialTeams, home: Omit<Kit, 'dir'>, away: Omit<Kit, 'dir'>, seconds: number) {
   const fg = sp.kind === 'field-goal';
   const dir = g.fieldFrame ?? 1;
   // athletes: offense = kicking team, defense = receiving team.
@@ -324,8 +318,6 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       slim(ctx, a.x, a.y, { ...kit, dir: fielding ? (sp.ball.x < a.x ? -1 : 1) : facing }, { step: moving ? t + a.id : 0, hold: fielding, engaged: a.engaged > sp.age, lean: a.engaged > sp.age ? facing : 0 });
     }
     ctx.restore();
-    if (a.id === sp.kicker && isUserKickoffCoverage(g))
-      playerTarget(ctx, a.x, a.y, manualDefense ? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE);
   }
   if (ret) return;
   const b = sp.ball;
