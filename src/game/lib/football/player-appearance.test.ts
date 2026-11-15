@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { playerSkin, positionKit, positionSkin, specialSkinPosition, SKIN_TONES, uniformKit, type SkinPosition } from '../../components/football-art';
+import { helmetColor, playerSkin, positionKit, positionSkin, specialSkinPosition, SKIN_TONES, uniformKit, type SkinPosition } from '../../components/football-art';
 import { slim } from '../../components/football-sprites';
 import { kickFootballArt } from '../../components/kick-return-renderer';
 import { drawTackle, tackleSkinPosition } from '../../components/football-tackle';
@@ -12,6 +12,16 @@ import { fieldGoalSequence } from './special-teams';
 import { KICK_TEAMS } from '../kick-return-teams';
 
 const positions: SkinPosition[] = ['QB', 'OL', 'RB', 'WR', 'TE', 'DL', 'LB', 'DB', 'K', 'H', 'KR'];
+test('primary jerseys and secondary helmets preserve each actual team palette in both directions', () => {
+  for (const team of KICK_TEAMS) for (const dir of [-1, 1] as const) {
+    const before = JSON.stringify(team), kit = uniformKit(team, dir);
+    assert.equal(kit.body, team.body, 'the primary remains the jersey and field palette');
+    assert.equal(helmetColor(kit), team.trim, 'the real secondary color is the helmet identity');
+    assert.equal(JSON.stringify(team), before, 'uniform policy never rewrites a stored team');
+  }
+  assert.equal(helmetColor(uniformKit({ body: '#123456' }, 1)), '#123456',
+    'a palette without a secondary retains its explicitly supported primary fallback');
+});
 function canvas() {
   const paints: { color: string; x: number; y: number; w: number; h: number }[] = [];
   const pixels = new Map<string, string>();
@@ -42,14 +52,14 @@ test('front and quarter helmets expose only a small one-row face slot above a sh
       const kit = positionKit(uniformKit(KICK_TEAMS[0]!, dir), position);
       const { ctx, paints, pixels } = canvas();
       slim(ctx, 100, 100, kit, { view });
-      const faces = paints.filter(p => p.color === kit.skin && p.y < 96);
+      const faces = paints.filter(p => p.color === kit.skin && p.y < 91);
       if (view === 4 || view === 8) assert.equal(faces.length, 0, 'rear helmets never grow a face');
       else {
         assert.equal(faces.length, 1);
         const face = faces[0]!;
         assert(face.w <= 2 && face.h <= 2, 'one native pixel, sharply enlarged with the existing artwork');
         assert.equal(pixels.get(`${face.x},${face.y}`), kit.skin, 'face slot is not accidentally painted over');
-        assert(paints.some(p => p.color === kit.body && p.y === face.y + face.h && p.h <= 2 && p.w >= 3),
+        assert(paints.some(p => p.color === helmetColor(kit) && p.y === face.y + face.h && p.h <= 2 && p.w >= 3),
           'visible helmet-colored cage rail sits immediately below the face');
       }
       const wrong = SKIN_TONES.filter(color => color !== kit.skin);
@@ -81,12 +91,12 @@ test('visible face slots and helmet-colored facemasks never contain a black face
       const { ctx, paints, pixels } = canvas();
       if (classic) kickFootballArt.sprite(ctx, 100, 100, kit, 0, false, 0, 0, view);
       else slim(ctx, 100, 100, kit, { view });
-      const face = paints.find(p => p.color === kit.skin && p.y < 96)!;
+      const face = paints.find(p => p.color === kit.skin && p.y < 91)!;
       assert(face, 'face remains a small, visible position-specific skin slot');
       for (let x = face.x - .5; x < face.x + face.w + .5; x += .5)
         for (let y = face.y; y < face.y + face.h + .5; y += .5)
           assert.notEqual(pixels.get(`${x},${y}`), '#10213a', `no black visor or cage at view ${view}/${dir}/${classic}`);
-      assert(paints.some(p => p.color === kit.body && p.y === face.y + face.h && p.w >= 3),
+      assert(paints.some(p => p.color === helmetColor(kit) && p.y === face.y + face.h && p.w >= 3),
         'the facemask rail uses the exact helmet color');
     }
   }

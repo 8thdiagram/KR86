@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { UNIFORM, uniformKit } from '../../components/football-art';
+import { helmetColor, UNIFORM, uniformKit } from '../../components/football-art';
 import { slim } from '../../components/football-sprites';
 import { drawTackle } from '../../components/football-tackle';
 import { drawKickReturn, kickFootballArt } from '../../components/kick-return-renderer';
@@ -18,7 +18,7 @@ function canvas() {
   return { ctx, paints };
 }
 
-test('uniforms use bright white pants and clean primary helmet shells in every facing', () => {
+test('uniforms use bright white pants and clean secondary helmet shells in every facing', () => {
   for (const channel of [1, 3, 5]) {
     assert(parseInt(UNIFORM.pants.slice(channel, channel + 2), 16) >= 245);
     assert(parseInt(UNIFORM.pantsShade.slice(channel, channel + 2), 16) >= 210);
@@ -28,8 +28,8 @@ test('uniforms use bright white pants and clean primary helmet shells in every f
     for (const view of [undefined, 0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
       const a = canvas();
       slim(a.ctx, 100, 100, kit, { view, step: 0 });
-      const shell = a.paints.filter(p => p.y < 96 && p.color === team.body);
-      assert(shell.some(p => p.w >= 4 && p.h >= 4), `${team.name}/${dir}/${view}: clear primary shell`);
+      const shell = a.paints.filter(p => p.y < 96 && p.color === helmetColor(kit));
+      assert(shell.some(p => p.w >= 4 && p.h >= 3), `${team.name}/${dir}/${view}: clear secondary shell`);
       assert(a.paints.some(p => p.color === UNIFORM.pants), 'white pants remain visible');
     }
   }

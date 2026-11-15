@@ -1,8 +1,8 @@
 /** Slim articulated Full Game anatomy using the same uniforms/ball as Classic. */
-import { drawFootballBall, playerSkin, UNIFORM, type FootballKit } from './football-art';
-import { FOOTBALL_ART_STAGES as ART, tone } from './football-deluxe-art';
+import { drawFootballBall, type FootballKit } from './football-art';
 import { drawPixelEnlarged } from './football-pixel-scale';
 import { withBroadcastAnchor } from './football-broadcast';
+import { drawFootballPlayer } from './football-player-art';
 export type Kit = FootballKit;
 const INK = '#10213a', GOLD = '#f4d23c';
 export const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number, w: number, h: number) => {
@@ -18,35 +18,6 @@ function contactShadow(ctx: CanvasRenderingContext2D, cx: number, y: number, wid
   R(ctx, 'rgba(15,50,23,.3)', left + 3, y + 1, Math.max(1, width - 6), 1);
 }
 
-function helmet(ctx: CanvasRenderingContext2D, kit: Kit, hx: number, hy: number, d: 1 | -1) {
-  hx += 1; hy += 1;
-  // Slightly larger crown, grown upward and outward from the same neck anchor.
-  // Half-unit clusters resolve as individual pixels on the doubled backing canvas.
-  if (kit.edge) R(ctx, kit.edge, hx + 1, hy - 1, 5.5, 1);
-  R(ctx, kit.body, hx + 1.5, hy - .5, 4.5, .5);
-  R(ctx, kit.body, hx + 1, hy, 5.5, 4);
-  R(ctx, kit.body, hx + 1.5, hy + 4, 4.5, 1);
-  // Stepped crown and a tiny shaded rear shell edge round the hard silhouette.
-  R(ctx, kit.body, hx + 2, hy - .5, 4, .5);
-  R(ctx, kit.trim, hx + 2, hy - .5, 3.5, .5);
-  R(ctx, tone(kit.body, 1.28), hx + 2, hy + .5, 3, .5);
-  R(ctx, tone(kit.body, 1.16), hx + 1.5, hy + 1, 1, .5);
-  R(ctx, tone(kit.body, .68), hx + 5, hy + 3, 1, 1);
-  R(ctx, tone(kit.body, .58), hx + 5.5, hy + 2.5, .5, 1);
-  R(ctx, tone(kit.body, .78), hx + 1, hy + 2.5, .5, 1);
-  R(ctx, kit.trim, d > 0 ? hx + 1 : hx + 6, hy + 1.5, 1, 2);
-  const faceX = d > 0 ? hx + 3.5 : hx + 2.5;
-  R(ctx, playerSkin(kit), faceX, hy + 1, 1.5, 1);
-  // Fine, readable shell-color mask rails; the little skin opening stays clear.
-  R(ctx, kit.body, faceX - .5, hy + 1, .5, 2.5);
-  R(ctx, kit.body, faceX + 1.5, hy + 1, .5, 2.5);
-  R(ctx, kit.body, faceX - .5, hy + 2, 3, .5);
-  R(ctx, kit.body, faceX - .5, hy + 3.5, 3, .5);
-  if (ART.players) {
-    R(ctx, tone(kit.body, 1.16), hx + 5.5, hy + .5, 1, 1);
-    R(ctx, tone(kit.body, .78), hx + 5.5, hy + 3.5, 1, 1);
-  }
-}
 export function heldBall(ctx: CanvasRenderingContext2D, bx: number, by: number) {
   drawFootballBall(ctx, bx + 2, by + 1, { held: true });
 }
@@ -65,147 +36,14 @@ export function movementBodyView(vx: number, vy: number, facing: 1 | -1): BodyVi
 /** Nine hand-authored 16-bit silhouettes; view changes anatomy, never a flat rotation. */
 function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit,
   view: BodyView, options: { step?: number; ball?: boolean; crouch?: boolean; hold?: boolean } = {}) {
-  const cx = Math.round(x), top = Math.round(y) - (options.crouch ? 7 : 8);
-  // Continuous phase feeds the same two-beat cycle, giving knees and arms a
-  // small intermediate silhouette without changing the cycle duration.
-  const phase = options.step ?? 0;
-  const d = kit.dir, f = (1 - Math.cos(phase * Math.PI)) / 2, ball = !!options.ball;
-  const shade = tone(kit.body, .86), light = tone(kit.body, 1.16);
-  contactShadow(ctx, cx, Math.round(y) + 5, view === 2 ? 8 : 10);
-  const rearView = view === 3 || view === 4 || view === 7 || view === 8;
-  const intermediate = view >= 5;
-  const ballSide: 1 | -1 = rearView ? (d > 0 ? -1 : 1) : d;
-  // On the rear turn the ball is carried behind the back and only its outside
-  // pixels remain visible; front/profile views keep it in front of the chest.
-  if (ball && rearView) heldBall(ctx, ballSide > 0 ? cx + 1 : cx - 5, top + 7);
-  // Legs are re-staged per view: the far leg is darker and tucked behind the near one.
-  if (view === 2) {
-    R(ctx, UNIFORM.pantsShade, cx - 1, top + 10, 1, 3);
-    R(ctx, UNIFORM.pants, cx, top + 10, 1, 3);
-    R(ctx, INK, cx + (d > 0 ? 1 : -2), top + 12, 2, 1);
-  } else {
-    const back = rearView;
-    const spread = f;
-    R(ctx, UNIFORM.pantsShade, cx - 2 + spread, top + 10, 2, 2);
-    R(ctx, UNIFORM.pants, cx - 2 + spread, top + 11, 2, 2);
-    R(ctx, UNIFORM.pants, cx + (back ? 0 : 1) - spread, top + 10, 2, 3);
-    R(ctx, INK, cx - 3 + spread, top + 13, 3, 1);
-    R(ctx, INK, cx + (back ? 0 : 1) - spread, top + 13, 3, 1);
-  }
-  // Chest/hips: front, two foreshortened three-quarter frames, profile, and back.
-  if (view === 2) {
-    R(ctx, INK, cx - 2, top + 6, 4, 5);
-    R(ctx, shade, cx - 1, top + 6, 1, 4);
-    R(ctx, kit.body, cx, top + 6, 2, 4);
-    R(ctx, light, cx, top + 6, 1, 1);
-  } else {
-    const narrow = view === 1 || view === 3;
-    const w = narrow ? 3 : intermediate ? 4 : 5, left = cx - Math.floor(w / 2);
-    R(ctx, INK, left, top + 6, w, 5);
-    R(ctx, kit.body, left, top + 6, w, 4);
-    R(ctx, light, left + 1, top + 6, Math.max(1, w - 2), 1);
-    R(ctx, tone(kit.body, .68), left, top + 8, .5, 2);
-    R(ctx, tone(kit.body, .78), left + w - .5, top + 8, .5, 2);
-    R(ctx, kit.trim, left + .5, top + 7, .5, 2);
-    R(ctx, tone(kit.body, 1.3), left + 1, top + 6.5, Math.max(1, w - 2), .5);
-    if (rearView) {
-      R(ctx, kit.trim, cx - 1, top + 8, 2, 1); // back yoke / number block
-      R(ctx, kit.trim, cx + 1, top + 7, 1, 1);
-      R(ctx, tone(kit.trim, .72), cx - .5, top + 8.5, 1.5, .5);
-      R(ctx, shade, view === 3 || view === 7 ? cx + 1 : cx + 2, top + 9, 1, 1);
-    } else {
-      R(ctx, kit.trim, left + 1, top + 8, 1, 1); // compact secondary chest mark
-      R(ctx, tone(kit.body, 1.16), left + 1.5, top + 7.5, .5, .5);
-      R(ctx, tone(kit.body, .72), left + w - 1, top + 9, .5, 1);
-    }
-  }
-  // A higher white hip line leaves the trouser legs readable beneath the pads.
-  R(ctx, UNIFORM.pants, cx - (view === 2 ? 1 : 1.5), top + 9.5, view === 2 ? 2 : 3, 1);
-  // Bulky shoulder pads retain their silhouette as the chest turns away.
-  if (view === 2) {
-    R(ctx, INK, cx - 2, top + 5, 4, 2);
-    R(ctx, kit.body, cx - 1, top + 5, 2, 1);
-    R(ctx, kit.trim, cx - 2, top + 5, 1, 2);
-    R(ctx, light, cx, top + 5, 1, 1);
-  } else {
-    const narrow = view === 1 || view === 3;
-    const w = narrow ? 5 : intermediate ? 6 : 7, left = cx - Math.floor(w / 2);
-    R(ctx, INK, left, top + 5, w, 2);
-    R(ctx, kit.body, left + 1, top + 5, w - 2, 1);
-    R(ctx, tone(kit.body, .72), left + 1, top + 6, w - 2, .5);
-    R(ctx, kit.trim, left, top + 5, 1, 2);
-    R(ctx, kit.trim, left + w - 1, top + 5, 1, 2);
-    R(ctx, light, left + 2, top + 5, Math.max(1, w - 4), 1);
-    R(ctx, tone(kit.trim, .78), left + .5, top + 6, .5, 1);
-    R(ctx, tone(kit.trim, .78), left + w - 1, top + 6, .5, 1);
-  }
-  // The far arm stays behind the chest; the near forearm wraps the ball.
-  if (ball && !rearView) heldBall(ctx, ballSide > 0 ? cx + 1 : cx - 5, top + 7);
-  if (view === 2) {
-    const nearX = d > 0 ? cx + 1 : cx - 2, farX = d > 0 ? cx - 2 : cx + 1;
-    R(ctx, shade, farX, top + 7, 2, 2); R(ctx, kit.body, farX, top + 7, 1, 2);
-    R(ctx, tone(kit.body, 1.2), farX + .5, top + 7, .5, 1);
-    R(ctx, playerSkin(kit), farX, top + 9, 1, 1);
-    R(ctx, INK, nearX, top + 7, 2, 2); R(ctx, kit.body, nearX, top + 7, 1, 2);
-    R(ctx, tone(kit.body, .72), nearX + 1, top + 8, 1, 1);
-    R(ctx, INK, nearX + (d > 0 ? 1 : -1), top + 8, 2, 2);
-    R(ctx, kit.body, nearX + (d > 0 ? 1 : -1), top + 8, 1, 1);
-    if (!ball) R(ctx, playerSkin(kit), nearX, top + 9, 1, 1);
-  } else {
-    const leftY = top + 7 + f, rightY = top + 7 - f;
-    // Sleeves angle away from the pads and articulate back at the elbow.
-    R(ctx, INK, cx - 4, leftY, 2, 2); R(ctx, shade, cx - 4, leftY, 1, 1);
-    R(ctx, kit.body, cx - 3, leftY, 1, 1);
-    R(ctx, INK, cx - 4, leftY + 1, 1, 2); R(ctx, kit.body, cx - 4, leftY + 1, 1, 1);
-    R(ctx, INK, cx + 2, rightY, 2, 2); R(ctx, kit.body, cx + 2, rightY, 1, 1);
-    R(ctx, shade, cx + 3, rightY, 1, 1);
-    R(ctx, INK, cx + 3, rightY + 1, 1, 2); R(ctx, kit.body, cx + 3, rightY + 1, 1, 1);
-    if (!ball || ballSide > 0) R(ctx, playerSkin(kit), cx - 4, leftY + 2, 1, 1);
-    if (!ball || ballSide < 0) R(ctx, playerSkin(kit), cx + 3, rightY + 2, 1, 1);
-    if (ball) {
-      const nearX = ballSide > 0 ? cx + 2 : cx - 4;
-      R(ctx, kit.body, nearX, top + 7, 2, 2);
-      R(ctx, INK, nearX, top + 8, 2, 1);
-    }
-  }
-  // Five hand-authored helmet profiles, enlarged around their unchanged neck line.
-  if (view === 2) {
-    R(ctx, kit.body, cx - 1, top + .5, 4.5, 4.5);
-    R(ctx, kit.trim, cx - .5, top + .5, 2.5, .5);
-    R(ctx, tone(kit.body, 1.28), cx - .5, top + 1.5, 2.5, .5);
-    R(ctx, tone(kit.body, 1.16), cx - 1, top + 2, 1, .5);
-    R(ctx, shade, cx + 2.5, top + 4, 1, 1);
-    const faceX = cx + (d > 0 ? 1.5 : -1), maskX = cx + (d > 0 ? -.5 : -1.5);
-    R(ctx, playerSkin(kit), faceX, top + 2, 1.5, 1);
-    R(ctx, kit.body, faceX - .5, top + 2, .5, 2);
-    R(ctx, kit.body, maskX + 3, top + 2, .5, 2);
-    R(ctx, kit.body, maskX, top + 3, 3.5, .5);
-  } else {
-    const narrow = view === 1 || view === 3;
-    const hw = narrow ? 5.5 : intermediate ? 7 : 8;
-    const hx = Math.round((cx - hw / 2) * 2) / 2;
-    R(ctx, kit.body, hx + .5, top + .5, hw - 1, 4.5);
-    R(ctx, kit.body, hx, top + 1, hw, 4);
-    R(ctx, kit.trim, hx + 1, top + .5, Math.max(1, hw - 2), .5);
-    R(ctx, tone(kit.body, 1.16), hx + 1, top + 1, Math.max(1, hw - 3), .5);
-    R(ctx, tone(kit.body, 1.3), hx + 1.5, top + 1.5, Math.max(1, hw - 3), .5);
-    if (view !== 4 && view !== 8) R(ctx, kit.body, d > 0 ? hx + 1 : hx + hw - 2, top + 1, 1, 1);
-    R(ctx, shade, hx + hw - 2, top + 4, 1, 1);
-    if (view === 4 || view === 8) {
-      R(ctx, kit.trim, cx - 1, top + 2, 2, 1); // rear stripe; no face on the back
-    } else {
-      const faceX = d > 0 ? hx + Math.floor(hw / 2) : hx + 1;
-      const slit = narrow || view >= 6;
-      R(ctx, playerSkin(kit), faceX, top + 2, 1.5, 1);
-      R(ctx, kit.body, faceX - 1, top + 2, .5, 2);
-      R(ctx, tone(kit.body, 1.16), faceX - .5, top + 2, .5, .5);
-      R(ctx, kit.body, faceX + (slit ? 1.5 : 2.5), top + 2, .5, 2);
-      R(ctx, kit.body, faceX - 1, top + 3, slit ? 3 : 4, .5);
-      R(ctx, kit.body, faceX - 1, top + 3.5, slit ? 3 : 4, .5);
-    }
-  }
-  if (kit.edge) R(ctx, kit.edge, cx - 2, top, 4, 1);
-  if (options.hold && !ball) R(ctx, playerSkin(kit), cx + d * 4, top + 8, 1, 1);
+  const cx = Math.round(x), ground = Math.round(y);
+  contactShadow(ctx, cx, ground + 5, view === 2 ? 8 : 10);
+  const rear = view === 3 || view === 4 || view === 7 || view === 8;
+  const d = rear ? (kit.dir > 0 ? -1 : 1) : kit.dir;
+  const top = ground - (options.crouch ? 7 : 8);
+  if (options.ball && rear) heldBall(ctx, d > 0 ? cx + 1 : cx - 5, top + 7);
+  drawFootballPlayer(ctx, cx, ground, kit, { ...options, view });
+  if (options.ball && !rear) heldBall(ctx, d > 0 ? cx + 1 : cx - 5, top + 7);
 }
 export function turnSprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit,
   view: BodyView, options: { step?: number; ball?: boolean; crouch?: boolean; hold?: boolean } = {}) {
@@ -214,99 +52,10 @@ export function turnSprite(ctx: CanvasRenderingContext2D, x: number, y: number, 
 /** Slim standing sprite, anchor = torso centre. Tapered shoulder caps, 3px torso, split legs, compact helmet shell. */
 function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, p: Pose = {}) {
   if (p.view !== undefined) { turnSprite(ctx, x, y, kit, p.view, p); return; }
-  const step = p.step ?? 0, d = kit.dir, lean = p.lean ?? 0;
-  const px = Math.round(x) - 4, py = Math.round(y) - 8 + (p.crouch ? 1 : 0);
-  ctx.save();
-  ctx.translate(0, -Math.round(.4 * (1 - Math.cos(step * Math.PI))));
-  contactShadow(ctx, px + 4, py + 13, 9);
-  const reach = Math.sin(step * Math.PI / 2) * 1.6;
-  if (p.kick !== undefined) {
-    // plant leg + swinging leg (kick 0 = cocked back, 1 = follow-through)
-    R(ctx, UNIFORM.pants, px + 3, py + 10, 1, 3); R(ctx, INK, px + 3 + (d > 0 ? 0 : -1), py + 12, 2, 1);
-    const swing = (p.kick * 2 - 1) * 4 * d;
-    R(ctx, UNIFORM.pantsShade, px + 4, py + 10, 1, 1);
-    R(ctx, UNIFORM.pants, px + 4 + Math.round(swing * .5), py + 11 - Math.round(p.kick * 2), 1, 2);
-    R(ctx, INK, px + 4 + Math.round(swing), py + 12 - Math.round(p.kick * 4), 2, 1);
-  } else {
-    const lx = px + 2 - reach, rx = px + 5 + reach;
-    const lh = reach < 0 ? 2 : 3, rh = reach > 0 ? 2 : 3;
-    R(ctx, UNIFORM.pantsShade, lx, py + 10, 1, 1); R(ctx, UNIFORM.pantsShade, rx, py + 10, 1, 1);
-    R(ctx, UNIFORM.pants, lx, py + 10 + (lh < 3 ? 0 : 1), 2, lh - (lh < 3 ? 0 : 1) + 1);
-    R(ctx, UNIFORM.pants, rx, py + 10 + (rh < 3 ? 0 : 1), 2, rh - (rh < 3 ? 0 : 1) + 1);
-    R(ctx, UNIFORM.pantsShade, lx + 1.5, py + 10.5, .5, Math.max(1, lh - .5));
-    R(ctx, tone(UNIFORM.pants, 1.06), rx + .5, py + 10, .5, Math.max(1, rh));
-    const leftToe = lx + (d > 0 ? 0 : -1), rightToe = rx + (d > 0 ? 0 : -1);
-    R(ctx, INK, leftToe, py + 10 + lh, 2, 1); R(ctx, INK, rightToe, py + 10 + rh, 2, 1);
-    if (ART.players) {
-      R(ctx, kit.body, lx + .5, py + 9.5 + lh, 1, .5);
-      R(ctx, kit.body, rx + .5, py + 9.5 + rh, 1, .5);
-      // Tiny cleat catches sit inside the original boot footprint.
-      R(ctx, tone(INK, 1.28), leftToe + (d > 0 ? 0 : 1), py + 10 + lh, 1, 1);
-      R(ctx, tone(INK, 1.28), rightToe + (d > 0 ? 0 : 1), py + 10 + rh, 1, 1);
-      R(ctx, INK, leftToe + 1.5, py + 10.5 + lh, .5, .5);
-      R(ctx, INK, rightToe + 1.5, py + 10.5 + rh, .5, .5);
-    }
-  }
-  R(ctx, kit.body, px + 2 + lean, py + 6, 4, 5);
-  R(ctx, INK, px + 2.5 + lean, py + 5.5, 3, .5);
-  R(ctx, tone(kit.body, 1.28), px + 3 + lean, py + 6, 2, .5);
-  R(ctx, kit.trim, px + 3 + lean, py + 8, 1, 1);
-  R(ctx, tone(kit.trim, .74), px + 3.5 + lean, py + 8.5, .5, .5);
-  R(ctx, kit.trim, px + 2 + lean, py + 6, .5, 1.5);
-  R(ctx, kit.trim, px + 5.5 + lean, py + 6, .5, 1.5);
-  R(ctx, tone(kit.trim, 1.18), px + 3.5 + lean, py + 7, .5, 1);
-  R(ctx, tone(kit.body, 1.16), px + 2.5 + lean, py + 7, .5, .5);
-  R(ctx, tone(kit.body, .72), px + 5 + lean, py + 8.5, .5, 1);
-  if (ART.players) R(ctx, tone(kit.body, .88), px + 5 + lean, py + 9, 1, 1);
-  const la = -Math.sin(step * Math.PI / 2), ra = -la;
-  if (p.hold) {
-    R(ctx, kit.body, px + (d > 0 ? 6 : 1) + lean, py + 7, 2, 1); R(ctx, playerSkin(kit), px + (d > 0 ? 8 : 0) + lean, py + 7, 1, 1);
-  } else {
-    R(ctx, tone(kit.body, .76), px + 1 + lean, py + 7 + la, 2, 2);
-    R(ctx, tone(kit.body, .58), px + 1 + lean, py + 8 + la, .5, 1);
-    R(ctx, kit.body, px + 2 + lean, py + 7 + la, 1, 2);
-    R(ctx, tone(kit.body, .76), px + 1 + lean, py + 9 + la, 1, 1);
-    R(ctx, playerSkin(kit), px + 2 + lean, py + 9 + la, 1, 1);
-    R(ctx, tone(playerSkin(kit), .78), px + 2.5 + lean, py + 9 + la, .5, .5);
-    R(ctx, tone(kit.body, .76), px + 5 + lean, py + 7 + ra, 2, 2);
-    R(ctx, tone(kit.body, .58), px + 6.5 + lean, py + 8 + ra, .5, 1);
-    R(ctx, kit.body, px + 6 + lean, py + 7 + ra, 1, 2);
-    R(ctx, tone(kit.body, .76), px + 6 + lean, py + 9 + ra, 1, 1);
-    R(ctx, playerSkin(kit), px + 7 + lean, py + 9 + ra, 1, 1);
-    R(ctx, tone(playerSkin(kit), .78), px + 7 + lean, py + 9 + ra, .5, .5);
-  }
-  // Broad rounded shoulder pads taper into a slim waist, not a boxy chest.
-  R(ctx, INK, px + 1 + lean, py + 5, 1, 1);
-  R(ctx, INK, px + 6 + lean, py + 5, 1, 1);
-  R(ctx, kit.body, px + 1 + lean, py + 5, 1, 1.5);
-  R(ctx, kit.body, px + 2 + lean, py + 4.5, 4, 2);
-  R(ctx, kit.body, px + 6 + lean, py + 5, 1, 1.5);
-  R(ctx, tone(kit.body, .72), px + 1 + lean, py + 6, 1, .5);
-  R(ctx, tone(kit.body, .72), px + 6 + lean, py + 6, 1, .5);
-  R(ctx, kit.trim, px + 1 + lean, py + 5, 1, 1); R(ctx, kit.trim, px + 6 + lean, py + 5, 1, 1);
-  if (ART.players) R(ctx, tone(kit.body, 1.18), px + 2 + lean, py + 5, 4, 1);
-  if (kit.edge) { R(ctx, kit.edge, px + lean, py + 6, 1, 2); R(ctx, kit.edge, px + 8 + lean, py + 6, 1, 2); }
-  R(ctx, kit.body, px + 3 + lean, py + 6, 2, 1);
-  R(ctx, INK, px + 1 + lean, py + 6.5, .5, 1);
-  R(ctx, INK, px + 6.5 + lean, py + 6.5, .5, 1);
-  if (ART.players) {
-    R(ctx, tone(kit.body, 1.16), px + 3 + lean, py + 6, 1, 1);
-    // Shoulder-pad undersides and two short jersey folds add volume without
-    // widening the slim chest or shifting its established foot anchor.
-    R(ctx, tone(kit.body, .68), px + 2 + lean, py + 6, 1, 1);
-    R(ctx, tone(kit.body, .68), px + 5 + lean, py + 6, 1, 1);
-    R(ctx, tone(kit.body, .58), px + 2 + lean, py + 9, .5, 1);
-    R(ctx, tone(kit.body, 1.22), px + 5 + lean, py + 8, .5, 1);
-    R(ctx, tone(kit.body, .68), px + 4 + lean, py + 7, 1, 2);
-    R(ctx, tone(kit.body, .78), px + 3 + lean, py + 9, 1, 1);
-    R(ctx, tone(kit.body, .72), px + 4 + lean, py + 10, 1, 1);
-    R(ctx, UNIFORM.pantsShade, px + 2 + lean, py + 11, 1, 1);
-    R(ctx, UNIFORM.pantsShade, px + 6 + lean, py + 11, 1, 1);
-  }
-  R(ctx, UNIFORM.pants, px + 2 + lean, py + 9.5, 4, 1.5);
-  helmet(ctx, kit, px + 1 + lean + (d > 0 ? 0 : 0), py - 1, d);
-  if (p.ball) heldBall(ctx, d > 0 ? px + 5 + lean : px - 1 + lean, py + 7);
-  ctx.restore();
+  const cx = Math.round(x), ground = Math.round(y), d = kit.dir;
+  contactShadow(ctx, cx, ground + 5, 9);
+  drawFootballPlayer(ctx, cx, ground, kit, p);
+  if (p.ball) heldBall(ctx, d > 0 ? cx + 1 + (p.lean ?? 0) : cx - 5 + (p.lean ?? 0), ground - 1);
 }
 export function slim(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, p: Pose = {}) {
   drawPixelEnlarged(ctx, x, y, (target, px, py) => slimNative(target, px, py, kit, p), 6);

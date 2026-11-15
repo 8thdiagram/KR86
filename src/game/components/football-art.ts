@@ -1,8 +1,10 @@
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
 import { withBroadcastAnchor } from './football-broadcast';
 import { sharpPixelRect } from './football-pixel-scale';
-/** Shared kit policy: body is the primary jersey/shell; trim is a restrained secondary mark. */
+/** Shared kit policy: body is the solid primary jersey; trim is the secondary helmet. */
 export type FootballKit = { body: string; trim: string; dir: 1 | -1; edge?: string; skin?: string };
+/** Rendering-only helmet identity; never swap the team palette used by field art. */
+export const helmetColor = (kit: Pick<FootballKit, 'trim'>): string => kit.trim;
 export const UNIFORM = { pants: '#fffdf5', pantsShade: '#d8dfe2', ink: '#10213a' } as const;
 /** Cosmetic position palette only: never stored on athletes or used by gameplay. */
 export const SKIN_TONES = ['#f0bd93', '#d99b6c', '#af734c', '#825038', '#563726'] as const;

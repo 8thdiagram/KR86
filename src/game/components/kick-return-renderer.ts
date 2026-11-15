@@ -4,7 +4,7 @@ import { drawTouchdownMarquee } from './football-touchdown-art';
 import { kickDivePose } from '../lib/kick-return-dive';
 import { kickDiveBallReach, kickDiveRules } from '../lib/kick-return-burst';
 import type { KickViewport } from '../lib/kick-return-viewport';
-import { drawFootballBall, footballPixels, playerSkin, positionKit, classicSkinPosition, uniformKit, UNIFORM, type FootballKit } from './football-art';
+import { drawFootballBall, footballPixels, helmetColor, playerSkin, positionKit, classicSkinPosition, uniformKit, UNIFORM, type FootballKit } from './football-art';
 import { FOOTBALL_ART_STAGES as ART, drawDeluxeTurf, drawEndZoneLettering, drawFieldFixtures, drawYardNumber, tone } from './football-deluxe-art';
 import { drawBroadcastStadium } from './football-stadium-art';
 import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
@@ -12,6 +12,7 @@ import { drawBroadcastGoalPosts } from './football-broadcast-posts';
 import { heldBall, turnSprite, movementBodyView as motionView, type BodyView } from './football-sprites';
 import { drawPixelEnlarged } from './football-pixel-scale';
 import { refereeRenderY, REFEREE_WORLD_Y } from './football-referee-layout';
+import { drawFootballPlayer } from './football-player-art';
 
 const G: Record<string, string> = {
   A: '010101111101101', C: '111100100100111', T: '111010010010010', H: '101101111101101',
@@ -122,33 +123,6 @@ type Kit = FootballKit;
 // Shared anatomy (all poses): stepped shell, matching-color cage, tapered jersey,
 // articulated white trousers and compact cleats.
 type Put = (c: string, u: number, v: number, w: number, h: number) => void;
-function helmet(put: Put, kit: Kit, hx: number, hy: number, d: 1 | -1) {
-  // Slightly fuller 16-bit crown, grown upward from the original neck anchor.
-  hx += 1; hy += 1;
-  if (kit.edge) put(kit.edge, hx + .5, hy - 1, 7, 1);
-  put(kit.body, hx + 1.5, hy - .5, 5.5, .5);
-  put(kit.body, hx + 1, hy, 6.5, 4);
-  put(kit.body, hx + 1.5, hy + 4, 5.5, 1);
-  put(kit.body, hx + 2, hy - .5, 4, .5);
-  put(kit.trim, hx + 2, hy - .5, 3.5, .5);
-  put(tone(kit.body, 1.28), hx + 2, hy + .5, 3.5, .5);
-  put(tone(kit.body, 1.16), hx + 1.5, hy + 1, 1, .5);
-  put(tone(kit.body, .68), hx + 5.5, hy + 3, 1, 1);
-  put(tone(kit.body, .58), hx + 6, hy + 2.5, .5, 1);
-  put(tone(kit.body, .78), hx + 1, hy + 2.5, .5, 1);
-  put(kit.trim, d > 0 ? hx + 1 : hx + 6.5, hy + 1.5, 1, 2);
-  const faceX = d > 0 ? hx + 3.5 : hx + 2.5;
-  put(playerSkin(kit), faceX, hy + 1, 1.5, 1);
-  // The fine cage stays primary-color and never paints across the skin opening.
-  put(kit.body, faceX - .5, hy + 1, .5, 2.5);
-  put(kit.body, faceX + 1.5, hy + 1, .5, 2.5);
-  put(kit.body, faceX - .5, hy + 2, 3, .5);
-  put(kit.body, faceX - .5, hy + 3.5, 3, .5);
-  if (ART.players) { // shell highlight + darker lower back edge, inside the helmet
-    put(tone(kit.body, 1.16), hx + 1.5, hy + .5, 1, 1);
-    put(tone(kit.body, .78), hx + 5.5, hy + 3.5, 1, 1);
-  }
-}
 function ballShape(put: Put, bx: number, by: number, d: 1 | -1, kit: Kit) {
   footballPixels(put, bx - 1, by - 1, true);
   put(playerSkin(kit), d > 0 ? bx : bx + 6, by + 3, 1, 1);
@@ -159,85 +133,15 @@ function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: 
     turnSprite(ctx, x, y, kit, view, { step, ball, hold: !ball && shuffle > 0, crouch: shuffle > 0 });
     return;
   }
-  const px = Math.round(x) - 4, py = Math.round(y) - 8, d = kit.dir;
-  const put: Put = (c, u, v, w, h) => R(ctx, c, u, v, w, h);
-  const f = Math.abs(Math.floor(step)) % 4;
-  ctx.save();
-  // Continuous body weight shift; crisp pixel anatomy stays local to the body.
-  ctx.translate(0, -Math.round(.45 * (1 - Math.cos(step * Math.PI))));
-  contactShadow(ctx, px + 4, py + 13, 10);
-  const reach = shuffle ? 0 : Math.sin(step * Math.PI / 2) * 1.5;
-  const lh = shuffle && f % 2 ? 2 : reach < 0 ? 2 : 3, rh = reach > 0 ? 2 : 3;
-  const lx = px + 2 - reach, rx = px + 4 + reach;
-  // Thigh, raised knee and offset calf form a crisp bent-leg silhouette.
-  const bend = d > 0 ? .5 : 0;
-  R(ctx, UNIFORM.pants, lx, py + 10, 2, 1);
-  R(ctx, UNIFORM.pants, lx + bend, py + 11, 1.5, 1);
-  if (lh > 2) R(ctx, UNIFORM.pants, lx + bend, py + 12, 1.5, lh - 2);
-  R(ctx, UNIFORM.pants, rx, py + 10, 2, 1);
-  R(ctx, UNIFORM.pants, rx + (1 - bend), py + 11, 1.5, 1);
-  if (rh > 2) R(ctx, UNIFORM.pants, rx + (1 - bend), py + 12, 1.5, rh - 2);
-  R(ctx, C.ink, lx + (d > 0 ? 0 : -1), py + 9 + lh, 3, 1); R(ctx, C.ink, rx + (d > 0 ? 0 : -1), py + 9 + rh, 3, 1);
-  if (ART.players) {
-    R(ctx, kit.body, lx + .5, py + 8.5 + lh, 1, .5);
-    R(ctx, kit.body, rx + .5, py + 8.5 + rh, 1, .5);
-    R(ctx, UNIFORM.pantsShade, lx + 1, py + 11, 1, 1); R(ctx, UNIFORM.pantsShade, rx, py + 11, 1, 1);
-    R(ctx, tone(UNIFORM.pants, 1.08), lx + .5, py + 10, .5, Math.max(1, lh - 1));
-    R(ctx, tone(UNIFORM.pants, 1.08), rx + .5, py + 10, .5, Math.max(1, rh - 1));
-    R(ctx, UNIFORM.pantsShade, lx, py + 11, 1, 1);
-  }
-    // Narrow waist beneath a sculpted, stepped shoulder silhouette.
-    R(ctx, kit.body, px + 1, py + 6, 5, 5);
-  R(ctx, C.ink, px + 1.5, py + 5.5, 4, .5);
-  R(ctx, tone(kit.body, 1.28), px + 2, py + 6, 3, .5);
-  R(ctx, tone(kit.body, .64), px + 1, py + 9, .5, 1.5);
-  R(ctx, tone(kit.body, .8), px + 5.5, py + 8, .5, 2);
-  if (ART.players) {
-    R(ctx, tone(kit.body, 1.16), px + 3, py + 6, 1, 1);
-    R(ctx, tone(kit.body, .88), px + 5, py + 7, 1, 3);
-  }
-  R(ctx, kit.trim, px + 2, py + 8, 1, 1);
-  R(ctx, tone(kit.trim, .72), px + 2.5, py + 8.5, .5, .5);
-  R(ctx, kit.trim, px + 1.5, py + 6, .5, 1.5);
-  R(ctx, kit.trim, px + 5.5, py + 6, .5, 1.5);
-  R(ctx, tone(kit.trim, 1.18), px + 3, py + 7, 1, .5);
-  R(ctx, tone(kit.body, 1.16), px + 2.5, py + 7.5, .5, .5);
-  R(ctx, tone(kit.body, .72), px + 5, py + 8.5, .5, 1);
-  if (ART.players) R(ctx, tone(kit.body, .88), px + 5, py + 10, 1, 1);
-  // Knee highlight stays bright after jersey overlap; still inside the existing trouser silhouette.
-  R(ctx, UNIFORM.pants, lx + 1, py + 11, 1, 1);
-  const la = -Math.sin(step * Math.PI / 2), ra = -la;
-  // Sleeves angle out of the pads, with a clear inward elbow and forearm.
-  R(ctx, C.ink, px + 1 + lean, py + 7 + la, 2, 2);
-  R(ctx, tone(kit.body, .76), px + 1 + lean, py + 7 + la, 1, 2);
-  R(ctx, kit.body, px + 2 + lean, py + 7 + la, 1, 1);
-  R(ctx, C.ink, px + lean, py + 9 + la, 2, 1);
-  R(ctx, kit.body, px + .5 + lean, py + 9 + la, 1, 1);
-  R(ctx, playerSkin(kit), px + lean, py + 10 + la, 1, 1);
-  R(ctx, tone(playerSkin(kit), .78), px + .5 + lean, py + 10 + la, .5, .5);
-  R(ctx, C.ink, px + 6 + lean, py + 7 + ra, 2, 2);
-  R(ctx, kit.body, px + 6 + lean, py + 7 + ra, 1, 2);
-  R(ctx, tone(kit.body, .76), px + 7 + lean, py + 7 + ra, 1, 1);
-  R(ctx, C.ink, px + 7 + lean, py + 9 + ra, 2, 1);
-  R(ctx, kit.body, px + 7 + lean, py + 9 + ra, 1, 1);
-  R(ctx, playerSkin(kit), px + 8 + lean, py + 10 + ra, 1, 1);
-  R(ctx, tone(kit.body, .58), px + 7.5 + lean, py + 8 + ra, .5, 1);
-  R(ctx, tone(playerSkin(kit), .78), px + 7 + lean, py + 10 + ra, .5, .5);
-  R(ctx, kit.body, px + 2 + lean, py + 4.5, 4, .5);
-  R(ctx, kit.body, px + 1 + lean, py + 5, 6, 1.5);
-  R(ctx, tone(kit.body, .72), px + 1.5 + lean, py + 6, 5, .5);
-  R(ctx, kit.trim, px + 1 + lean, py + 5, 1, 2); R(ctx, kit.trim, px + 6 + lean, py + 5, 1, 2);
-  if (ART.players) R(ctx, tone(kit.body, 1.18), px + 2 + lean, py + 5, 4, 1);
-  if (kit.edge) { R(ctx, kit.edge, px + lean, py + 6, 1, 2); R(ctx, kit.edge, px + 7 + lean, py + 6, 1, 2); }
-  R(ctx, UNIFORM.pants, px + 2 + lean, py + 9.5, 4, 1.5);
-  R(ctx, C.ink, px + 1 + lean, py + 6.5, .5, 1);
-  R(ctx, C.ink, px + 6.5 + lean, py + 6.5, .5, 1);
-  helmet(put, kit, px + lean, py - 1, d);
+  const cx = Math.round(x), ground = Math.round(y), d = kit.dir;
+  contactShadow(ctx, cx, ground + 5, 10);
+  drawFootballPlayer(ctx, cx, ground, kit, {
+    step, lean, crouch: shuffle > 0, engaged: shuffle > 0, hold: shuffle > 0,
+  });
   if (ball) {
-    R(ctx, kit.body, px + lean + (d > 0 ? 6 : 1), py + 7, 1, 2);
-    ballShape(put, d > 0 ? px + 5 + lean : px - 3 + lean, py + 7, d, kit);
+    const put: Put = (c, u, v, w, h) => R(ctx, c, u, v, w, h);
+    ballShape(put, d > 0 ? cx + 1 : cx - 7, ground - 1, d, kit);
   }
-  ctx.restore();
 }
 function sprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, step: number, ball = false, shuffle = 0, lean = 0, view?: BodyView) {
   drawPixelEnlarged(ctx, x, y, (target, px, py) => spriteNative(target, px, py, kit, step, ball, shuffle, lean, view), 6);
@@ -246,7 +150,7 @@ function sprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, s
 function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, angle: number, lift: number, crouch = 0, ball = false) {
   const cx = Math.round(x), cy = Math.round(y - lift), horizontal = Math.abs(Math.cos(angle)) >= Math.abs(Math.sin(angle));
   const forward: 1 | -1 = Math.cos(angle) >= 0 ? 1 : -1;
-  const far = tone(kit.body, .86), light = tone(kit.body, 1.16);
+  const shell = helmetColor(kit);
   const shadowW = (horizontal ? 18 : 10) - Math.min(4, Math.max(0, Math.round(lift)));
   if (lift > 0) contactShadow(ctx, cx, Math.round(y) + (horizontal ? 2 : 7), shadowW);
   if (horizontal) {
@@ -255,38 +159,28 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
       R(ctx, c, cx + (forward > 0 ? u : -u - w), by + v, w, h);
     // A single connected turf-contact cluster, not an outline or impact rays.
     if (lift <= 0) hr('#173923', -3, 3, 8, 1);
-    hr(UNIFORM.pants, -8, 1, 5, 3);
-    hr(UNIFORM.pantsShade, -7, 3, 3, 1);
-    hr(tone(UNIFORM.pants, 1.08), -7, 1, 3, .5);
-    hr(C.ink, -8, 3.5, 4, .5);
+    hr(UNIFORM.pants, -10, 1, 7, 3);
+    hr(UNIFORM.pantsShade, -9, 3, 5, 1);
+    hr(C.ink, -10, 3.5, 2.5, .5);
     hr(kit.body, -3, -1, 6, 4);
-    hr(light, -3, -1, 3, 1); hr(kit.trim, 0, -1, 1, 2);
+    hr(kit.body, -3, -1, 3, 1);
     hr(C.ink, -2.5, -1.5, 5, .5);
-    hr(tone(kit.body, .64), -3, 1, .5, 2);
-    hr(tone(kit.body, .78), 2, 1, .5, 2);
-    hr(tone(kit.trim, .74), 0, 0, .5, 1);
     // Separated trouser/jersey masses preserve the athlete's long prone profile.
-    hr(far, -1, -3, ball ? 5 : 9, 2);
+    hr(kit.body, -1, -3, ball ? 5 : 9, 2);
     hr(kit.body, 0, 2, ball ? 5 : 9, 2);
-    hr(tone(kit.body, 1.2), 1, 2, ball ? 2 : 4, .5);
     hr(playerSkin(kit), ball ? 4 : 10, 2, 2, 1);
     // Crown overlaps the shoulder, avoiding a detached helmet at either facing.
     // Shell expands a half-unit toward the crown; its lower edge remains at
     // the same neck/shoulder overlap so the prone silhouette stays grounded.
-    hr(kit.body, 2.5, -4.5, 5.5, 4.5);
-    hr(kit.trim, 3.5, -4.5, 3.5, .5);
-    hr(tone(kit.body, 1.16), 3.5, -3.5, 2.5, .5); hr(far, 6.5, -1, 1, 1);
+    hr(shell, 2.5, -4.5, 5.5, 4.5);
+    hr(shell, 3.5, -4.5, 3.5, .5);
     hr(C.ink, 3, -5, 4.5, .5); // restrained exterior crown contour only
-    hr(tone(kit.body, 1.28), 4, -3.5, 2.5, .5);
     hr(playerSkin(kit), 7.5, -2, 1, 1);
-    hr(tone(kit.body, .68), 7, -1, 1, .5);
     // Same-color cage around the tiny visible face slot; never a dark recess.
-    hr(kit.body, 6.5, -1, .5, 2);
-    hr(kit.body, 9, -1, .5, 2);
-    hr(kit.body, 6.5, 0, 3, .5);
-    hr(kit.body, 6.5, 1, 3, .5);
-    hr(tone(kit.body, 1.16), -1, 2, .5, .5);
-    hr(tone(kit.body, .72), 2, 3, .5, .5);
+    hr(shell, 6.5, -1, .5, 2);
+    hr(shell, 9, -1, .5, 2);
+    hr(shell, 6.5, 0, 3, .5);
+    hr(shell, 6.5, 1, 3, .5);
     if (ball) {
       heldBall(ctx, forward > 0 ? cx - 1 : cx - 7, by + 1);
       hr(kit.body, 3, 1, 2, 1); hr(C.ink, 3, 2, 2, 1);
@@ -296,23 +190,18 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     const vr = (c: string, u: number, v: number, w: number, h: number) =>
       R(ctx, c, cx + u, cy + (down > 0 ? v : -v - h), w, h);
     if (lift <= 0) vr('#173923', -2, 7, 5, 1);
-    vr(UNIFORM.pants, -2, -7, 3, 5);
-    vr(UNIFORM.pants, 1, -7, 3, 5);
-    vr(tone(UNIFORM.pants, 1.08), -1.5, -7, .5, 3);
-    vr(UNIFORM.pantsShade, 1.5, -4, 1, 2);
+    vr(UNIFORM.pantsShade, -2, -9, 3, 7);
+    vr(UNIFORM.pants, 1, -9, 3, 7);
     vr(kit.body, -3, -3, 7, 7);
-    vr(light, -2, -2, 3, 1); vr(kit.trim, -2, 0, 2, 1);
     vr(C.ink, -2.5, -3.5, 6, .5);
-    vr(tone(kit.body, 1.16), -1, -1, .5, .5);
-    vr(tone(kit.body, .72), 2, 1, .5, 1);
-    vr(tone(kit.body, .64), -3, 1, .5, 2);
-    vr(tone(kit.body, 1.18), 1, -2, 2, .5);
-    vr(far, -6, -2, 2, 5); vr(kit.body, 4, -2, 2, 4); vr(playerSkin(kit), 5, 2, 1, 1);
-    vr(kit.body, -3.5, 3, 9, 5.5); vr(kit.trim, -2, 3, 2, 1);
-    vr(tone(kit.body, 1.28), -2, 4, 3.5, .5);
-    vr(tone(kit.body, 1.16), -2, 4, 3, 1); vr(far, 3, 5, 2, 1);
+    vr(kit.body, -6, -2, 2, 5); vr(kit.body, 4, -2, 2, 4); vr(playerSkin(kit), 5, 2, 1, 1);
+    vr(shell, -3.5, 3, 9, 5.5);
     vr(C.ink, -2, 2.5, 6, .5);
-    vr(tone(kit.body, .72), 3, 6, 1, 1);
+    const faceX = kit.dir > 0 ? 1.5 : -1;
+    vr(playerSkin(kit), faceX, 5, 1.5, 1);
+    vr(shell, faceX - .5, 4.5, .5, 2);
+    vr(shell, faceX + 1.5, 4.5, .5, 2);
+    vr(shell, faceX - .5, 6.5, 3, .5);
     if (ball) {
       heldBall(ctx, kit.dir > 0 ? cx + 1 : cx - 7, cy + down);
       vr(kit.body, kit.dir > 0 ? 4 : -6, 0, 2, 2);

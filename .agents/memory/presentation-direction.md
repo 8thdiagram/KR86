@@ -3,23 +3,23 @@ name: Retro presentation direction
 description: User's standing visual direction and audio boundaries for Kick Return ’86.
 ---
 
-Kick Return ’86 should look as close as possible to the supplied football screenshot, adapted for mobile rather than a modern mobile app or SaaS dashboard. The latest reference brief emphasizes exceptional late-NES pixel craftsmanship: rich but disciplined colors and square, deliberately pixelated artwork, not smoother graphics. Keep crisp separated colors, readable player sprites, square frames, a stadium setting, chrome/white/blue lettering, and red accents inspired by the supplied icon artwork.
+Kick Return ’86 should look as close as possible to the supplied football screenshot, adapted for mobile rather than a modern mobile app or SaaS dashboard. The latest player-art direction favors less pixelated, smoother and more readable athletes. Keep crisp separated colors, square interface frames, a stadium setting, chrome/white/blue lettering, and red accents inspired by the supplied icon artwork.
 
-**Why:** After requesting finer 16-bit-capable sprites, the user supplied a graphical-only reference brief emphasizing “exceptionally advanced NES football game from approximately 1988” and “More detailed does not mean less pixelated.”
+**Why:** The user superseded the earlier deliberately pixelated NES-only brief with “Make the players less pixelated and smoother” and “Overall, they need to be easier to see like in the reference picture here.”
 
-**How to apply:** Keep the finer authored-pixel capability, but use restrained discrete shade ramps, clear exterior outlines and readable pixel clusters without blur, modern 3D effects or extra sprite bulk. Preserve current proportions, animation timing, gameplay and saves. Keep title, Franchise management and supporting interfaces visually consistent; follow the separate intro/menu/audio boundaries below.
+**How to apply:** Use finer authored contours and coherent readable shapes rather than extra coarse pixel noise. Do not blur the entire game to smooth athletes. Preserve animation timing, gameplay and saves. Keep title, Franchise management and supporting interfaces visually consistent; follow the separate intro/menu/audio boundaries below.
 
-Keep the current enlarged player height and slightly leaner equipped bodies. Helmets should now be a little bigger and easier to see, with finer 16-bit-style sprite detail rather than blur, anti-aliasing, whole-sprite enlargement, or altered movement physics.
+Keep players lean and athletic, with longer articulated legs and finer, smoother silhouettes. Keep helmets readable and clearly separated from the jersey; do not make whole sprites wider simply to add detail.
 
-**Why:** The user retained the enlarged height and leaner bodies, but superseded the earlier smaller-helmet direction with “Make the helmets a little bigger and easier to see. Increase graphics resolution on the sprites to 16 bit.”
+**Why:** The user explicitly asked to “make their legs longer” and make players easier to see in the reference, superseding the earlier fixed-proportions rule.
 
-**How to apply:** Refine native pixel clusters across standing, turning, spinning, diving, falling, and kicking artwork. Enlarge helmet artwork around the neck without moving the body or feet; use finer authored pixels and discrete shading, not a scaled-up low-detail bitmap. Keep uniform identity, collision geometry, speeds, and action timing intact.
+**How to apply:** Apply the athletic anatomy across standing, turning, spinning, diving, falling and kicking artwork. Lengthen the visual legs while preserving ground anchors, collision geometry, speeds and action timing. Use finer authored shapes, not a scaled-up low-detail bitmap.
 
-Prioritize clear individual sprites: more white on pants, more primary team color on jerseys and helmets, and readable helmet-colored facemasks. Use dark definition to separate limbs and external silhouettes, not to create black face panels or cages. Do not add decorative lines around downed players.
+Prioritize clear individual sprites: white pants, solid primary-team-color jerseys and sleeves, secondary-team-color helmets, and readable helmet-colored facemasks. No secondary stripes or blocks on the jerseys. Use dark definition to separate limbs and external silhouettes, not to create black face panels or cages. Do not add decorative lines around downed players.
 
-**Why:** The user found the detailed sprites and lines around grounded players messy and asked for simpler, clearer uniforms and individual silhouettes.
+**Why:** The user specified “make the jerseys one color which is the primary team color separated from the helmet, which is the secondary team color.” Earlier they found detailed sprites and lines around grounded players messy.
 
-**How to apply:** Use broad readable color clusters, small secondary accents, minimal internal shading, and clean grounded poses. Keep gameplay, height, and animation timing unchanged; increase artwork resolution only if clarity requires it.
+**How to apply:** Use broad uninterrupted jersey color, contrasting helmet identity and clean grounded poses consistently across Classic, Full Game and special teams. Keep gameplay and animation timing unchanged; preserve team palettes used elsewhere.
 
 Limit exposed face pixels and make facemask bars visible in the helmet's base team color. Remove black/navy recessed face panels and dark mask bars from athlete faces, including moving, turned and grounded poses. Use varied skin tones assigned consistently by player position, including hands and tackled poses.
 
@@ -31,7 +31,7 @@ Normal gameplay should resemble the supplied 16-bit football reference: near-ove
 
 **Why:** The user rejected earlier steep perspectives and explicitly prioritized readable overhead play with modest television-style depth, then said “The far sideline looks good.”
 
-**How to apply:** Keep projection render-only and consistent for field paint, artwork, athlete anchors, balls and shadows. Keep upright sprite height/proportions, actual team colors, HUD, controls, camera-follow behavior and all football coordinates intact; never skew the entire screen. Preserve the separate behind-the-kicker Kick View. Use disciplined textured greens, readable bitmap numbers, restrained contact shadows and team-colored pixel people within available stadium space, without shrinking the field merely for decoration.
+**How to apply:** Keep projection render-only and consistent for field paint, artwork, athlete anchors, balls and shadows. Keep actual team colors, HUD, controls, camera-follow behavior and all football coordinates intact; never skew the entire screen. Preserve the separate behind-the-kicker Kick View. Use disciplined textured greens, readable bitmap numbers, restrained contact shadows and team-colored pixel people within available stadium space, without shrinking the field merely for decoration.
 
 Keep the referee slightly higher and fully visible in landscape, with all touchdown and possession signals moving with him. Preserve portrait placement.
 
