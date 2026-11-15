@@ -50,7 +50,7 @@ export function createKickControls(options: { immediateAction?: boolean } = {}) 
         .sort((a, b) => b.order - a.order)[0];
       const direction: KickDirection = vertical ? vertical.control === 'up' ? -1 : 1
         : now < tapUntil ? tap : 0;
-      const backward = !options.immediateAction && all.some(p => p.control === 'juke' && now - p.since >= JUKE.holdMs);
+      const backward = all.some(p => p.control === 'juke' && now - p.since >= JUKE.holdMs);
       for (const p of all)
         if (p.control === 'juke' && now - p.since >= JUKE.holdMs) p.usedHold = true;
       const juke = queued;

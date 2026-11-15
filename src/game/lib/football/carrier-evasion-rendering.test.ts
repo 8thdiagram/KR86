@@ -34,6 +34,19 @@ function evasiveAttempt(kind: 'spin' | 'boost', side: -1 | 0 | 1, elapsed: numbe
   return attempt;
 }
 
+test('a halted carrier keeps animated running legs without forward displacement', () => {
+  const a = evasiveAttempt('boost', 0, 0);
+  a.moves!.active = undefined; a.moves!.hesitating = true;
+  const kit = uniformKit({ body: '#b42635', trim: '#d9e2f0' }, 1);
+  const first = drawing(), second = drawing();
+  a.returnTime = 1;
+  assert(kickFootballArt.moveSprite(first.ctx, 100, 100, kit, 0, a));
+  a.returnTime = 1.2;
+  assert(kickFootballArt.moveSprite(second.ctx, 100, 100, kit, 0, a));
+  assert.notDeepEqual(first.paints, second.paints);
+  assert.deepEqual(a.player, { x: 100, y: 100 });
+});
+
 test('evasive spin completes a directional orbit, returns to its first facing and keeps the ball tucked', () => {
   const kit = uniformKit({ body: '#b42635', trim: '#d9e2f0' }, 1);
   for (const side of [-1, 1] as const) {

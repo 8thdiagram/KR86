@@ -87,6 +87,7 @@ export function stepInterception(g: FootballGame, input: FootballInput, dt: numb
     speed: Math.abs(d.vx), lateralSpeed: Math.abs(d.vy), active: true,
     dive: d.dive ? { ...d.dive, vx: -d.dive.vx } : undefined }));
   const movement = stepKickMoves(l.movement, direction, dt, human ? { juke: !!input.juke || !!input.action, evasion: true,
+    hesitate: !!input.hesitate,
     obstacles: blockers.map(d => ({ x: 1200 - d.x, y: d.y, vx: -d.vx, vy: d.vy })) } : {}, FOOTBALL_SIDELINES);
   const secondary = l.athletes.filter(a => a.side === 'defense' && a.role === 'DB');
   const elite = eliteSlots(g, other(l.offense ?? other(g.possession))).includes(secondary.indexOf(runner));

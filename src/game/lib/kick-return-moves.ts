@@ -17,6 +17,10 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 /** Real bounded displacement; no invulnerability, collision exemption or teleport. */
 export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: number, input: KickMoveInput,
   bounds: CarrierBounds = { minY: 24, maxY: 168 }): { player: { x: number; y: number }; started: boolean; moves: KickMoves | undefined; outAt?: number; spinStep?: boolean; evasiveStep?: boolean } {
+  // A sustained ACTION owns movement even if its initial press started an evade.
+  // The established hesitation path stops forward travel but preserves steering.
+  if (input.hesitate && a.moves?.version === 2)
+    return stepBurst(a, direction, dt, input, bounds);
   if (a.moves?.active?.evasive || input.evasion && !a.moves?.active && !input.hesitate)
     return stepCarrierEvasion(a, direction, dt, input, bounds);
   if (a.moves?.version === 2) return stepBurst(a, direction, dt, input, bounds);

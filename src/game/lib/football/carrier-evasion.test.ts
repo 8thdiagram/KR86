@@ -101,16 +101,31 @@ test('swept spin cannot jump through a body; contact is not an invincibility shi
   const m = stepKickMoves(a, 0, 1 / 60, { evasion: true, juke: true });
   assert(isKickContact(m.player, a.defenders[0]!));
 });
-test('immediate touch down fires once; holding, release, capture loss and repeated samples cannot repeat or hesitate', () => {
+test('immediate touch down fires once; sustained hold hesitates without repeating the action', () => {
   const c = createKickControls({ immediateAction: true });
   c.enter('steer', 'up', 0); c.enter('action', 'juke', 1);
   assert(c.sample(1, false).juke); assert(c.sample(1).juke);
-  assert(!c.sample(2).juke); assert(!c.sample(900).hesitate);
+  assert(!c.sample(2).juke); assert(!c.sample(200).hesitate);
+  assert(c.sample(201).hesitate); assert(c.sample(900).hesitate);
   assert.equal(c.sample(900).direction, -1);
   c.release('action', 1000); c.release('action', 1000, true);
-  assert(!c.sample(1001).juke); assert.equal(c.sample(1001).direction, -1);
+  assert(!c.sample(1001).juke); assert(!c.sample(1001).hesitate); assert.equal(c.sample(1001).direction, -1);
   c.release('steer', 1002); c.enter('new', 'juke', 1003);
   assert(c.sample(1003).juke);
+});
+test('holding ACTION cancels either evade, halts forward progress and retains both steering directions', () => {
+  for (const kind of ['spin', 'boost'] as const) for (const direction of [-1, 0, 1] as const) {
+    const a = attempt();
+    a.moves!.active = { kind, side: kind === 'spin' ? 1 : 0, elapsed: .21, evasive: true };
+    const held = stepKickMoves(a, direction, 1 / 60, { evasion: true, hesitate: true });
+    assert.equal(held.player.x, a.player.x);
+    assert.equal(Math.sign(held.player.y - a.player.y), direction);
+    assert(held.moves?.hesitating); assert.equal(held.moves.active, undefined);
+    a.player = held.player; a.moves = held.moves;
+    const released = stepKickMoves(a, direction, 1 / 60, { evasion: true });
+    assert(released.player.x > a.player.x);
+    assert(!released.moves?.hesitating); assert(!released.started);
+  }
 });
 test('cooldown rejects extra action presses without stopping steering or queuing late moves', () => {
   const a = attempt();

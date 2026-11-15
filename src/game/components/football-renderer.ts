@@ -242,7 +242,7 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
     const stableFacing = cadence.facing;
     const hasBall = !snap && a.id === live.carrier && !live.flight && !live.loose && !live.option?.ball && !(live.mode === 'kick' && live.kickAccuracy !== undefined);
     const activeMove = live.movement.moves?.active as { kind: string; evasive?: boolean } | undefined;
-    const renderableCarrierMove = activeMove?.evasive === true ||
+    const renderableCarrierMove = !!live.movement.moves?.hesitating || activeMove?.evasive === true ||
       ['spin', 'stutter', 'dive'].includes(activeMove?.kind ?? '');
     const engaged = a.engaged > live.time;
     ctx.save();
@@ -264,7 +264,7 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
         { action: 'catch', progress: clamp(ic.age / CATCH_HOLD, 0, 1), ball: true });
       });
     } else if (hasBall && !live.holdingPass && renderableCarrierMove && (live.mode === 'run' || live.mode === 'scramble' ||
-        live.mode === 'return' && live.movement.moves?.active?.evasive) &&
+        live.mode === 'return' && (live.movement.moves?.active?.evasive || live.movement.moves?.hesitating)) &&
         moveSprite(ctx, a.x, a.y, { ...kit, dir: stableFacing }, cadence.step,
           { ...live.movement, player: { x: a.x, y: a.y } })) { /* action frame keeps the carrier's integrated cadence */ }
     else if (snap && a.role === 'OL' && a === centerOf(live))

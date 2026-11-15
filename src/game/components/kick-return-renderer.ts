@@ -197,7 +197,7 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
   const act = m.active as { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: number; evasive?: boolean } | undefined;
   // Full Game reuses the carrier move record during eligible runs/scrambles;
   // only the explicitly tagged new moves may render outside Classic returns.
-  if (a.phase !== 'returning' && !act?.evasive) return false;
+  if (a.phase !== 'returning' && !act?.evasive && !m.hesitating) return false;
   const runProgress = (((t % 4) + 4) % 4) / 4;
   const px = Math.round(x) - 4, py = Math.round(y) - 8;
   if (act && act.kind === 'dive') {
@@ -219,7 +219,7 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
     return true;
   }
   if (v2 && !act && m.hesitating) {
-    sprite(ctx, x, y, kit, t, true, 1, 0, undefined, { action: 'stance' });
+    sprite(ctx, x, y, kit, t, true, 0, 0, undefined, { action: 'run', progress: (a.returnTime * 2) % 1 });
     return true;
   }
   if (act && act.kind === 'spin') {
