@@ -20,12 +20,13 @@ import { MOMENTS, primaryMoment, momentRoute, interiorBlockBonus, canSeal, carri
 import { FOOTBALL_SIDELINES, outsideFootballSideline } from './sidelines';
 import { resolveReception } from './receiving';
 import { routePoint } from './route-geometry';
+import { playerSpeed } from '../player-pace';
 export { routePoint } from './route-geometry';
 export { releasePass } from './passing';
 import { clamp, isBlitz, other, random, type Athlete, type Defense, type FootballGame, type FootballInput, type LivePlay, type PlayId } from './types';
 
 const move = (a: Athlete, x: number, y: number, speed: number, dt: number) => {
-  const dx = x - a.x, dy = y - a.y, d = Math.hypot(dx, dy), f = d > 0 ? Math.min(1, speed * dt / d) : 0;
+  const dx = x - a.x, dy = y - a.y, d = Math.hypot(dx, dy), f = d > 0 ? Math.min(1, playerSpeed(speed) * dt / d) : 0;
   a.vx = dx * f / dt; a.vy = dy * f / dt; a.x += dx * f; a.y = clamp(a.y + dy * f, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
 };
 export function startField(g: FootballGame, id: PlayId, defense: Defense): LivePlay {
@@ -237,7 +238,7 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
       }
       if (sealing && Math.hypot(a.x - sealing.x, a.y - sealing.y) < 16) {
         const gap = runApproach({ ...l, time: p.develop }).y;
-        const dy = clamp(gap + a.runSeal!.side * 20 - sealing.y, -MOMENTS.sealSpeed * dt, MOMENTS.sealSpeed * dt);
+        const dy = clamp(gap + a.runSeal!.side * 20 - sealing.y, -playerSpeed(MOMENTS.sealSpeed) * dt, playerSpeed(MOMENTS.sealSpeed) * dt);
         sealing.y = clamp(sealing.y + dy, 25, 167); sealing.vy = dy / dt;
       }
     } else if (a.role === 'WR' || a.role === 'TE' || p.kind === 'pass' && releasing.includes(a)) {
@@ -271,12 +272,12 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
   if (l.mode === 'dropback') {
     // The scripted dropback owns x; UP/DOWN exclusively reposition the pocket laterally.
     const pocketX = Math.max(12, los - (p.formation === 'shotgun' ? 48 : 36));
-    qb.vx = (Math.max(pocketX, qb.x - 31 * dt) - qb.x) / dt;
+    qb.vx = (Math.max(pocketX, qb.x - playerSpeed(31) * dt) - qb.x) / dt;
     qb.x += qb.vx * dt;
     const lateral = g.possession === 'home' ? input.direction ?? 0
       : l.pressure > .3 ? (qb.y < 96 ? -1 : 1) : 0;
     const beforeY = qb.y;
-    qb.y = clamp(qb.y + lateral * KR.lateralSpeed * dt, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
+    qb.y = clamp(qb.y + lateral * playerSpeed(KR.lateralSpeed) * dt, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
     qb.vy = (qb.y - beforeY) / dt;
   }
   if (l.mode === 'flight') {

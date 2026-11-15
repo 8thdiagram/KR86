@@ -4,6 +4,7 @@ import { createFootball, advanceFootball, tossFootball, chooseKick, chooseOffens
   offensiveChoices, fieldGoalDistance, fieldGoalAllowed, matchupAdvantage, PLAYBOOK, type FootballGame, type PlayId } from './engine';
 import { startField } from './field';
 import { KR, createKickAttempt, stepKickAttempt, kickWitnessDirection } from '../kick-return-engine';
+import { playerSpeed } from '../player-pace';
 import { isFootballGame, loadFootball, saveFootball } from './storage';
 
 const teams = { player: 'Big Blue', opponent: 'Redbirds' } as const;
@@ -93,8 +94,8 @@ test('carrier movement adds only a smooth modest open-field ramp; hesitation and
   l.movement.player = { x: 500, y: 96 }; l.athletes[6]!.x = 500;
   l.athletes.filter(a => a.side === 'defense').forEach(a => { a.x = 900; a.y = 30; });
   stepFootball(g, { direction: -1 });
-  assert(l.movement.player.x - 500 > KR.forwardSpeed / 60 && l.movement.player.x - 500 < KR.forwardSpeed / 60 * 1.001);
-  assert(96 - l.movement.player.y > KR.lateralSpeed / 60 && 96 - l.movement.player.y < KR.lateralSpeed / 60 * 1.001);
+  assert(l.movement.player.x - 500 > playerSpeed(KR.forwardSpeed) / 60 && l.movement.player.x - 500 < playerSpeed(KR.forwardSpeed) / 60 * 1.001);
+  assert(96 - l.movement.player.y > playerSpeed(KR.lateralSpeed) / 60 && 96 - l.movement.player.y < playerSpeed(KR.lateralSpeed) / 60 * 1.001);
   const x = l.movement.player.x, y = l.movement.player.y;
   stepFootball(g, { direction: 1, hesitate: true });
   assert.equal(l.movement.player.x, x); assert(l.movement.player.y > y);

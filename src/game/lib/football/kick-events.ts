@@ -2,6 +2,7 @@ import { looseBall, noteRare, RARE, stepLoose } from './rare-events';
 import { canDefensiveAction, startNearestDive } from './defensive-action';
 import { clamp, random, type Athlete, type FootballGame, type FootballInput, type SpecialTeams } from './types';
 import { chaosOpportunity } from './clutch';
+import { playerSpeed } from '../player-pace';
 
 /** Original kick orientation: punt/kickoff receiving side attacks right;
  * field-goal receiving side attacks left. Compare with the neutral zone. */
@@ -31,7 +32,7 @@ export function advanceKickRush(g: FootballGame, s: SpecialTeams, dt: number) {
   const edge = { x: los + (punt ? 8 : -8), y: 96 + attempt.side * 33 };
   if (Math.hypot(d.x - edge.x, d.y - edge.y) < 5) attempt.cleared = true;
   const target = attempt.cleared ? { x: s.fromX, y: s.fromY } : edge;
-  const speed = 53 + g.profiles[s.receiver].rush * 18;
+  const speed = playerSpeed(53 + g.profiles[s.receiver].rush * 18);
   const dx = target.x - d.x, dy = target.y - d.y, n = Math.hypot(dx, dy), f = Math.min(1, speed * dt / Math.max(.001, n));
   d.vx = dx * f / dt; d.vy = dy * f / dt; d.x += dx * f; d.y += dy * f;
   const blocker = s.athletes.filter(a => a.side === 'offense' && a.role === 'OL')

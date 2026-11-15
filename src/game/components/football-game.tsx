@@ -19,6 +19,7 @@ import { footballSoundEvents, soundSnapshot, type SoundSnapshot } from '../lib/f
 import { FootballPreplay, FootballPlayClock, FootballPenalty } from './football-preplay';
 import './football-game.css';
 import { footballFormationPreview } from '../lib/football/presentation';
+import { captureFootballRender, withFootballRenderInterpolation, type FootballRenderSample } from '../lib/football/render-interpolation';
 import { KickBackToMenu } from './kick-back-confirm';
 import { resultVisible } from '../lib/football/play-result';
 import { turnoverReturnLabel } from '../lib/football/interception';
@@ -85,10 +86,12 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
     const ok = fRef.current ? fRef.current.onSave(g) : saveFootball(scopeRef.current, g);
     setSaveError(ok ? '' : 'This browser could not save the game. Keep the tab open to avoid losing progress.');
   };
-  const draw = (seconds = 0) => {
+  const draw = (seconds = 0, previous?: FootballRenderSample, alpha = 1) => {
     const ctx = canvas.current && prepareFootballCanvas(canvas.current, view.current?.width ?? KR.width, view.current?.height ?? KR.height);
     if (ctx && gRef.current) {
-      drawFootball(ctx, footballFormationPreview(gRef.current), view.current, seconds);
+      const g = gRef.current;
+      withFootballRenderInterpolation(g, previous, alpha,
+        () => drawFootball(ctx, footballFormationPreview(g), view.current, seconds));
     }
   };
   const clearInput = () => {
@@ -209,6 +212,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
   useEffect(() => {
     if (!ticking) return;
     let frame = 0, prev = performance.now(), acc = 0, lastUI = 0, lastSave = performance.now(), start = prev;
+    let previousRender: FootballRenderSample | undefined;
     const tick = (now: number) => {
       const g = gRef.current!;
       if (gameMode?.paused) { prev = now; acc = 0; frame = requestAnimationFrame(tick); return; }
@@ -223,12 +227,13 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
         acc += Math.min(.1, elapsed);
         while (acc >= DT && shouldTick(g) && g.phase === before.phase) {
           const s = input.current.sample(now);
+          previousRender = captureFootballRender(g);
           stepFootball(g, s, DT, FULL_GAME_SPEED);
           acc -= DT;
         }
       }
       playSounds(before);
-      draw((now - start) / 1000 * FULL_GAME_SPEED);
+      draw((now - start) / 1000 * FULL_GAME_SPEED, previousRender, acc / DT);
       if (resultWasVisible !== resultVisible(g)) rerender();
       if (g.phase !== before.phase || !shouldTick(g)) { afterChange(); clearInput(); return; }
       if (now - lastUI > 100) {

@@ -1,9 +1,17 @@
 import { PLAYBOOK } from './playbook';
 import { EXECUTION, primaryPlayer } from './execution';
 import { clamp, type Athlete, type LivePlay } from './types';
+import { PLAYER_MOVEMENT_SCALE } from '../player-pace';
 
 /** Shared read-only route geometry. Movement still uses these exact waypoints. */
 export function routePoint(l: LivePlay, a: Athlete, speedFactor = 1) {
+  // Advance route waypoints with the faster feet, retaining the same paths,
+  // play-action/release delays and passing progression clock.
+  l = { ...l, time: l.play === 'play-action'
+    ? Math.min(l.time, .6) + Math.max(0, l.time - .6) * PLAYER_MOVEMENT_SCALE
+    : l.play === 'verticals' && a.id === 2 && l.athletes.length === 14
+      ? Math.min(l.time, .85) + Math.max(0, l.time - .85) * PLAYER_MOVEMENT_SCALE
+      : l.time * PLAYER_MOVEMENT_SCALE };
   if(l.play==='flood') {
     const t=l.time,s=speedFactor,los=100+l.snapSpot*10;
     return a.role==='RB' ? {x:Math.min(1110,a.startX+Math.min(los+24-a.startX,t*64*s)),y:clamp(a.startY+t*46,27,158)} :

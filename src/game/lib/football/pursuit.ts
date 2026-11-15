@@ -11,6 +11,7 @@ import { FOOTBALL_SIDELINES } from './sidelines';
 import { pursuitPoint } from '../open-field-pursuit';
 import { coachingAssignment } from './coaching-execution';
 import { containmentTarget } from './containment';
+import { playerSpeed } from '../player-pace';
 
 type Role = NonNullable<Athlete['pursuit']>['role'];
 /** Bounded interception horizon from observed motion, never from the next control input. */
@@ -81,6 +82,7 @@ export function stepDefense(g: FootballGame, dt: number) {
     speed *= (1 + MOMENTS.coverSpeed * exceptionalCoverage) * (1 + .05 * exceptionalFit);
     const openGain = d.role === 'DB' ? openFieldGain(d, offense, dt, !d.dive && d.engaged <= l.time) : 1;
     speed *= openGain * franchiseAthleteFactor(g, d);
+    speed = playerSpeed(speed);
     if (!openField && l.time < .28 && l.defense !== 'run' && !goal) speed *= .35;
     // Repair a resumed pre-crossing scramble's cached run target as well.
     if (holdCoverage && d.pursuit && !['cover', 'deep'].includes(d.pursuit.role)) delete d.pursuit;

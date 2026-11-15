@@ -4,6 +4,7 @@ import { footballStridePeriod, updateFootballAnimation } from './football-animat
 import { createKickAttempt, stepKickAttempt } from '../lib/kick-return-engine';
 import { interpolateKickAttempt } from '../lib/kick-return-presentation';
 import { drawKickReturn } from './kick-return-renderer';
+import { refineFootballHelmetWidth } from './football-player-frames';
 
 function sample(now: number, x: number, y = 0, vx = 20, vy = 0, facing: 1 | -1 = 1) {
   return { now, x, y, vx, vy, facing };
@@ -80,5 +81,38 @@ test('stationary athletes plant, direction changes preserve cadence, and rewinds
   frame = updateFootballAnimation(owner, 12, sample(.1, 0));
   assert.equal(frame.phase, 0, 'clock rewind begins a fresh render-only cycle');
   assert.equal(frame.moving, false);
+});
+
+test('helmet refinement trims one native contour pixel and leaves markings, mask, and body intact', () => {
+  const pixels = Array.from({ length: 16 }, () => Array<string>(32).fill('.'));
+  pixels[2]!.splice(8, 12, ...'KMMMMMMMMMMK');
+  pixels[3]!.splice(8, 12, ...'KMMMMMMMMMMK');
+  pixels[4]!.splice(8, 12, ...'KMMTMMMMMMMK');
+  pixels[5]!.splice(8, 12, ...'KKFFFFKK....'.split(''));
+  for (let y = 8; y < 16; y++) pixels[y]!.fill(y % 2 ? 'J' : 'W');
+  const bodyBefore = pixels.slice(8).map(row => [...row]);
+
+  refineFootballHelmetWidth(pixels);
+
+  assert.deepEqual(pixels.slice(8), bodyBefore, 'torso and legs remain byte-for-byte unchanged');
+  assert.equal(pixels[2]!.filter(glyph => glyph === 'M').length, 10, 'helmet shading remains');
+  assert.equal(pixels[4]!.filter(glyph => glyph === 'T').length, 1, 'helmet stripe remains');
+  assert.equal(pixels[5]!.filter(glyph => glyph === 'F').length, 4, 'facemask pixels remain');
+  assert.equal(pixels[2]!.filter(glyph => glyph === 'K').length, 1, 'shell width loses one pixel');
+  assert.equal(pixels[3]!.filter(glyph => glyph === 'K').length, 1, 'alternating trim keeps the shell centered');
+});
+
+test('faster travel stays on a deliberate six-pose cadence without frame twitching', () => {
+  const owner = {};
+  let phase = updateFootballAnimation(owner, 'runner', sample(0, 0)).phase;
+  let prior = phase;
+  for (let n = 1; n <= 60; n++) {
+    phase = updateFootballAnimation(owner, 'runner', sample(n / 60, n * 1.1)).phase;
+    const delta = (phase - prior + 1) % 1;
+    assert(delta > 0, 'a moving runner advances through the stride');
+    assert(delta < .04, `one display frame cannot jump across poses (${delta})`);
+    prior = phase;
+  }
+  assert(phase > .5, 'the deliberate six-pose stride continues at faster travel speeds');
 });
 

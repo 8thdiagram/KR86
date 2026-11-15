@@ -1,4 +1,5 @@
 import type { KickDefender } from './kick-return-engine';
+import { playerSpeed } from './player-pace';
 
 export const ROAMER = { speedBoost: 1.15, lateralBoost: 1.12, reach: 40 } as const;
 export type RoamerMotion = { vx: number; stride: number; tier?: 'medium' };
@@ -17,11 +18,12 @@ export function stepKickRoamer(d: KickDefender, playerX: number, targetY: number
   const motion = d.roamer!;
   const anchor = roamerAnchorX(d, progressX);
   const targetX = clamp(playerX + 22, anchor - ROAMER.reach, anchor + ROAMER.reach);
-  const desired = clamp((targetX - d.x) * 2, -d.speed, d.speed);
-  const vx = motion.vx + clamp(desired - motion.vx, -d.speed * 3 * dt, d.speed * 3 * dt);
+  const speed = playerSpeed(d.speed), lateral = playerSpeed(d.lateralSpeed);
+  const desired = clamp((targetX - d.x) * 2, -speed, speed);
+  const vx = motion.vx + clamp(desired - motion.vx, -speed * 3 * dt, speed * 3 * dt);
   // A soft target permits braking distance instead of snapping at a patrol edge.
   const x = d.x + vx * dt;
-  const y = d.y + clamp(targetY - d.y, -d.lateralSpeed * dt, d.lateralSpeed * dt);
+  const y = d.y + clamp(targetY - d.y, -lateral * dt, lateral * dt);
   return { ...d, active: true, x, y, roamer: { ...motion,
     vx: (x - d.x) / dt,
     stride: motion.stride + Math.hypot(x - d.x, y - d.y) / 5,

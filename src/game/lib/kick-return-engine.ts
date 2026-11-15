@@ -9,6 +9,7 @@ import { upgradeExtraCoverage, upgradeMediumCoverage } from './kick-return-cover
 import { stepOpenFieldCoverage } from './kick-open-field';
 import { stepFullCoverage } from './kick-full-coverage';
 import { openFieldGain } from './football/athleticism';
+import { playerSpeed } from './player-pace';
 
 /** Original, deterministic miniature football physics. No assessment scoring. */
 export const KR = {
@@ -229,8 +230,8 @@ function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number
     const target = clamp(d.jukeRead && d.jukeRead.until > a.returnTime ? d.jukeRead.targetY
       : player.y + direction * 10, d.minY, d.maxY);
     if (d.roamer && d.id !== 10) return stepKickRoamer(d, player.x, target, dt, movement.moves?.furthestX);
-    return { ...d, active, x: d.x - d.speed * dt,
-      y: d.y + clamp(target - d.y, -d.lateralSpeed * dt, d.lateralSpeed * dt) };
+    return { ...d, active, x: d.x - playerSpeed(d.speed) * dt,
+      y: d.y + clamp(target - d.y, -playerSpeed(d.lateralSpeed) * dt, playerSpeed(d.lateralSpeed) * dt) };
   });
   if (a.safetyVersion === 1 && !a.fullCoverage && !a.pursuitVersion) {
     const index = defenders.findIndex(d => d.id === 10);
@@ -355,7 +356,7 @@ export function isKickReturnProgress(value: unknown): value is KickReturnProgres
     (a.diveRead !== undefined && (a.diveVersion !== 1 ||
       !finite(a.diveRead.y, a.diveRead.vy, a.diveRead.steadyFor) ||
       a.diveRead.y < KR.minY || a.diveRead.y > KR.maxY ||
-      Math.abs(a.diveRead.vy) > KR.lateralSpeed * (a.moves?.version === 2 ? 1.25 : 1) + .000001 ||
+      Math.abs(a.diveRead.vy) > playerSpeed(KR.lateralSpeed) * (a.moves?.version === 2 ? 1.25 : 1) + .000001 ||
       a.diveRead.steadyFor < 0 || a.diveRead.steadyFor > 10)) ||
     !['kickoff', 'returning', 'tackled', 'touchdown'].includes(a.phase) ||
     !finite(a.time, a.returnTime, a.player?.x, a.player?.y, a.landing?.x, a.landing?.y) ||
@@ -371,7 +372,7 @@ export function isKickReturnProgress(value: unknown): value is KickReturnProgres
      d.lateralSpeed >= 0 && d.lateralSpeed <= (a.safetyVersion === 1 && d.id === 10 ? SAFETY.lateral : d.roamer ? 56 * roamerLateralBoost(d) : a.difficulty==='hard'?60:40) &&
      (d.roamer === undefined || a.difficulty === 'hard' && d.id >= 0 && d.id < 10 &&
        (d.roamer.tier === undefined || d.roamer.tier === 'medium') &&
-       finite(d.roamer.vx, d.roamer.stride) && Math.abs(d.roamer.vx) <= d.speed + .000001 &&
+       finite(d.roamer.vx, d.roamer.stride) && Math.abs(d.roamer.vx) <= playerSpeed(d.speed) + .000001 &&
         d.roamer.stride >= 0 && (!!a.pursuitVersion || !!d.dive || d.diveSpent || Math.abs(d.x - roamerAnchorX(d, a.moves?.furthestX ?? a.player.x)) <= ROAMER.reach + d.speed + .000001)) &&
      (d.jukeRead === undefined || !!a.moves && !!d.jukeRead && finite(d.jukeRead.until, d.jukeRead.targetY) &&
        d.jukeRead.until >= 0 && d.jukeRead.until <= a.returnTime + .2 &&
@@ -379,7 +380,7 @@ export function isKickReturnProgress(value: unknown): value is KickReturnProgres
      (d.dive === undefined || a.diveVersion === 1 && (d.roamer || d.id === 10 && d.motion) &&
         (d.dive.approach === undefined || d.dive.compact && a.divePolicy === 3 &&
           finite(d.dive.approach.vx, d.dive.approach.vy) &&
-          Math.abs(d.dive.approach.vx) <= d.speed + .000001 && Math.abs(d.dive.approach.vy) <= d.lateralSpeed + .000001) &&
+          Math.abs(d.dive.approach.vx) <= playerSpeed(d.speed) + .000001 && Math.abs(d.dive.approach.vy) <= playerSpeed(d.lateralSpeed) + .000001) &&
         (d.dive.compact === undefined || d.dive.compact === true && a.divePolicy === 3 && fitsCompactDive(d, d.dive.vx, d.dive.vy)) &&
         (['windup', 'airborne', 'grounded'].includes(d.dive.phase) ||
           a.mechanicsVersion === 2 && d.dive.phase === 'recovering') &&
@@ -392,7 +393,7 @@ export function isKickReturnProgress(value: unknown): value is KickReturnProgres
      (d.observedY === undefined || finite(d.observedY) && d.observedY >= KR.minY && d.observedY <= KR.maxY) &&
      (d.motion === undefined || (a.pursuitVersion === 1 || a.safetyVersion === 1 && d.id === 10) &&
        finite(d.motion.vx, d.motion.vy, d.motion.targetX, d.motion.targetY, d.motion.reactionLeft, d.motion.stride) &&
-       Math.max(Math.abs(d.motion.vx / (a.pursuitVersion ? d.speed : SAFETY.forward)), Math.abs(d.motion.vy / (a.pursuitVersion ? d.lateralSpeed : SAFETY.lateral))) <= 1.000001 &&
+       Math.max(Math.abs(d.motion.vx / playerSpeed(a.pursuitVersion ? d.speed : SAFETY.forward)), Math.abs(d.motion.vy / playerSpeed(a.pursuitVersion ? d.lateralSpeed : SAFETY.lateral))) <= 1.000001 &&
        d.motion.targetX >= (a.pursuitVersion ? 8 : 100) && d.motion.targetX <= (a.pursuitVersion ? 1180 : 1096) && d.motion.targetY >= KR.minY && d.motion.targetY <= KR.maxY &&
        d.motion.reactionLeft >= 0 && d.motion.reactionLeft <= (a.pursuitVersion ? .08 : SAFETY.reaction) &&
        d.motion.stride >= 0 && (d.motion.facing === -1 || d.motion.facing === 1)))) return false;

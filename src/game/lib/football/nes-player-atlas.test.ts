@@ -10,13 +10,31 @@ import { movementStep } from '../../components/football-sprites';
 import { selectFootballPlayerConceptFrame } from '../../components/football-player-concepts';
 import {
   selectFootballPlayerFrame, footballPlayerPalette, PLAYER_RUN_PHASES, PLAYER_ACTIONS,
-  PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, type FootballPlayerFrame,
+  PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, refineFootballHelmetWidth, type FootballPlayerFrame,
 } from '../../components/football-player-frames';
 
 function pixels(frame: FootballPlayerFrame) {
   const out = new Map<string, string>();
   for (const r of frame.runs) for (let x = r.x; x < r.x + r.length; x++) out.set(`${x},${r.row}`, r.color);
   return out;
+}
+function conceptAfterHelmetRefinement(frame: FootballPlayerFrame) {
+  const raster = Array.from({ length: PLAYER_FRAME_HEIGHT }, () => Array<string>(PLAYER_FRAME_WIDTH).fill('.'));
+  for (const run of frame.runs)
+    for (let x = run.x; x < run.x + run.length; x++) raster[run.row]![x] = run.color;
+  refineFootballHelmetWidth(raster);
+  const runs: { row: number; x: number; length: number; color: string }[] = [];
+  raster.forEach((row, y) => {
+    let x = 0;
+    while (x < row.length) {
+      const color = row[x]!;
+      if (color === '.') { x++; continue; }
+      const start = x++;
+      while (x < row.length && row[x] === color) x++;
+      runs.push({ row: y, x: start, length: x - start, color });
+    }
+  });
+  return runs;
 }
 function connectedShare(frame: FootballPlayerFrame) {
   const remaining = new Set(pixels(frame).keys()), total = remaining.size;
@@ -143,10 +161,15 @@ test('the selected C concept is the actual production art rather than a comparis
     const alternatives = ['A', 'B', 'C'].map(concept =>
       JSON.stringify(selectFootballPlayerConceptFrame(concept as 'A' | 'B' | 'C', 'planted', role, view, 0).runs));
     assert.equal(new Set(alternatives).size, 3, 'three genuinely different silhouettes');
+    const plantedConcept = selectFootballPlayerConceptFrame('C', 'planted', role, view, 0);
     assert.deepEqual(selectFootballPlayerFrame('idle', view, 0, false, role).runs,
-      selectFootballPlayerConceptFrame('C', 'planted', role, view, 0).runs);
-    for (let phase = 0; phase < 6; phase++)
+      conceptAfterHelmetRefinement(plantedConcept),
+    'production differs from selected C only by the documented native-pixel helmet contour trim');
+    for (let phase = 0; phase < 6; phase++) {
+      const runConcept = selectFootballPlayerConceptFrame('C', 'run', role, view, phase);
       assert.deepEqual(selectFootballPlayerFrame('run', view, phase, false, role).runs,
-        selectFootballPlayerConceptFrame('C', 'run', role, view, phase).runs);
+        conceptAfterHelmetRefinement(runConcept),
+      `${role}/${view}/${phase}: production retains the exact C pose apart from helmet contour trim`);
+    }
   }
 });

@@ -1,6 +1,7 @@
 import { clamp, random, type Athlete, type FootballGame, type LooseBall, type Side } from './types';
 import { chaosOpportunity } from './clutch';
 import { turnoverSkill } from './franchise-upgrades';
+import { playerSpeed } from '../player-pace';
 
 /** Per ELIGIBLE contact/catch/kick only. Never consume score, clock, prior
  * drought or event counters. These conservative constants are calibration knobs. */
@@ -49,7 +50,7 @@ export function stepLoose(ball: LooseBall, players: Athlete[], dt: number) {
   for (const a of players) {
     if (ball.kind === 'fumble' && a.id === ball.lostBy && ball.time < .36) { a.vx = 0; a.vy = 0; continue; }
     const dx = ball.x - a.x, dy = ball.y - a.y + (a.id === nearest.id ? 0 : (a.id % 3 - 1) * 10);
-    const n = Math.hypot(dx, dy), travel = Math.min(n, (a.id === nearest.id ? 78 : 53) * dt);
+    const n = Math.hypot(dx, dy), travel = Math.min(n, playerSpeed(a.id === nearest.id ? 78 : 53) * dt);
     a.vx = n ? dx / n * travel / dt : 0; a.vy = n ? dy / n * travel / dt : 0;
     a.x += a.vx * dt; a.y += a.vy * dt;
   }

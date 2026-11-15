@@ -15,6 +15,12 @@ Use six or more clearly distinct running poses with knee drive, plant, push-off,
 
 **How to apply:** Let movement speed drive visual cadence, not the reverse. Keep common ground anchors, actual release/catch/contact timing, and stable position-based skin tones. A held football belongs to its authored hand; there must not be a second independently positioned carried ball.
 
+Keep the newly approved sprite designs. Refine them with approximately 10% faster player locomotion on both teams, preserving rating differences, and slightly smaller helmets (about 5–8% at an appropriate native-pixel increment). Preserve muscular bodies, substantial legs, mask/stripe detail, authentic shading and crisp nearest-neighbor pixels.
+
+**Why:** The user explicitly liked the new sprites and asked for faster, smoother motion and smaller helmets, not another redesign. This supersedes the earlier instruction to leave player speed unchanged.
+
+**How to apply:** Keep strides recognizable rather than excessively fast or jittery. Smooth render positioning without changing ball speed, game/pressure clocks, probabilities, controls, field/camera, saves, or established sound effects.
+
 Prioritize clear individual sprites: white pants, primary-team-color jerseys, secondary-team-color helmets, and white facemasks. Discrete highlight/shadow and cuff pixels are allowed by the complete redesign, but team identity must remain obvious. Use dark definition for silhouettes and limb separation, not black face panels. Do not add decorative lines around downed players.
 
 **Why:** The user specified “make the jerseys one color which is the primary team color separated from the helmet, which is the secondary team color.” Earlier they found detailed sprites and lines around grounded players messy.

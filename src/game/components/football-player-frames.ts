@@ -304,6 +304,7 @@ function flatten(view: FootballPlayerView, action: FootballPlayerAction, phase: 
       pixels[pixelY]![x * 2 + dx] = glyph as Glyph;
     }
   }));
+  refineFootballHelmetWidth(pixels);
   const runs: FrameRun[] = [];
   pixels.forEach((row, y) => {
     let x = 0;
@@ -325,6 +326,34 @@ function flatten(view: FootballPlayerView, action: FootballPlayerAction, phase: 
     width: 32, height: 44, view, action, phase, ball, build, grip,
     runs: Object.freeze(runs),
   });
+}
+
+/**
+ * The authored head keeps its original mask, stripe, shading and colors. On
+ * rows carrying helmet material, trim one outer black pixel (alternating
+ * sides) at native atlas resolution. This is the closest crisp-pixel
+ * adjustment to a 5–8% width reduction without scaling or softening the art.
+ * The material glyphs also identify the helmet in turned and prone sheets.
+ */
+export function refineFootballHelmetWidth(pixels: string[][]) {
+  for (let y = 0; y < pixels.length; y++) {
+    const row = pixels[y]!;
+    const helmetXs = row.flatMap((glyph, x) => glyph === 'M' || glyph === 'm' || glyph === 'T' ? [x] : []);
+    if (!helmetXs.length) continue;
+    let left = helmetXs[0]!;
+    let right = helmetXs[helmetXs.length - 1]!;
+    while (left > 0 && row[left - 1] === 'K') left--;
+    while (right < row.length - 1 && row[right + 1] === 'K') right++;
+    // A one-pixel cut from a 12–18px shell row is 5.5–8.3%. Never cut the
+    // facemask or a colored helmet pixel when the contour is not available.
+    if (right - left + 1 >= 12) {
+      // Atlas pixels are expanded in vertical pairs from one authored cell;
+      // keep each pair aligned, alternating only between authored rows.
+      const trimLeft = Math.floor(y / 2) % 2 === 0;
+      const edge = trimLeft ? left : right;
+      if (row[edge] === 'K') row[edge] = '.';
+    }
+  }
 }
 
 const frameCache = new Map<string, FootballPlayerFrame>();

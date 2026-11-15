@@ -1,4 +1,5 @@
 import type { KickAttempt, KickDefender, KickDirection } from './kick-return-engine';
+import { playerSpeed } from './player-pace';
 import { BURST, chooseKickBurst, kickBurstKind, kickBurstVelocity, kickDiveRules } from './kick-return-burst';
 
 export const JUKE = { holdMs: 200, spin: .34, stutter: .36, dive: .34, cooldown: 1, backwardRatio: .7 } as const;
@@ -16,8 +17,8 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: number, input: KickMoveInput,
   bounds: CarrierBounds = { minY: 24, maxY: 168 }) {
   if (a.moves?.version === 2) return stepBurst(a, direction, dt, input, bounds);
-  const forward = (a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1);
-  const lateral = a.difficulty === 'hard' ? 86 : 78;
+   const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
+   const lateral = playerSpeed(a.difficulty === 'hard' ? 86 : 78);
   if (!a.moves) return { player: { x: a.player.x + forward * dt,
     y: clamp(a.player.y + direction * lateral * dt, bounds.minY, bounds.maxY) }, started: false, moves: undefined };
   let moves: KickMoves = { ...a.moves, backward: !!input.backward };
@@ -61,7 +62,7 @@ export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: numb
 }
 
 function stepBurst(a: KickAttempt, direction: KickDirection, dt: number, input: KickMoveInput, bounds: CarrierBounds) {
-  const forward = (a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1), lateral = a.difficulty === 'hard' ? 86 : 78;
+  const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1)), lateral = playerSpeed(a.difficulty === 'hard' ? 86 : 78);
   const diveRules = kickDiveRules(a);
   const held = !!(input.hesitate ?? input.backward);
   let moves: KickMoves = { ...a.moves!, backward: false, hesitating: held };
@@ -78,6 +79,7 @@ function stepBurst(a: KickAttempt, direction: KickDirection, dt: number, input: 
   const diving = moves.active?.kind === 'dive';
   if (moves.active) {
     ({ vx, vy } = kickBurstVelocity(a, moves.active.side));
+     vx = playerSpeed(vx); vy = playerSpeed(vy);
     const duration = moves.active.kind === 'dive' ? diveRules.duration : BURST.duration;
     if (a.returnUpgrade === 1 && moves.active.kind === 'dive') {
       const fraction = Math.min(dt, duration - moves.active.elapsed) / dt;
@@ -132,7 +134,7 @@ export function isKickMoves(value: KickMoves | undefined, a: KickAttempt): boole
   return [1, 2].includes(m.version) && (m.hesitating === undefined || m.version === 2 && typeof m.hesitating === 'boolean') &&
     Number.isSafeInteger(m.sequence) && m.sequence >= 0 &&
      Number.isFinite(m.readyAt) && m.readyAt >= 0 && m.readyAt <= a.returnTime + (a.returnUpgrade === 1 ? 1.5 : 1.4) &&
-    typeof m.backward === 'boolean' && (m.version !== 2 || !m.backward) && Number.isFinite(m.vx) && Math.abs(m.vx) <= (m.version === 2 ? 100 : 86) &&
+    typeof m.backward === 'boolean' && (m.version !== 2 || !m.backward) && Number.isFinite(m.vx) && Math.abs(m.vx) <= playerSpeed(m.version === 2 ? 100 : 86) &&
     Number.isFinite(m.furthestX) && m.furthestX >= 0 && m.furthestX <= 1101 &&
     m.furthestX + .000001 >= a.player.x &&
     (active === undefined || !!active && (m.version === 2 ? ['spin', 'stutter', 'dive'] : ['spin', 'stutter']).includes(active.kind) &&

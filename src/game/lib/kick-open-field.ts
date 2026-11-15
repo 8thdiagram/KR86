@@ -1,5 +1,6 @@
 import type { KickAttempt, KickDefender } from './kick-return-engine';
 import { pursuitPoint } from './open-field-pursuit';
+import { playerSpeed } from './player-pace';
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -8,6 +9,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
  */
 export function stepOpenFieldCoverage(a: KickAttempt, d: KickDefender, dt: number,
   speed = d.speed, lateral = d.lateralSpeed): KickDefender {
+  speed = playerSpeed(speed); lateral = playerSpeed(lateral);
   const m = d.motion ?? { vx: 0, vy: 0, targetX: d.x, targetY: d.y,
     reactionLeft: 0, stride: 0, facing: -1 as const };
   let left = m.reactionLeft - dt, tx = m.targetX, ty = m.targetY;

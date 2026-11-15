@@ -11,9 +11,10 @@ import { franchiseFactor, franchiseKickControl } from './franchise-upgrades';
 import { chaosOpportunity, SPECIAL_EXECUTION_SPEED } from './clutch';
 import { advanceKickLoose, advanceKickRush, contactKickBlock, receptionMuff } from './kick-events';
 import { looseBall, tryFumble } from './rare-events';
+import { playerSpeed } from '../player-pace';
 
 const point = (a: Athlete, x: number, y: number, speed: number, dt: number) => {
-  const dx = x - a.x, dy = y - a.y, n = Math.hypot(dx, dy), f = n ? Math.min(1, speed * dt / n) : 0;
+  const dx = x - a.x, dy = y - a.y, n = Math.hypot(dx, dy), f = n ? Math.min(1, playerSpeed(speed) * dt / n) : 0;
   a.vx = dx * f / dt; a.vy = dy * f / dt; a.x += dx * f; a.y += dy * f;
 };
 const stage = (s: SpecialTeams, next: SpecialTeams['stage']) => { s.stage = next; s.stageAge = 0; };

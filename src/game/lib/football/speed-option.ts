@@ -1,9 +1,11 @@
 import { looseBall } from './rare-events';
 import { franchiseAthleteFactor } from './franchise-upgrades';
+import { playerSpeed } from '../player-pace';
 import { clamp, random, type Athlete, type FootballGame, type FootballInput } from './types';
 
 export const OPTION={ends:1.8,opens:.18,spacing:27} as const;
 function move(a:Athlete,x:number,y:number,speed:number,lateral:number,dt:number) {
+  speed=playerSpeed(speed);lateral=playerSpeed(lateral);
   // Match the normal carrier's independent axes, not receiving-route speed.
   // Otherwise the supporting back falls out of pitch range before the read ends.
   a.vx=clamp((x-a.x)/dt,-speed,speed);a.vy=clamp((y-a.y)/dt,-lateral,lateral);

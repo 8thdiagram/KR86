@@ -1,4 +1,5 @@
 import type { KickAttempt, KickDefender } from './kick-return-engine';
+import { playerSpeed } from './player-pace';
 
 /** Same independent-axis speed system as the runner, including diagonal travel. */
 export const SAFETY = {
@@ -14,6 +15,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 /** Reads elapsed movement only, never the current input or future button presses. */
 export function stepFreeSafety(a: KickAttempt, d: KickDefender, dt: number,
   blockers: KickDefender[], fakeTargetY?: number): KickDefender {
+  const forward = playerSpeed(SAFETY.forward), lateral = playerSpeed(SAFETY.lateral);
   const m: SafetyMotion = d.motion ?? {
     vx: 0, vy: 0, targetX: d.x, targetY: d.y, reactionLeft: 0, stride: 0, facing: -1,
   };
@@ -23,9 +25,9 @@ export function stepFreeSafety(a: KickAttempt, d: KickDefender, dt: number,
   if (!active) return d;
   if (reactionLeft <= 0) {
     // Sample the already-observed lateral displacement, including sideline stops.
-    const vx = a.moves?.vx ?? (a.difficulty === 'hard' ? 73 : 57);
+    const vx = a.moves?.vx ?? playerSpeed(a.difficulty === 'hard' ? 73 : 57);
     const vy = clamp((a.player.y - (d.observedY ?? a.player.y)) /
-      (d.observedY === undefined ? dt : SAFETY.reaction), -86, 86);
+      (d.observedY === undefined ? dt : SAFETY.reaction), -playerSpeed(86), playerSpeed(86));
     const distance = Math.hypot(d.x - a.player.x, d.y - a.player.y);
     const lead = clamp(distance / 240, .18, .65);
     targetY = clamp(a.player.y + vy * lead, 24, 168);
@@ -37,20 +39,20 @@ export function stepFreeSafety(a: KickAttempt, d: KickDefender, dt: number,
     reactionLeft += SAFETY.reaction;
   }
   if (fakeTargetY !== undefined) targetY = fakeTargetY;
-  const dx = (targetX - d.x) / SAFETY.forward;
-  const dy = (targetY - d.y) / SAFETY.lateral;
+   const dx = (targetX - d.x) / forward;
+   const dy = (targetY - d.y) / lateral;
   const norm = Math.max(Math.abs(dx), Math.abs(dy));
   // Arrive without oscillation; each axis is capped at 112% of the runner's.
   const scale = norm > 0 ? Math.min(1, norm / .12) / norm : 0;
   const desiredX = dx * scale, desiredY = dy * scale;
-  const oldX = m.vx / SAFETY.forward, oldY = m.vy / SAFETY.lateral;
+   const oldX = m.vx / forward, oldY = m.vy / lateral;
   const changeX = desiredX - oldX, changeY = desiredY - oldY;
   const change = Math.hypot(changeX, changeY);
   const reversing = oldX * desiredX + oldY * desiredY < 0;
   const blend = change > 0 ? Math.min(1,
     (reversing ? SAFETY.turnAcceleration : SAFETY.acceleration) * dt / change) : 0;
-  let vx = (oldX + changeX * blend) * SAFETY.forward;
-  let vy = (oldY + changeY * blend) * SAFETY.lateral;
+   let vx = (oldX + changeX * blend) * forward;
+   let vy = (oldY + changeY * blend) * lateral;
   let x = clamp(d.x + vx * dt, 100, 1096);
   let y = clamp(d.y + vy * dt, 24, 168);
   // Other defenders remain untouched. Stop/slide, never phase through a teammate.

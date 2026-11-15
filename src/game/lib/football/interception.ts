@@ -11,6 +11,7 @@ import { FOOTBALL_SIDELINES, outsideFootballSideline } from './sidelines';
 import { pursuitPoint } from '../open-field-pursuit';
 import { franchiseAthleteFactor } from './franchise-upgrades';
 import { carrierMoment } from './execution-moments';
+import { playerSpeed } from '../player-pace';
 
 /** Old saved returns without returnKind were interceptions; recovery returns
  * explicitly identify themselves. Never show a return banner over a loose ball. */
@@ -31,7 +32,7 @@ export function intercept(l: LivePlay, defender: Athlete) {
   l.movement.player = { x: 1200 - defender.x, y: defender.y }; l.movement.returnTime = 0;
 }
 const move = (a: Athlete, x: number, y: number, speed: number, dt: number) => {
-  const dx = x - a.x, dy = y - a.y, n = Math.hypot(dx, dy), k = n ? Math.min(1, speed * dt / n) : 0;
+  const dx = x - a.x, dy = y - a.y, n = Math.hypot(dx, dy), k = n ? Math.min(1, playerSpeed(speed) * dt / n) : 0;
   a.vx = dx * k / dt; a.vy = dy * k / dt; a.x += dx * k; a.y = clamp(a.y + dy * k, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
 };
 export function stepInterception(g: FootballGame, input: FootballInput, dt: number): { spot: number; touchdown: boolean; outOfBounds?: boolean } | undefined {
@@ -57,8 +58,8 @@ export function stepInterception(g: FootballGame, input: FootballInput, dt: numb
     // The old offense is now covering the return: keep its real athleticism.
     const skill = d.role === 'WR' || d.role === 'RB' || d.role === 'TE';
     const upgrade = franchiseAthleteFactor(g, d);
-    const speed = (skill ? KR.forwardSpeed * EXECUTION.skillSpeed * openFieldGain(d, [runner], dt) : 57 + g.profiles[l.offense ?? other(g.possession)].back * 8) * upgrade;
-    const lateral = skill ? KR.lateralSpeed * EXECUTION.skillSpeed * upgrade : speed;
+    const speed = playerSpeed((skill ? KR.forwardSpeed * EXECUTION.skillSpeed * openFieldGain(d, [runner], dt) : 57 + g.profiles[l.offense ?? other(g.possession)].back * 8) * upgrade);
+    const lateral = skill ? playerSpeed(KR.lateralSpeed * EXECUTION.skillSpeed * upgrade) : speed;
     // All return defenders finish a reachable interception, not a fixed offset
     // outside tackle range. Read only the runner's already-observed movement.
     if (!d.pursuit || d.pursuit.until <= l.time) {
