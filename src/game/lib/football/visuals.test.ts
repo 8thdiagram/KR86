@@ -145,10 +145,10 @@ test('every configured team uses its primary jersey, secondary helmet and white 
       const { ctx, paints, pixels } = canvas();
       if (mode === 'classic') kickFootballArt.sprite(ctx, 100, 100, kit, 0);
       else slim(ctx, 100, 100, kit);
-      assert(paints.some(p => p.c === team.trim && p.x === (mode === 'classic' ? 97 : 98) && p.y === 92 &&
-        p.w === (mode === 'classic' ? 7 : 6) && p.h === 5), `${team.name} smaller secondary helmet`);
-      assert.equal(pixels.has('100,91'), false, `${mode}: helmet is one pixel shorter`);
-      assert(paints.some(p => p.c === team.body && p.h === (mode === 'classic' ? 5 : 4)), `${team.name} primary jersey`);
+      assert(paints.some(p => p.c === team.trim && p.x === (mode === 'classic' ? 97 : 98) && p.y === 90 &&
+        p.w === (mode === 'classic' ? 8 : 7) && p.h === 6), `${team.name} enlarged secondary helmet`);
+      assert.equal(pixels.has('100,89'), false, `${mode}: helmet retains its authored silhouette`);
+      assert(paints.some(p => p.c === team.body && p.h === (mode === 'classic' ? 6 : 4)), `${team.name} primary jersey`);
       assert([UNIFORM.pants, UNIFORM.pantsShade].includes(pixels.get('98,103') as typeof UNIFORM.pants),
         `${team.name} white pants or their far-leg shade, ${mode}`);
       assert([...pixels.values()].includes(UNIFORM.pants), `${team.name} retains white near-leg pixels, ${mode}`);

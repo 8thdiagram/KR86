@@ -1,6 +1,7 @@
 /** Slim articulated Full Game anatomy using the same uniforms/ball as Classic. */
 import { drawFootballBall, UNIFORM, type FootballKit } from './football-art';
 import { FOOTBALL_ART_STAGES as ART, tone } from './football-deluxe-art';
+import { drawPixelEnlarged } from './football-pixel-scale';
 export type Kit = FootballKit;
 const SKIN = '#e0a370', INK = '#10213a', SHADOW = 'rgba(8,40,16,.35)', GOLD = '#f4d23c';
 export const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number, w: number, h: number) => {
@@ -30,7 +31,7 @@ export function heldBall(ctx: CanvasRenderingContext2D, bx: number, by: number) 
 export type Pose = { step?: number; ball?: boolean; engaged?: boolean; lean?: number; kick?: number; hold?: boolean; crouch?: boolean; view?: BodyView };
 export type BodyView = 0 | 1 | 2 | 3 | 4;
 /** Five hand-authored late-NES silhouettes; view changes anatomy, never a flat rotation. */
-export function turnSprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit,
+function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit,
   view: BodyView, options: { step?: number; ball?: boolean; crouch?: boolean; hold?: boolean } = {}) {
   const cx = Math.round(x), top = Math.round(y) - (options.crouch ? 7 : 8);
   const d = kit.dir, f = Math.floor(options.step ?? 0) & 1, ball = !!options.ball;
@@ -144,8 +145,12 @@ export function turnSprite(ctx: CanvasRenderingContext2D, x: number, y: number, 
   if (kit.edge) R(ctx, kit.edge, cx - 2, top, 4, 1);
   if (options.hold && !ball) R(ctx, SKIN, cx + d * 4, top + 8, 1, 1);
 }
+export function turnSprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit,
+  view: BodyView, options: { step?: number; ball?: boolean; crouch?: boolean; hold?: boolean } = {}) {
+  turnSpriteNative(ctx, x, y, kit, view, options);
+}
 /** Slim standing sprite, anchor = torso centre. 6px shoulders with pad caps, 3px torso, split legs, 6px helmet. */
-export function slim(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, p: Pose = {}) {
+function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, p: Pose = {}) {
   if (p.view !== undefined) { turnSprite(ctx, x, y, kit, p.view, p); return; }
   const step = p.step ?? 0, d = kit.dir, lean = p.lean ?? 0;
   const px = Math.round(x) - 4, py = Math.round(y) - 8 + (p.crouch ? 1 : 0);
@@ -167,6 +172,7 @@ export function slim(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     R(ctx, UNIFORM.pants, lx, py + 10 + (lh < 3 ? 0 : 1), 1, lh - (lh < 3 ? 0 : 1) + 1); R(ctx, UNIFORM.pants, rx, py + 10 + (rh < 3 ? 0 : 1), 1, rh - (rh < 3 ? 0 : 1) + 1);
     R(ctx, INK, lx + (d > 0 ? 0 : -1), py + 10 + lh, 2, 1); R(ctx, INK, rx + (d > 0 ? 0 : -1), py + 10 + rh, 2, 1);
   }
+  R(ctx, INK, px + 2 + lean, py + 6, 5, 5);
   R(ctx, kit.body, px + 3 + lean, py + 6, 3, 4);
   R(ctx, kit.trim, px + 3 + lean, py + 8, 3, 1);
   if (ART.players) { R(ctx, tone(kit.body, .78), px + 3 + lean, py + 9, 1, 1); R(ctx, tone(kit.body, .78), px + 5 + lean, py + 9, 1, 1); }
@@ -200,6 +206,9 @@ export function slim(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     R(ctx, c, bx, by + 10, 2, 1); R(ctx, c, bx, by + 9, 1, 2); R(ctx, c, bx + 8, by + 10, 2, 1); R(ctx, c, bx + 9, by + 9, 1, 2);
   }
   ctx.restore();
+}
+export function slim(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, p: Pose = {}) {
+  drawPixelEnlarged(ctx, x, y, (target, px, py) => slimNative(target, px, py, kit, p), 6);
 }
 /** Gold chevron + under-foot bar that marks the ball carrier. */
 export function carrierMark(ctx: CanvasRenderingContext2D, x: number, y: number, seconds: number) {

@@ -7,6 +7,7 @@ import { fieldViewportFrame, type KickViewport } from '../lib/kick-return-viewpo
 import { drawFootballBall, footballPixels, uniformKit, UNIFORM, type FootballKit } from './football-art';
 import { FOOTBALL_ART_STAGES as ART, drawDeluxeTurf, drawEndZoneLettering, drawFieldFixtures, tone } from './football-deluxe-art';
 import { heldBall, turnSprite, type BodyView } from './football-sprites';
+import { drawPixelEnlarged } from './football-pixel-scale';
 
 const G: Record<string, string> = {
   A: '010101111101101', C: '111100100100111', T: '111010010010010', H: '101101111101101',
@@ -21,7 +22,7 @@ const G: Record<string, string> = {
   '8': '111101111101111', '9': '111101111001111',
 };
 const C = {
-  turfA: '#2f8a3f', turfB: '#277a37', line: '#e8f0e0',
+  turfA: '#348e43', turfB: '#286f38', line: '#e8f0e0',
   ink: '#10213a', skin: '#e0a370', home: '#2f6fd0', homeTrim: '#d8e8ff', away: '#d9392b',
   awayTrim: '#ff9a3c', ball: '#8a4a1f', lace: '#f1e6d0', shadow: 'rgba(8,40,16,.35)',
 };
@@ -137,7 +138,7 @@ function ballShape(put: Put, bx: number, by: number, d: 1 | -1) {
   put(C.skin, d > 0 ? bx : bx + 6, by + 3, 1, 1);
 }
 // Standing sprite: 8 wide x ~16 tall. Anchor: (x, y) = torso centre.
-function sprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, step: number, ball = false, shuffle = 0, lean = 0, view?: BodyView) {
+function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, step: number, ball = false, shuffle = 0, lean = 0, view?: BodyView) {
   if (view !== undefined) { turnSprite(ctx, x, y, kit, view, { step, ball, hold: !ball && shuffle > 0 }); return; }
   const px = Math.round(x) - 4, py = Math.round(y) - 8, d = kit.dir;
   const put: Put = (c, u, v, w, h) => R(ctx, c, u, v, w, h);
@@ -152,6 +153,7 @@ function sprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, s
   R(ctx, UNIFORM.pants, lx, py + 10, 2, lh); R(ctx, UNIFORM.pants, rx, py + 10, 2, rh);
   R(ctx, C.ink, lx + (d > 0 ? 0 : -1), py + 9 + lh, 3, 1); R(ctx, C.ink, rx + (d > 0 ? 0 : -1), py + 9 + rh, 3, 1);
   if (ART.players) { R(ctx, UNIFORM.pantsShade, lx + 1, py + 11, 1, 1); R(ctx, UNIFORM.pantsShade, rx, py + 11, 1, 1); }
+  R(ctx, C.ink, px + 1, py + 6, 6, 5);
   R(ctx, kit.body, px + 2, py + 6, 4, 5);
   if (ART.players) {
     R(ctx, tone(kit.body, 1.16), px + 3, py + 6, 2, 1);
@@ -179,8 +181,11 @@ function sprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, s
   }
   ctx.restore();
 }
+function sprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, step: number, ball = false, shuffle = 0, lean = 0, view?: BodyView) {
+  drawPixelEnlarged(ctx, x, y, (target, px, py) => spriteNative(target, px, py, kit, step, ball, shuffle, lean, view), 6);
+}
 // Hand-authored turf silhouette; no upright sprite is rotated into a cutout.
-function prone(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, angle: number, lift: number, crouch = 0, ball = false) {
+function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, angle: number, lift: number, crouch = 0, ball = false) {
   const cx = Math.round(x), cy = Math.round(y - lift), horizontal = Math.abs(Math.cos(angle)) >= Math.abs(Math.sin(angle));
   const forward: 1 | -1 = Math.cos(angle) >= 0 ? 1 : -1;
   const far = tone(kit.body, .68), light = tone(kit.body, 1.16);
@@ -223,6 +228,9 @@ function prone(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, an
       vr(C.skin, kit.dir > 0 ? 5 : -6, 2, 1, 1);
     }
   }
+}
+function prone(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, angle: number, lift: number, crouch = 0, ball = false) {
+  drawPixelEnlarged(ctx, x, y, (target, px, py) => proneNative(target, px, py, kit, angle, lift, crouch, ball));
 }
 function lying(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit) {
   prone(ctx, Math.round(x) - (kit.dir > 0 ? 1 : -1), Math.round(y), kit, kit.dir > 0 ? 0 : Math.PI, 0);

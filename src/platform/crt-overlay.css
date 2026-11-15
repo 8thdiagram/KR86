@@ -7,12 +7,12 @@
     radial-gradient(
       ellipse at center,
       transparent 56%,
-      rgba(3, 8, 15, 0.045) 100%
+      rgba(3, 8, 15, 0.025) 100%
     ),
     repeating-linear-gradient(
       to bottom,
       transparent 0 3px,
-      rgba(5, 10, 18, 0.075) 3px 4px
+      rgba(5, 10, 18, 0.035) 3px 4px
     );
 }
 

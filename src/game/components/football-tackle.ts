@@ -1,7 +1,8 @@
 import type { FootballGame, TackleActor } from '../lib/football/types';
 import { tackleFrame } from '../lib/football/tackle-scene';
-import { slim, R, type Kit } from './football-sprites';
+import { slim, heldBall, R, type Kit } from './football-sprites';
 import { kickFootballArt } from './kick-return-renderer';
+import { drawPixelEnlarged } from './football-pixel-scale';
 
 /** Five held pixel-art poses. Outcome coordinates remain untouched. No camera
  * shake or enlarged hitboxes; two bodies visibly connect, buckle and settle. */
@@ -36,6 +37,16 @@ export function drawTackle(ctx: CanvasRenderingContext2D, g: FootballGame,
   } else {
     pose(s.defender, dx, dy, false);
     pose(s.carrier, cx, cy, true);
+  }
+  if (frame >= 3 && !carrierFumbled) {
+    // Keep the secured football and outside forearm in the foreground when
+    // the slightly larger tackler overlaps the carrier's prone silhouette.
+    drawPixelEnlarged(ctx, Math.round(cx), Math.round(cy) + 1, (pixels, x, y) => {
+      heldBall(pixels, dir > 0 ? x - 1 : x - 7, y - 1);
+      const arm = x + (dir > 0 ? 3 : -5);
+      R(pixels, s.carrier.team === 'home' ? home.body : away.body, arm, y - 1, 2, 1);
+      R(pixels, '#10213a', arm, y, 2, 1);
+    });
   }
   if (frame === 0) {
     const x = Math.round((cx + dx) / 2), y = Math.round((cy + dy) / 2) - 4;

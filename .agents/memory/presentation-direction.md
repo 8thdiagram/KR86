@@ -3,9 +3,9 @@ name: NES presentation direction
 description: User's standing visual direction and audio boundaries for Kick Return ’86.
 ---
 
-Kick Return ’86 should look like a believable late-NES football game from roughly 1986–1988, adapted for mobile, not a modern mobile app or SaaS dashboard. Use sharp pixel art, square frames, a night stadium, chrome/white/blue lettering, and red accents inspired by the supplied icon artwork.
+Kick Return ’86 should look like a believable late-NES football game from roughly 1986–1988, adapted for mobile, not a modern mobile app or SaaS dashboard. Use sharp pixel art, crisp separated colors, slightly larger readable player sprites, square frames, a night stadium, chrome/white/blue lettering, and red accents inspired by the supplied icon artwork.
 
-**Why:** The user explicitly requested a cohesive visual redesign while preserving all modes, game logic, and saved progress.
+**Why:** The user explicitly requested a cohesive visual redesign while preserving all modes, game logic, and saved progress, then supplied a classic NES screenshot as a reference for sharper graphics, crisper colors, and slightly larger sprites.
 
 **How to apply:** Keep title, Franchise management, and supporting interfaces visually consistent. Keep browser audio activation restrictions in mind and preserve existing gameplay sounds. Follow the intro/menu audio boundaries below.
 
