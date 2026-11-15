@@ -8,6 +8,7 @@ import { kickMatchupTeams } from '../lib/kick-return-teams';
 import { uniformKit, positionKit, playerSkin, helmetColor, UNIFORM, SKIN_TONES } from './football-art';
 import { tone } from './football-deluxe-art';
 import { slim, R, type Kit, type Pose } from './football-sprites';
+import { updateFootballAnimation } from './football-animation-clock';
 import { drawFieldGoalPadding } from './football-field-goal-padding';
 
 /** Camera and timing constants are presentation-only; scoring remains engine-owned. */
@@ -310,6 +311,10 @@ function drawKickViewPlayers(
   const drawKicker = () => {
     if (!kicker) return;
     const projected = screenPoint(kicker.x, kicker.y);
+    const facing: 1 | -1 = kicker.vx < -6 ? -1 : kicker.vx > 6 ? 1 : kickingKit.dir;
+    const cadence = updateFootballAnimation(s, kicker.id, {
+      now: s.age, x: kicker.x, y: kicker.y, vx: kicker.vx, vy: kicker.vy, facing,
+    });
     // Compose the two authored sprites as one foreground kicking unit. Their
     // gameplay coordinates remain untouched; only this camera's staging moves.
     const p = holderPoint
@@ -320,7 +325,14 @@ function drawKickViewPlayers(
       const contact = stage === 'flight' ? Math.max(0, Math.min(1, .5 + s.stageAge / .44))
         : s.stageAge > .24 ? .35 : -1;
       if (contact >= 0) player(p, { kick: contact });
-      else player(p, { step: s.age * 9, lean: kickingKit.dir, hold: true, view: 3 });
+      else player(p, {
+        action: cadence.moving ? 'run' : 'stance',
+        progress: cadence.phase,
+        step: cadence.step,
+        lean: cadence.facing,
+        hold: true,
+        view: cadence.view ?? 3,
+      });
     } else {
       player(p, {
         hold: true,

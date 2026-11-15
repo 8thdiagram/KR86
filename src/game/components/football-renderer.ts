@@ -8,7 +8,8 @@ import { fieldGoalHeight } from '../lib/football/field-goal-geometry';
 import { highlightedReceiver } from '../lib/football/passing';
 import { primaryPlayer } from '../lib/football/execution';
 import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
-import { slim, carrierMark, airBall, landingMark, goalPosts, R, movementStep, movementBodyView as motionView, type Kit } from './football-sprites';
+import { slim, carrierMark, airBall, landingMark, goalPosts, R, type Kit } from './football-sprites';
+import { updateFootballAnimation } from './football-animation-clock';
 import { footballAthletePose } from './football-player-state';
 import { uniformKit, positionKit, specialSkinPosition, classicSkinPosition } from './football-art';
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
@@ -228,7 +229,6 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
   const offenseKit: Kit = { ...(originalOffense === 'home' ? home : away), dir };
   const defenseKit: Kit = { ...(originalOffense === 'home' ? away : home), dir: dir === 1 ? -1 : 1 };
   if (!live) { if (g.phase !== 'final') football(ctx, los + 1, 96, true); return; }
-  const t = live.time * 9;
   const snap = snapping(live);
   const ic = live.interception, holding = !!ic && ic.age < CATCH_HOLD;
   const read = highlightedReceiver(live);
@@ -241,6 +241,10 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
     const backpedaling = a.side === 'defense' && a.role === 'DB' &&
       (live.mode === 'dropback' || live.mode === 'flight') && a.vx * dir > 3;
     const facing: 1 | -1 = backpedaling ? kit.dir : a.vx < -6 ? -1 : a.vx > 6 ? 1 : kit.dir;
+    const cadence = updateFootballAnimation(live, a.id, {
+      now: live.time, x: a.x, y: a.y, vx: a.vx, vy: a.vy, facing,
+    });
+    const stableFacing = cadence.facing;
     const hasBall = !snap && a.id === live.carrier && !live.flight && !live.loose && !live.option?.ball && !(live.mode === 'kick' && live.kickAccuracy !== undefined);
     const engaged = a.engaged > live.time;
     ctx.save();
@@ -261,11 +265,13 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
       slim(ctx, ic.catchX, ic.catchY, { ...kit, dir: dir === 1 ? -1 : 1 },
         { action: 'catch', progress: clamp(ic.age / CATCH_HOLD, 0, 1), ball: true });
       });
-    } else if (hasBall && (live.mode === 'run' || live.mode === 'scramble') && moveSprite(ctx, a.x, a.y, kit, t, { ...live.movement, player: { x: a.x, y: a.y } })) { /* original move pose */ }
+    } else if (hasBall && (live.mode === 'run' || live.mode === 'scramble') &&
+        moveSprite(ctx, a.x, a.y, { ...kit, dir: stableFacing }, cadence.step,
+          { ...live.movement, player: { x: a.x, y: a.y } })) { /* action frame keeps the carrier's integrated cadence */ }
     else if (snap && a.role === 'OL' && a === centerOf(live))
       slim(ctx, a.x, a.y, kit, { action: 'snap', progress: clamp((live.snapAge ?? 0) / SNAP, 0, 1) });
     else if (snap && a.role === 'QB') slim(ctx, a.x, a.y, kit, { action: 'hold' });
-    else slim(ctx, a.x, a.y, { ...kit, dir: facing },
+    else slim(ctx, a.x, a.y, { ...kit, dir: stableFacing },
       footballAthletePose(live, a, { snapping: snap, ball: hasBall, engaged, facing, direction: dir }));
     if (g.phase === 'live' && a.id === read && g.possession === 'home' && !ic) {
       playerTarget(ctx, a.x, a.y, live.holdingPass ? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE);
@@ -300,21 +306,30 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
   R(ground, LOS, Math.round(sp.fromX), 18, 2, 156);
   const ret = sp.stage === 'return';
   const sorted = [...sp.athletes].sort((a, b) => a.y - b.y);
-  const st = sp.stage, age = sp.stageAge, t = sp.age * 9;
+  const st = sp.stage, age = sp.stageAge;
   const ballHeld = st === 'lineup' || st === 'approach' && sp.kind !== 'punt' && !fg;
   for (const a of sorted) {
     if (isTackleActor(g, a, 'special')) continue;
     const kit = positionKit(a.side === 'offense' ? kickKit : recvKit, specialSkinPosition(sp, a));
+    const facing: 1 | -1 = a.vx < -6 ? -1 : a.vx > 6 ? 1 : kit.dir;
+    const cadence = updateFootballAnimation(sp, a.id, {
+      now: sp.age, x: a.x, y: a.y, vx: a.vx, vy: a.vy, facing,
+    });
+    const stableFacing = cadence.facing;
     if (ret && a.id === sp.returner) {
       ctx.save(); ctx.translate(a.x - Math.round(a.x), a.y - Math.round(a.y));
       const ra = g.returnAttempt;
-      if (!(ra && ra.phase === 'returning' && moveSprite(ctx, a.x, a.y, { ...kit, dir: (sp.mirrored ? -dir : dir) as 1 | -1 }, t, { ...ra, player: { x: a.x, y: a.y } })))
-        slim(ctx, a.x, a.y, { ...kit, dir: a.vx < -6 ? -1 : 1 },
-          { step: movementStep(a.vx, a.vy, sp.age), ball: true });
+      if (!(ra && ra.phase === 'returning' && moveSprite(ctx, a.x, a.y,
+        { ...kit, dir: (sp.mirrored ? -dir : dir) as 1 | -1 }, cadence.step, { ...ra, player: { x: a.x, y: a.y } })))
+        slim(ctx, a.x, a.y, { ...kit, dir: stableFacing }, {
+          action: cadence.moving ? 'run' : 'idle',
+          progress: cadence.phase,
+          view: cadence.view,
+          ball: true,
+        });
       ctx.restore(); carrierMark(ctx, a.x, a.y, seconds); continue;
     }
-    const moving = Math.hypot(a.vx, a.vy) > 3;
-    const facing: 1 | -1 = a.vx < -6 ? -1 : a.vx > 6 ? 1 : kit.dir;
+    const moving = cadence.moving;
     ctx.save();
     ctx.translate(a.x - Math.round(a.x), a.y - Math.round(a.y));
     if (st === 'loose' && a.id === sp.loose?.recoverer && age > .4) {
@@ -332,7 +347,7 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       const contact = st === 'flight' || st === 'loose' ? clamp(.5 + age / .44, 0, 1) : st === 'approach' && age > .24 ? .35 : -1;
       if (contact >= 0) slim(ctx, a.x, a.y, { ...kit, dir: kit.dir }, { kick: contact, hold: sp.kind === 'punt' && contact < .5 });
       else slim(ctx, a.x, a.y, { ...kit, dir: kit.dir },
-        { action: 'run', step: movementStep(a.vx, a.vy, sp.age), lean: kit.dir });
+        { action: 'run', progress: cadence.phase, view: cadence.view, lean: stableFacing });
     } else if (fg && a.id === sp.returner && (st === 'hold' || st === 'approach')) {
       slim(ctx, a.x, a.y, kit, { action: 'kneel' });
     } else if (a.id === sp.kicker && (st === 'snap' || st === 'hold' || st === 'lineup') && (sp.kind === 'punt' || fg)) {
@@ -349,13 +364,14 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       });
     } else {
       const fielding = a.id === sp.returner && (st === 'flight' || st === 'bounce') && Math.hypot(a.x - sp.ball.x, a.y - sp.ball.y) < 26;
-      const actualFacing = fielding ? (sp.ball.x < a.x ? -1 : 1) : facing;
+      const actualFacing = fielding ? (sp.ball.x < a.x ? -1 : 1) : stableFacing;
+      const action = fielding ? 'catch' : a.engaged > sp.age ? 'block' : moving ? 'run' : 'stance';
       slim(ctx, a.x, a.y, { ...kit, dir: actualFacing }, {
-        step: movementStep(a.vx, a.vy, sp.age, a.id / 7), hold: fielding,
-        action: fielding ? 'catch' : a.engaged > sp.age ? 'block' : moving ? 'run' : 'stance',
-        progress: fielding ? clamp(1 - Math.hypot(a.x - sp.ball.x, a.y - sp.ball.y) / 26, 0, .55) : undefined,
-        engaged: a.engaged > sp.age, lean: a.engaged > sp.age ? facing : 0,
-        view: moving ? motionView(a.vx, a.vy, actualFacing) : undefined,
+        step: cadence.step, hold: fielding, action,
+        progress: fielding ? clamp(1 - Math.hypot(a.x - sp.ball.x, a.y - sp.ball.y) / 26, 0, .55)
+          : action === 'run' ? cadence.phase : action === 'block' ? .5 : undefined,
+        engaged: a.engaged > sp.age, lean: a.engaged > sp.age ? stableFacing : 0,
+        view: cadence.view,
       });
     }
     ctx.restore();

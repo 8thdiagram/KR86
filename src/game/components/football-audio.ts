@@ -1,6 +1,8 @@
 import hutUrl from '../assets/football-hut.mp3';
 import { CADENCE, retroCadenceSamples } from '../lib/football/cadence';
 import { TACKLE_AUDIO, tackleSamples } from '../lib/football/tackle-audio';
+import { playActivatedGameAudio, resumeGameAudio } from '../lib/game-audio-activation';
+import { playFootballKick } from '../lib/football/kick-audio';
 /** Minimal locally synthesized referee whistle. Original Kick Return effects are untouched. */
 export function createFootballWhistle() {
   let whistleUntil = 0;
@@ -8,24 +10,26 @@ export function createFootballWhistle() {
   let bytes: Promise<ArrayBuffer> | undefined, voice: Promise<AudioBuffer> | undefined, source: AudioBufferSourceNode | undefined;
   let generation = 0;
   let tackleBuffer: AudioBuffer | undefined;
-  const hits = new Set<AudioBufferSourceNode>();
-  const preload = () => bytes ??= fetch(hutUrl).then(r => { if (!r.ok) throw new Error('Cadence audio unavailable'); return r.arrayBuffer(); });
+  const hits = new Set<AudioScheduledSourceNode>();
+  const preload = () => bytes ??= fetch(hutUrl).then(r => { if (!r.ok) throw new Error('Cadence audio unavailable'); return r.arrayBuffer(); })
+    .catch(error => { bytes = undefined; throw error; });
   const unlock = () => {
     try {
       const C = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!C) return;
-      ctx ??= new C();
-      if (ctx.state === 'suspended') void ctx.resume();
-      voice ??= preload().then(data => ctx!.decodeAudioData(data.slice(0))).then(decoded => {
+      if (!C) return Promise.reject(new Error('Game audio is unavailable.'));
+      if (!ctx || ctx.state === 'closed') { ctx = new C(); voice = undefined; tackleBuffer = undefined; }
+      const audioContext = ctx, resumed = resumeGameAudio(audioContext);
+      voice ??= preload().then(data => audioContext.decodeAudioData(data.slice(0))).then(decoded => {
         const samples = retroCadenceSamples(decoded.getChannelData(0), decoded.sampleRate);
-        const retro = ctx!.createBuffer(1, samples.length, CADENCE.sampleRate);
+        const retro = audioContext.createBuffer(1, samples.length, CADENCE.sampleRate);
         retro.getChannelData(0).set(samples);
         return retro;
-      });
+      }).catch(error => { voice = undefined; throw error; });
       void voice.catch(() => undefined); // The UI's preload reports missing assets; no unhandled playback rejection.
-    } catch { /* Audio is optional; football remains playable. */ }
+      return resumed;
+    } catch (error) { return Promise.reject(error); }
   };
-  return {
+  const effects = {
     unlock,
     preload,
     stopVoice() { generation++; try { source?.stop(); } catch { /* already ended */ } source = undefined; },
@@ -66,13 +70,8 @@ export function createFootballWhistle() {
     kick() {
       try {
         if (!ctx || ctx.state !== 'running') return;
-        const now = ctx.currentTime, tone = ctx.createOscillator(), gain = ctx.createGain();
-        tone.type = 'sine'; tone.frequency.setValueAtTime(260, now);
-        tone.frequency.exponentialRampToValueAtTime(60, now + .11);
-        gain.gain.setValueAtTime(.26, now); gain.gain.exponentialRampToValueAtTime(.001, now + .13);
-        tone.connect(gain); gain.connect(ctx.destination);
-        tone.start(now); tone.stop(now + .14);
-        tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+        const tone = playFootballKick(ctx); hits.add(tone);
+        tone.addEventListener('ended', () => hits.delete(tone), { once: true });
       } catch { /* sound is optional */ }
     },
     blow() {
@@ -89,7 +88,7 @@ export function createFootballWhistle() {
         osc.onended = () => { osc.disconnect(); lfo.disconnect(); lg.disconnect(); g.disconnect(); };
       } catch { /* sound is optional */ }
     },
-    stopEffects() { for (const hit of hits) { try { hit.stop(); } catch { /* ended */ } } hits.clear(); },
+    stopEffects() { generation++; for (const hit of hits) { try { hit.stop(); } catch { /* ended */ } } hits.clear(); },
     close() {
       generation++; try { source?.stop(); } catch { /* already ended */ }
       for (const hit of hits) { try { hit.stop(); } catch { /* ended */ } } hits.clear();
@@ -103,5 +102,13 @@ export function createFootballWhistle() {
       }
       ctx = undefined; tackleBuffer = undefined;
     },
+  };
+  const activated = (play: () => void) => {
+    const token = generation;
+    return playActivatedGameAudio(ctx, () => { if (token === generation) play(); });
+  };
+  return { ...effects,
+    hut: () => activated(effects.hut), kick: () => activated(effects.kick),
+    tackle: () => activated(effects.tackle), blow: () => activated(effects.blow),
   };
 }

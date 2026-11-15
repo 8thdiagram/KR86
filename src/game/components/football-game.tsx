@@ -162,8 +162,22 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
     if (!soundRef.current) return;
     crowd.current ??= createKickCrowdAudio();
     void crowd.current.unlock().catch(() => undefined);
-    (whistle.current ??= createFootballWhistle()).unlock();
+    void (whistle.current ??= createFootballWhistle()).unlock()
+      .catch(() => setAudioNotice('Sound needs another tap to resume. Your sound preference has not changed.'));
   };
+  useEffect(() => {
+    const recover = () => {
+      if (!document.hidden && !gameMode?.paused && gRef.current) unlock();
+    };
+    window.addEventListener('pointerdown', recover, true);
+    window.addEventListener('keydown', recover, true);
+    document.addEventListener('visibilitychange', recover);
+    return () => {
+      window.removeEventListener('pointerdown', recover, true);
+      window.removeEventListener('keydown', recover, true);
+      document.removeEventListener('visibilitychange', recover);
+    };
+  }, []);
   const playSounds = (before: SoundSnapshot) => {
     for (const kind of footballSoundEvents(before, gRef.current!)) {
       if (kind === 'whistle') whistle.current?.stopVoice();

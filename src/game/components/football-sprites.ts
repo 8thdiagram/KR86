@@ -3,7 +3,14 @@ import { drawFootballBall, type FootballKit } from './football-art';
 import { drawPixelEnlarged } from './football-pixel-scale';
 import { withBroadcastAnchor } from './football-broadcast';
 import { drawFootballPlayer, type FootballPlayerOptions } from './football-player-art';
+import {
+  movementBodyView,
+  movementStep,
+  type FootballBodyView,
+} from './football-animation-clock';
 export type Kit = FootballKit;
+export type BodyView = FootballBodyView;
+export { movementBodyView, movementStep };
 const INK = '#10213a', GOLD = '#f4d23c';
 export const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number, w: number, h: number) => {
   // Half-world-pixel authored edges survive the high-resolution canvas pass.
@@ -23,22 +30,6 @@ export function heldBall(ctx: CanvasRenderingContext2D, bx: number, by: number) 
 }
 
 export type Pose = FootballPlayerOptions;
-export type BodyView = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-/** Render-only cadence: stationary athletes plant; walking and sprinting use
- * the same authored cycle at a rate proportional to observed movement. */
-export function movementStep(vx: number, vy: number, seconds: number, offset = 0): number {
-  const speed = Math.hypot(vx, vy);
-  return speed <= 3 ? 0 : seconds * Math.min(12, speed / 6) + offset + .00001;
-}
-/** Shared visual facing bands; velocity is read, never changed or delayed. */
-export function movementBodyView(vx: number, vy: number, facing: 1 | -1): BodyView | undefined {
-  if (Math.hypot(vx, vy) < 3 || Math.abs(vy) < Math.abs(vx) * .55) return undefined;
-  if (Math.abs(vx) < 3) return vy > 0 ? 0 : 4;
-  const lateral = Math.sign(vx) === facing, diagonal = Math.abs(vx / vy);
-  if (diagonal >= .75 && diagonal <= 1.45)
-    return vy > 0 ? (lateral ? 5 : 7) : (lateral ? 6 : 8);
-  return vy > 0 ? (lateral ? 1 : 3) : (lateral ? 3 : 1);
-}
 /** Nine hand-authored 16-bit silhouettes; view changes anatomy, never a flat rotation. */
 function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit,
   view: BodyView, options: Pose = {}) {

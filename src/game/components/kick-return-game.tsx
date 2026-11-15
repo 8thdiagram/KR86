@@ -297,6 +297,19 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
     audio.current ??= createKickCrowdAudio();
     void audio.current.unlock().catch(() => setSoundError('This browser could not enable audio. You can still play without sound.'));
   };
+  useEffect(() => {
+    const recover = () => {
+      if (!document.hidden && active && !gameMode?.paused) unlockSound();
+    };
+    window.addEventListener('pointerdown', recover, true);
+    window.addEventListener('keydown', recover, true);
+    document.addEventListener('visibilitychange', recover);
+    return () => {
+      window.removeEventListener('pointerdown', recover, true);
+      window.removeEventListener('keydown', recover, true);
+      document.removeEventListener('visibilitychange', recover);
+    };
+  }, [active]);
   const begin = () => {
     let p = beginKickReturn(progressRef.current, seed);
     if (p === progressRef.current) return;
@@ -307,6 +320,7 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
     setPaused(false);
     commit(p);
     unlockSound();
+    if (p.current?.phase === 'kickoff' && soundEnabled.current) audio.current?.kick();
   };
   const press = (control: KickControl, e: React.PointerEvent<HTMLButtonElement>) => {
     if (!controlsEnabled) return;

@@ -3,3 +3,4 @@
 - [Defensive control boundaries](defensive-control-boundaries.md) — fully CPU-controlled defense; no selected defenders or manual movement; retain original ACTION and three-second pressure checks.
 - [Browser touch verification](browser-touch-verification.md) — isolate saves, release the correct CDP contacts, and resume the host after visibility tests.
 - [Interactive field goals](interactive-field-goals.md) — Kick View owns aiming through verdict; projected posts, meter and real crossing must agree.
+- [Presentation lifecycle](presentation-lifecycle.md) — use stable animation owners across cloned snapshots; a stalled headless audio clock is not proof of a silent effect.

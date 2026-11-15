@@ -1,5 +1,6 @@
 import type { Athlete, LivePlay } from '../lib/football/types';
-import { movementBodyView, movementStep, type Pose } from './football-sprites';
+import { updateFootballAnimation } from './football-animation-clock';
+import type { Pose } from './football-sprites';
 
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
 
@@ -8,12 +9,15 @@ const clamp = (n: number) => Math.max(0, Math.min(1, n));
 export function footballAthletePose(live: LivePlay, athlete: Athlete,
   flags: { snapping: boolean; ball: boolean; engaged: boolean; facing: 1 | -1; direction: 1 | -1 }): Pose {
   const { snapping, ball, engaged, facing, direction } = flags;
-  const speed = Math.hypot(athlete.vx, athlete.vy);
-  const moving = !snapping && speed > 3;
+  const cadence = updateFootballAnimation(live, athlete.id, {
+    now: live.time, x: athlete.x, y: athlete.y, vx: athlete.vx, vy: athlete.vy, facing,
+  });
+  const moving = !snapping && cadence.moving;
+  const stableFacing = cadence.facing;
   const base: Pose = {
-    step: moving ? movementStep(athlete.vx, athlete.vy, live.time, athlete.id / 7) : 0,
-    ball, engaged, crouch: snapping, lean: engaged ? facing : 0,
-    view: moving ? movementBodyView(athlete.vx, athlete.vy, facing) : undefined,
+    step: moving ? cadence.step : 0,
+    ball, engaged, crouch: snapping, lean: engaged ? stableFacing : 0,
+    view: cadence.view,
   };
   if (snapping) return { ...base, action: 'stance' };
   if (athlete.role === 'QB') {
@@ -45,7 +49,7 @@ export function footballAthletePose(live: LivePlay, athlete: Athlete,
   const breakthroughAge = live.time - (live.lineRush?.lastCheck ?? Math.floor(live.time));
   if (winner && breakthroughAge >= 0 && breakthroughAge < .25)
     return { ...base, action: 'break', progress: breakthroughAge / .25 };
-  if (engaged) return { ...base, action: 'block', progress: (live.time * 3 + athlete.id / 7) % 1 };
+  if (engaged) return { ...base, action: 'block', progress: .5 };
   if (moving && athlete.role === 'DB' && athlete.side === 'defense' &&
       (live.mode === 'dropback' || live.mode === 'flight') && athlete.vx * direction > 3)
     return { ...base, action: 'backpedal' };

@@ -9,7 +9,8 @@ import { FOOTBALL_ART_STAGES as ART, drawDeluxeTurf, drawEndZoneLettering, drawF
 import { drawBroadcastStadium } from './football-stadium-art';
 import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
 import { drawBroadcastGoalPosts } from './football-broadcast-posts';
-import { turnSprite, movementStep, movementBodyView as motionView, type BodyView, type Pose } from './football-sprites';
+import { turnSprite, type BodyView, type Pose } from './football-sprites';
+import { updateFootballAnimation } from './football-animation-clock';
 import { drawPixelEnlarged } from './football-pixel-scale';
 import { refereeRenderY, REFEREE_WORLD_Y } from './football-referee-layout';
 import { drawFootballPlayer, drawFootballProne } from './football-player-art';
@@ -184,6 +185,7 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
   if (!m) return false;
   const v2 = m.version === 2;
   const act = m.active;
+  const runProgress = (((t % 4) + 4) % 4) / 4;
   const px = Math.round(x) - 4, py = Math.round(y) - 8;
   if (act && act.kind === 'dive') {
     const e = act.elapsed * .34 / kickDiveRules(a).duration, tilt = act.side * 1;
@@ -204,8 +206,7 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
     return true;
   }
   if (v2 && !act && m.hesitating) {
-    const st = a.returnTime * 5, sh = Math.round(Math.sin(a.returnTime * 9));
-    sprite(ctx, x, y + (Math.floor(st) % 2), kit, st, true, 1, sh);
+    sprite(ctx, x, y, kit, t, true, 1, 0, undefined, { action: 'stance' });
     return true;
   }
   if (act && act.kind === 'spin') {
@@ -218,22 +219,23 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
     const frame = Math.min(frames.length - 1, Math.floor(p * frames.length));
     const view = frames[frame]!;
     const d: 1 | -1 = frame >= 8 && frame < frames.length - 1 ? (kit.dir === 1 ? -1 : 1) : kit.dir;
-    const step = Math.floor(p * 14);
-    sprite(ctx, x, y, { ...kit, dir: d }, step, true, 0, 0, view);
+    sprite(ctx, x, y, { ...kit, dir: d }, t, true, 0, 0, view,
+      { action: 'run', progress: runProgress });
     return true;
   }
   if (act && act.kind === 'stutter') {
     const hold = act.elapsed < .1 ? 1 : 0, fake = hold ? -act.side : act.side;
     if (v2 && !hold) R(ctx, C.lace, px + 3 - fake * 5, py + 14, 2, 1);
-    const f = hold ? 1 : Math.floor((act.elapsed - .1) * 28);
     const cutView: BodyView = hold ? (fake > 0 ? 5 : 6) : (fake > 0 ? 6 : 5);
-    sprite(ctx, x, y + hold, kit, f, true, hold, fake * 3, cutView);
+    sprite(ctx, x, y + hold, kit, t, true, hold, fake * 3, cutView,
+      hold ? {} : { action: 'run', progress: runProgress });
     R(ctx, C.lace, px + (fake < 0 ? 9 : -3), py + 14, 2, 1);
     return true;
   }
   if (m.backward) {
-    const f = Math.floor(t) % 4, bx = Math.round(x) - 1;
-    sprite(ctx, bx, y, kit, (4 - f) % 4, true);
+    const bx = Math.round(x) - 1;
+    sprite(ctx, bx, y, kit, t, true, 0, 0, undefined,
+      { action: 'run', progress: (1 - runProgress) % 1 });
     return true;
   }
   return false;
@@ -270,6 +272,9 @@ function crowd(ctx: CanvasRenderingContext2D, left: number, right: number, cheer
 }
 
 function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refereeY = REFEREE_WORLD_Y) {
+  // Classic simulation and interpolation return new attempt objects each
+  // frame. The canvas, unlike that temporary snapshot, is a stable clock owner.
+  const animationOwner = ctx.canvas ?? a;
   const p = a.player, kick = a.phase === 'kickoff';
   const imp = a.phase === 'tackled' ? (cel > 0 ? clamp(cel / .25, 0, 1) : 1) : 1;
   const lunge = (dx: number) => a.phase === 'tackled' ? Math.sign(p.x - dx) * Math.round(ease(clamp(imp / .4, 0, 1)) * 2) : 0;
@@ -285,7 +290,14 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refer
     if (Math.abs(by - p.y) < 22 && Math.abs(bx - p.x) < 30) continue;
     actors.push({ x: bx, y: by, draw: () => sprite(ctx, bx, by, homeLine, 0) });
   }
-  const t = a.phase === 'returning' ? a.returnTime * 9 : a.time * 9;
+  // One monotonic render clock spans kickoff flight and the return, even when
+  // the engine's phase-local returnTime begins at zero.
+  const animationNow = kick ? a.time : Math.max(a.time, 1.4 + a.returnTime);
+  const carrierFacing: 1 | -1 = home.dir;
+  const carrierCadence = updateFootballAnimation(animationOwner, 'carrier', {
+    now: animationNow, x: p.x, y: p.y, vx: 0, vy: 0, facing: carrierFacing,
+  });
+  const t = carrierCadence.step;
   for (const d of a.defenders) {
     if (d.x < -20) continue;
     const defenderKit = positionKit(away, classicSkinPosition(d));
@@ -295,29 +307,45 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refer
     const stagedY = d.id === 10 ? 96 : 32 + d.id % 6 * 25;
     const x = stagedX + (d.x - stagedX) * coverage;
     const y = stagedY + (d.y - stagedY) * coverage;
+    const fallbackFacing: 1 | -1 = d.motion?.facing ?? (d.roamer?.vx && d.roamer.vx < -2 ? -1 : 1);
+    const cadence = updateFootballAnimation(animationOwner, d.id, {
+      now: animationNow,
+      x: d.motion ? d.x : x,
+      y: d.motion ? d.y : y,
+      vx: d.motion?.vx ?? d.speed,
+      vy: d.motion?.vy ?? 0,
+      facing: fallbackFacing,
+    });
     actors.push({ x, y, draw: () => {
       if (kick) {
-        sprite(ctx, x, y, defenderKit, a.time > .1 ? movementStep(d.speed, 0, a.time, d.id / 7) : 0);
+        sprite(ctx, x, y, defenderKit, cadence.step, false, 0, 0, cadence.view,
+          cadence.moving ? { action: 'run', progress: cadence.phase } : { action: 'stance' });
       }
       else if (kickDivePose(a, d, cel)) {
         diving(ctx, d.x, d.y, defenderKit, kickDivePose(a, d, cel)!);
       } else if (d.id === 10 && d.motion) {
         const m = d.motion;
         const speed = Math.hypot(m.vx, m.vy);
-        const shuffling = Math.abs(m.vy) > Math.abs(m.vx);
-        const lean = speed > 15 && !shuffling ? Math.sign(m.vx) : 0;
-        sprite(ctx, d.x + lean + (tackling ? lunge(d.x) : 0), d.y + (tackling ? 2 : 0), { ...defenderKit, dir: m.facing },
-          speed > 3 && a.phase === 'returning' ? m.stride : 0, false, shuffling ? 1 : 0, 0,
-          a.phase === 'returning' ? motionView(m.vx, m.vy, m.facing) : undefined);
+        const shuffling = cadence.shuffling;
+        const lean = speed > 15 && !shuffling ? cadence.facing : 0;
+        sprite(ctx, d.x + lean + (tackling ? lunge(d.x) : 0), d.y + (tackling ? 2 : 0),
+          { ...defenderKit, dir: cadence.facing }, cadence.step, false, shuffling ? 1 : 0, 0, cadence.view,
+          cadence.moving && a.phase === 'returning'
+            ? { action: 'run', progress: cadence.phase }
+            : { action: 'stance' });
       } else if (d.roamer) {
-        const facing = tackling ? (p.x >= d.x ? 1 : -1) : d.roamer.vx > 2 ? 1 : -1;
+        const facing: 1 | -1 = tackling ? (p.x >= d.x ? 1 : -1) : cadence.facing;
         sprite(ctx, d.x + (tackling ? lunge(d.x) : 0), d.y + (tackling ? 1 : 0), { ...defenderKit, dir: facing },
-          d.active && a.phase === 'returning' ? d.roamer.stride : 0);
+          cadence.step, false, 0, 0, cadence.view,
+          d.active && cadence.moving && a.phase === 'returning'
+            ? { action: 'run', progress: cadence.phase }
+            : { action: 'stance' });
       } else
       if (tackling) {
          sprite(ctx, d.x + lunge(d.x), d.y + 1, defenderKit, 0);
       }
-       else sprite(ctx, d.x, d.y, defenderKit, d.active ? movementStep(d.speed, 0, a.returnTime, d.id / 7) : 0);
+       else sprite(ctx, d.x, d.y, defenderKit, cadence.step, false, 0, 0, cadence.view,
+         d.active && cadence.moving ? { action: 'run', progress: cadence.phase } : { action: 'stance' });
     } });
   }
   const hasBall = !kick || a.time >= 1.4;
@@ -341,8 +369,15 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refer
       const hop = Math.floor(cel * 5) % 2 ? 2 : 0;
       sprite(ctx, p.x, p.y - hop, home, 0, true, 0, 0, undefined,
         { action: 'jump', progress: (cel % .5) / .5 });
-    } else if (!kick && hasBall && moveSprite(ctx, p.x, p.y, home, t, a)) { /* retro move pose drawn */ }
-    else sprite(ctx, p.x, p.y, home, kick ? (a.time > .25 && a.time < 1.4 ? t : 0) : p.x / 8, hasBall);
+     } else if (!kick && hasBall && moveSprite(ctx, p.x, p.y, { ...home, dir: carrierCadence.facing }, t, a)) {
+       /* integrated move pose drawn */
+     } else {
+       const running = !kick || a.time > .25 && a.time < 1.4;
+       sprite(ctx, p.x, p.y, { ...home, dir: carrierCadence.facing }, t, hasBall, 0, 0,
+         carrierCadence.view, running && carrierCadence.moving
+           ? { action: 'run', progress: carrierCadence.phase }
+           : { action: 'idle' });
+     }
   } });
   actors.sort((u, v) => u.y - v.y).forEach(o => {
     ctx.save();

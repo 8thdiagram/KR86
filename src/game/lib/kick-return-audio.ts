@@ -1,8 +1,12 @@
+import { playActivatedGameAudio, resumeGameAudio } from './game-audio-activation';
+import { playFootballKick } from './football/kick-audio';
 /** Original, locally synthesized arcade crowd cheer. No downloaded audio or external calls. */
 export function createKickCrowdAudio() {
   let context: AudioContext | undefined;
+  let generation = 0;
   const sources = new Set<AudioScheduledSourceNode>();
   const stop = () => {
+    generation++;
     for (const source of sources) { try { source.stop(); } catch { /* Already finished. */ } }
     sources.clear();
   };
@@ -10,8 +14,8 @@ export function createKickCrowdAudio() {
     const Constructor = window.AudioContext ||
       (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Constructor) throw new Error('This browser does not support game audio.');
-    context ??= new Constructor();
-    if (context.state === 'suspended') await context.resume();
+    if (!context || context.state === 'closed') context = new Constructor();
+    await resumeGameAudio(context);
   };
   const cheer = () => {
     if (!context || context.state !== 'running') return false;
@@ -73,5 +77,16 @@ export function createKickCrowdAudio() {
     tone.start(now); tone.stop(now + duration);
     return true;
   };
-  return { unlock, cheer, tackle, stop, close: () => { stop(); void context?.close(); context = undefined; } };
+  const activated = (play: () => boolean) => {
+    const token = generation;
+    return playActivatedGameAudio(context, () => token === generation ? play() : false);
+  };
+  return { unlock, cheer: () => activated(cheer), tackle: () => activated(tackle),
+    kick: () => activated(() => {
+      if (!context || context.state !== 'running') return false;
+      const tone = playFootballKick(context); sources.add(tone);
+      tone.addEventListener('ended', () => sources.delete(tone), { once: true });
+      return true;
+    }),
+    stop, close: () => { stop(); void context?.close(); context = undefined; } };
 }
