@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { inflateSync } from 'node:zlib';
 const read = (path: string) => fs.readFileSync(new URL(path, import.meta.url));
 
-test('intro is natively low resolution, H.264 video-only, with the original 138 frames and 5.75-second timing', () => {
+test('rebuilt intro is native pixel-resolution silent H.264 with 138 frames and 5.75-second timing', () => {
   const video = read('./assets/kick-return-intro.mp4');
   const entry = video.lastIndexOf(Buffer.from('avc1')), header = video.indexOf(Buffer.from('mvhd'));
   assert(entry > 0 && header > 0);
@@ -13,15 +13,20 @@ test('intro is natively low resolution, H.264 video-only, with the original 138 
   assert.equal(video.readUInt32BE(header + 20) / video.readUInt32BE(header + 16), 5.75);
   assert.equal(video.readUInt32BE(video.indexOf(Buffer.from('stsz')) + 12), 138);
   assert.equal(video.includes(Buffer.from('soun')), false, 'no embedded video soundtrack or hut');
-  const processor = read('../../scripts/pixelate-intro.mjs').toString();
-  assert.equal([...processor.matchAll(/#[0-9a-f]{6}/g)].length, 32);
-  assert.match(processor, /flags=neighbor/); assert.match(processor, /paletteuse=dither=none/);
+  const renderer = read('../../scripts/render-intro.mts').toString();
+  assert.match(renderer, /renderIntroFrame\(frame\)/);
+  assert.match(renderer, /rawvideo/);
+  const sprites = read('../../scripts/lib/intro-game-sprites.ts').toString();
+  assert.match(sprites, /kickFootballArt\.sprite/);
+  assert.match(sprites, /kickFootballArt\.prone/);
 });
 
 test('intro and its menu still retain aspect-fit nearest-pixel presentation', () => {
   const css = read('./retro-theme.css').toString();
   const film = css.match(/\.kr-film \{([^}]+)\}/)![1]!;
   assert.match(film, /width: 100%/); assert.match(film, /height: 100%/);
+  assert.match(film, /min-height: 0/, 'square media must not enlarge the landscape grid row');
+  assert.match(css, /\.kr-intro \{[^}]*grid-template-rows: minmax\(0, 1fr\)/);
   assert.match(film, /border: 0/); assert.match(film, /box-shadow: none/);
   assert.match(css, /\.kr-film-video \{[^}]*object-fit: contain;[^}]*image-rendering: pixelated/);
   assert.match(css, /\.kr-art \{[^}]*aspect-ratio: 1(?: \/ 1)?;/);
