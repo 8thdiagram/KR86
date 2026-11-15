@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BROADCAST, projectBroadcastPoint, broadcastVisibleRange, broadcastFieldContext, withBroadcastAnchor, withBroadcastWorld, broadcastViewportFrame } from '../../components/football-broadcast';
+import { BROADCAST, projectBroadcastPoint, projectBroadcastElevatedPoint, broadcastVisibleRange, broadcastFieldContext, withBroadcastAnchor, withBroadcastWorld, broadcastViewportFrame } from '../../components/football-broadcast';
+import { broadcastGoalPostGeometry, drawBroadcastGoalPosts } from '../../components/football-broadcast-posts';
+import { drawFieldFixtures } from '../../components/football-deluxe-art';
+import { FIELD_GOAL } from './field-goal-geometry';
 import { fieldViewportFrame } from '../kick-return-viewport';
 import { drawFootballBall } from '../../components/football-art';
 import { drawBroadcastStadium } from '../../components/football-stadium-art';
@@ -27,17 +30,67 @@ function canvas() {
   return { ctx, fills, images, translations };
 }
 
-test('broadcast camera keeps sidelines horizontal with modest twelve-percent far-side compression', () => {
+test('broadcast camera keeps the far sideline unchanged and widens the near sideline exactly eight percent', () => {
   const view = { centerX: 600 };
   for (const y of [0, 16, 18, 174, 176, 192]) {
     const a = projectBroadcastPoint(100, y, view), b = projectBroadcastPoint(1100, y, view);
     assert.equal(a.y, y); assert.equal(b.y, y);
-    assert(Math.abs((b.x - a.x) / 1000 - (y <= 18 ? .88 : 1)) < 1e-10);
+    assert(Math.abs((b.x - a.x) / 1000 - (y <= 18 ? .88 : 1.08)) < 1e-10);
   }
   const spacing = (y: number) => projectBroadcastPoint(600, y + 10, view).y - projectBroadcastPoint(600, y, view).y;
   assert(spacing(20) < spacing(150), 'far field has modestly compressed depth spacing');
-  assert(spacing(20) > 8.5 && spacing(150) < 11.5, 'angle remains near overhead, not dramatic');
+  assert(spacing(20) > 8 && spacing(150) < 12.5, 'angle remains near overhead, not dramatic');
   assert.equal(BROADCAST.bottom - BROADCAST.top, 156, 'playing surface height is preserved');
+  for (const centerX of [90, 600, 1110]) for (const x of [0, 300, 600, 1200]) {
+    const far = projectBroadcastPoint(x, BROADCAST.top, { centerX });
+    const near = projectBroadcastPoint(x, BROADCAST.bottom, { centerX });
+    assert.equal(far.x, centerX + (x - centerX) * .88, 'same far-sideline position as before');
+    assert(Math.abs(near.x - centerX - (x - centerX) * 1.08) < 1e-10);
+  }
+});
+
+test('both goalposts use the actual kick opening and lift above their projected field anchors', () => {
+  for (const centerX of [100, 600, 1100]) for (const side of [-1, 1] as const) {
+    const view = { centerX }, before = JSON.stringify(view);
+    const p = broadcastGoalPostGeometry(side, view);
+    assert.equal(p.planeX, side === 1 ? FIELD_GOAL.x : 1200 - FIELD_GOAL.x);
+    for (const [y, foot, top] of [
+      [FIELD_GOAL.center - FIELD_GOAL.half, p.crossbarStart, p.uprightStartTop],
+      [FIELD_GOAL.center + FIELD_GOAL.half, p.crossbarEnd, p.uprightEndTop],
+    ] as const) {
+      const ground = projectBroadcastPoint(p.planeX, y, view);
+      assert.deepEqual(foot, projectBroadcastElevatedPoint(p.planeX, y, FIELD_GOAL.crossbar, view));
+      assert.deepEqual(top, projectBroadcastElevatedPoint(p.planeX, y, FIELD_GOAL.top, view));
+      assert.equal(foot.x, ground.x); assert.equal(top.x, ground.x, 'uprights remain vertical');
+      assert(top.y < foot.y && foot.y < ground.y, 'posts rise above, never lie flat on the turf');
+    }
+    assert.deepEqual(p.gooseneckFoot, projectBroadcastPoint(p.planeX + side * 7, FIELD_GOAL.center, view));
+    const a = p.crossbarStart, b = p.crossbarEnd, c = p.postCenter;
+    assert(Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) < 1e-8,
+      'support joins the same straight raised crossbar at the exact camera projection');
+    assert.equal(JSON.stringify(view), before, 'goalpost geometry never changes the camera');
+  }
+  const left = broadcastGoalPostGeometry(-1, { centerX: 600 }), right = broadcastGoalPostGeometry(1, { centerX: 600 });
+  for (const key of ['crossbarStart', 'crossbarEnd', 'uprightStartTop', 'uprightEndTop', 'gooseneckFoot'] as const) {
+    assert(Math.abs(left[key].x + right[key].x - 1200) < 1e-10);
+    assert.equal(left[key].y, right[key].y);
+  }
+});
+
+test('raised goalposts render once, stay crisp at mobile scales, and replace the old flat post paint', () => {
+  const { ctx, fills } = canvas();
+  ctx.setTransform(3.7, 0, 0, 3.7, -213.13, 6.89);
+  const before = ctx.getTransform();
+  drawBroadcastGoalPosts(ctx, 400, 800, { centerX: 600 });
+  assert.equal(fills.length, 0, 'off-camera goalposts are culled');
+  drawBroadcastGoalPosts(ctx, 0, 1200, { centerX: 600 });
+  assert(fills.length > 100);
+  for (const r of fills) for (const n of [r.x, r.y, r.w, r.h]) assert(Math.abs(n - Math.round(n)) < 1e-8);
+  assert.deepEqual(ctx.getTransform(), before, 'no second camera transform or projection');
+  const ground = canvas();
+  drawFieldFixtures(ground.ctx, 0, 1200);
+  assert(ground.fills.every(p => ['#ffffff', '#ff8a2a', '#c75a12', '#ffc27a'].includes(p.color)),
+    'ground fixture layer contains only end lines and pylons, never a duplicate flat goalpost');
 });
 
 test('yard lines remain straight, ordered and geometrically aligned for either direction', () => {
@@ -85,7 +138,12 @@ test('plane paint is rasterized into sharp display pixels at fractional mobile c
 test('painted end-zone rotations and midfield images share the field projection without leaking transforms', () => {
   const { ctx, fills, images } = canvas(), ground = broadcastFieldContext(ctx, { centerX: 600 });
   ground.save(); ground.translate(50, 96); ground.rotate(-Math.PI / 2); ground.fillRect(-3, -3, 6, 6); ground.restore();
-  assert(fills.every(r => r.x > 40 && r.x < 90 && r.y > 85 && r.y < 100));
+  const corners = [47, 53].flatMap(x => [93, 99].map(y => projectBroadcastPoint(x, y, { centerX: 600 })));
+  assert(fills.length > 0);
+  assert(fills.every(r => r.x >= Math.floor(Math.min(...corners.map(p => p.x))) &&
+    r.x + r.w <= Math.ceil(Math.max(...corners.map(p => p.x))) &&
+    r.y >= Math.floor(Math.min(...corners.map(p => p.y))) &&
+    r.y + r.h <= Math.ceil(Math.max(...corners.map(p => p.y)))));
   assert.deepEqual(ctx.getTransform(), { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
   ctx.setTransform(2, 0, 0, 2, 0, 0);
   ground.drawImage({ naturalWidth: 100, naturalHeight: 100 } as HTMLImageElement, 570, 66, 60, 60);

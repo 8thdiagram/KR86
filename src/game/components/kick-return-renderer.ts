@@ -8,6 +8,7 @@ import { drawFootballBall, footballPixels, playerSkin, positionKit, classicSkinP
 import { FOOTBALL_ART_STAGES as ART, drawDeluxeTurf, drawEndZoneLettering, drawFieldFixtures, drawYardNumber, tone } from './football-deluxe-art';
 import { drawBroadcastStadium } from './football-stadium-art';
 import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
+import { drawBroadcastGoalPosts } from './football-broadcast-posts';
 import { heldBall, turnSprite, movementBodyView as motionView, type BodyView } from './football-sprites';
 import { drawPixelEnlarged } from './football-pixel-scale';
 
@@ -554,6 +555,7 @@ export function drawKickReturn(ctx: CanvasRenderingContext2D, attempt: KickAttem
     field(ground, range.left, range.right, attempt?.teams ?? matchup);
     fieldOverlay?.(ground);
     crowd(ground, range.left, range.right, attempt?.phase === 'touchdown', celebrationSeconds, attempt?.teams ?? matchup);
+    if (ART.geometry) drawBroadcastGoalPosts(ctx, range.left, range.right, projection);
     if (attempt) world(ctx, attempt, celebrationSeconds);
   });
   ctx.setTransform(1, 0, 0, 1, 0, 0);

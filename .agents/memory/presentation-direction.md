@@ -27,9 +27,9 @@ Limit exposed face pixels and make facemask bars visible in the helmet's base te
 
 **How to apply:** Derive cosmetic tone from roster role or special-teams duty at render time, not from animation frame or a changing uniform. Keep this separate from gameplay, physics, and saved player state.
 
-Normal gameplay should resemble the supplied 16-bit football reference: near-overhead, left-to-right, with modest broadcast depth, horizontal sidelines and far-side compression. The user asked to increase the angle slightly beyond the first subtle pass. Match the reference, not a rigid ten-degree preset. Never make it an isometric or dramatic low sideline camera.
+Normal gameplay should resemble the supplied 16-bit football reference: near-overhead, left-to-right, with modest broadcast depth, horizontal sidelines and far-side compression. The user approved the far sideline and asked to stretch only the near sideline further. Preserve that far-side view in future refinements unless explicitly asked to change it. Match the reference, not a rigid ten-degree preset. Never make it an isometric or dramatic low sideline camera.
 
-**Why:** The user rejected earlier steep perspectives and explicitly prioritized readable overhead play with modest television-style depth.
+**Why:** The user rejected earlier steep perspectives and explicitly prioritized readable overhead play with modest television-style depth, then said “The far sideline looks good.”
 
 **How to apply:** Keep projection render-only and consistent for field paint, artwork, athlete anchors, balls and shadows. Keep upright sprite height/proportions, actual team colors, HUD, controls, camera-follow behavior and all football coordinates intact; never skew the entire screen. Preserve the separate behind-the-kicker Kick View. Use disciplined textured greens, readable bitmap numbers, restrained contact shadows and team-colored pixel people within available stadium space, without shrinking the field merely for decoration.
 

@@ -2,7 +2,7 @@
  * A homography keeps yard lines straight and both sidelines horizontal. */
 import { fieldViewportFrame, type KickViewport } from '../lib/kick-return-viewport';
 import { KR } from '../lib/kick-return-engine';
-export const BROADCAST = { farScale: .88, top: 18, bottom: 174 } as const;
+export const BROADCAST = { farScale: .88, nearScale: 1.08, top: 18, bottom: 174 } as const;
 export type BroadcastView = { centerX: number };
 const active = new WeakMap<CanvasRenderingContext2D, BroadcastView>();
 
@@ -18,13 +18,22 @@ export function broadcastViewportFrame(view?: KickViewport) {
 
 export function projectBroadcastPoint(x: number, y: number, view: BroadcastView) {
   const t = Math.max(0, Math.min(1, (y - BROADCAST.top) / (BROADCAST.bottom - BROADCAST.top)));
-  const scale = BROADCAST.farScale / (1 - (1 - BROADCAST.farScale) * t);
+  const scale = BROADCAST.farScale / (1 - (1 - BROADCAST.farScale / BROADCAST.nearScale) * t);
   return {
     x: view.centerX + (x - view.centerX) * scale,
     // Keep the existing crowd/referee aprons and sideline fitting unchanged.
-    y: y < BROADCAST.top || y > BROADCAST.bottom ? y
-      : BROADCAST.top + (BROADCAST.bottom - BROADCAST.top) * t * scale,
+    y: y <= BROADCAST.top || y >= BROADCAST.bottom ? y
+      : BROADCAST.top + (BROADCAST.bottom - BROADCAST.top) * t * scale / BROADCAST.nearScale,
   };
+}
+
+/** World-fixed raised fixtures: lift after projecting the ground anchor, not by
+ * feeding an elevated screen Y back through the field plane. This keeps posts
+ * vertical and their crossbar parallel to the projected end line at its height. */
+export function projectBroadcastElevatedPoint(x: number, y: number, z: number, view: BroadcastView) {
+  const point = projectBroadcastPoint(x, y, view);
+  const scale = projectBroadcastPoint(view.centerX + 1, y, view).x - view.centerX;
+  return { x: point.x, y: point.y - z * scale };
 }
 
 /** Extra far-side visibility is presentation culling only, never a camera target. */

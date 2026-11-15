@@ -17,8 +17,6 @@ export const FIELD_ART = {
   rearLine: 3,
   pylonXs: [0, KR.receivingGoal, KR.goal, KR.worldWidth] as const,
   pylonYs: [18, 174] as const,
-  postCrossTop: 83,
-  postCrossBottom: 109,
 } as const;
 
 const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number, w: number, h: number) => {
@@ -215,24 +213,9 @@ export function drawYardNumber(ctx: CanvasRenderingContext2D, value: string | nu
 }
 
 /* ---------- Stage 1: permanent fixtures (rear lines, posts, pylons) ---------- */
-const LINE = '#ffffff', GOLD = '#f4d23c', GOLD_D = '#9c7d12', GOLD_L = '#fff0a0';
+const LINE = '#ffffff';
 const OR = '#ff8a2a', OR_D = '#c75a12', OR_L = '#ffc27a';
 
-/** Flat top-down posts: the original gold crossbar, with small hollow tube ends.
- * No projected uprights, perspective arms, or new camera geometry. */
-function goalPost(ctx: CanvasRenderingContext2D, side: 1 | -1) {
-  const back = side === 1 ? FIELD_ART.backLeft : FIELD_ART.backRight;
-  const X = (u: number, w: number) => side === 1 ? back + u : back - u - w;
-  const top = FIELD_ART.postCrossTop, bot = FIELD_ART.postCrossBottom;
-  const stem = FIELD_ART.rearLine + 1;
-  R(ctx, GOLD, X(stem, 2), top, 2, bot - top + 1);
-  for (const y of [top, bot]) {
-    R(ctx, GOLD, X(stem, 2), y - 2, 2, 4);
-    R(ctx, GOLD, X(stem - 1, 4), y - 1, 4, 2);
-    R(ctx, GOLD_D, X(stem, 2), y - 1, 2, 2);
-    R(ctx, GOLD_L, X(stem, 2), y - 2, 2, 1);
-  }
-}
 function pylon(ctx: CanvasRenderingContext2D, x: number, y: number) {
   const px = x >= FIELD_ART.backRight ? x - 3 : x === FIELD_ART.backLeft ? x : x - 1;
   const py = y <= FIELD_ART.turfTop ? y - 3 : y - 1;
@@ -242,8 +225,9 @@ function pylon(ctx: CanvasRenderingContext2D, x: number, y: number) {
 }
 export function drawFieldFixtures(ctx: CanvasRenderingContext2D, x0: number, x1: number) {
   const top = FIELD_ART.turfTop - 2, h = FIELD_ART.turfBottom - FIELD_ART.turfTop + 4, L = FIELD_ART.rearLine;
-  // Paint the boundary over the rear support so it stays continuous, not notched.
-  if (x0 <= FIELD_ART.backLeft + 30) { goalPost(ctx, 1); R(ctx, LINE, FIELD_ART.backLeft, top, L, h); }
-  if (x1 >= FIELD_ART.backRight - 30) { goalPost(ctx, -1); R(ctx, LINE, FIELD_ART.backRight - L, top, L, h); }
+  // Only grounded fixtures use the field-plane adapter. Raised goalposts are
+  // drawn separately with the broadcast camera's elevation projection.
+  if (x0 <= FIELD_ART.backLeft + 30) R(ctx, LINE, FIELD_ART.backLeft, top, L, h);
+  if (x1 >= FIELD_ART.backRight - 30) R(ctx, LINE, FIELD_ART.backRight - L, top, L, h);
   for (const x of FIELD_ART.pylonXs) if (x >= x0 - 6 && x <= x1 + 6) for (const y of FIELD_ART.pylonYs) pylon(ctx, x, y);
 }

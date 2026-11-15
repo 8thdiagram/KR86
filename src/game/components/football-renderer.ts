@@ -18,6 +18,7 @@ import { drawRegularSeasonMidfield } from '../../platform/midfield-logo';
 import { PLAYER_TARGET_PIXELS, PLAYER_TARGET_WHITE, PLAYER_TARGET_YELLOW } from '../lib/football/player-target';
 import { drawFieldGoalFlight } from './football-field-goal';
 import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
+import { drawBroadcastGoalPosts } from './football-broadcast-posts';
 
 /** Presentation only. Reads the engine state; never mutates it and never samples randomness. */
 const { field, moveSprite, prone, referee, football, crowd } = kickFootballArt;
@@ -161,6 +162,7 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   const ground = broadcastFieldContext(ctx, projection);
   field(ground, range.left, range.right, leftSide === 'home' ? g.teams : { player: g.teams.opponent, opponent: g.teams.player });
   drawRegularSeasonMidfield(ground, g);
+  if (FOOTBALL_ART_STAGES.geometry) drawBroadcastGoalPosts(ctx, range.left, range.right, projection);
   if (g.franchise?.playoff) {
     // Painted midfield emblem, behind players and ball; it never affects play.
     ground.save(); ground.globalAlpha = .68;
