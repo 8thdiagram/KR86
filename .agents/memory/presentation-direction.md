@@ -15,12 +15,6 @@ Keep players lean and athletic, with longer articulated legs and finer, smoother
 
 **How to apply:** Apply the athletic anatomy across standing, turning, spinning, diving, falling and kicking artwork. Lengthen the visual legs while preserving ground anchors, collision geometry, speeds and action timing. Use finer authored shapes, not a scaled-up low-detail bitmap.
 
-Keep the overall sprites a little smaller while retaining the athletic proportions. Give helmets a defined shell and a visibly protruding, open facemask, not just a face slit.
-
-**Why:** The user refined the larger athletic sprites with “Make the sprites a little smaller, define their helmets better ... Add face masks.”
-
-**How to apply:** Reduce visual scale modestly around unchanged foot anchors, not collision bodies. Preserve secondary-color helmets and matching cage rails, showing turf through the outer cage opening so masks remain readable on phones. Apply to Classic, Full Game and special teams.
-
 Prioritize clear individual sprites: white pants, solid primary-team-color jerseys and sleeves, secondary-team-color helmets, and readable helmet-colored facemasks. No secondary stripes or blocks on the jerseys. Use dark definition to separate limbs and external silhouettes, not to create black face panels or cages. Do not add decorative lines around downed players.
 
 **Why:** The user specified “make the jerseys one color which is the primary team color separated from the helmet, which is the secondary team color.” Earlier they found detailed sprites and lines around grounded players messy.
@@ -61,7 +55,7 @@ The home/menu artwork should be a screenshot from the existing intro showing KR 
 
 **Why:** The user explicitly changed the home-screen direction to an intro screenshot that says KR ’86.
 
-**How to apply:** Keep the selected menu frame uncropped and readable in portrait and landscape, with normal scrolling to mode/device options. The newer 32-bit opening request changes the opening only, not this menu artwork or the app icon.
+**How to apply:** Use the actual intro frame, not a recreation or new illustration. Keep it uncropped and readable in portrait and landscape, with normal scrolling to the mode/device options. Do not replace the separately supplied intro video or app icon.
 
 The title mode choices and device update/backup/install options belong to one continuous scrolling screen. Do not use an expandable tools section, a SELECT / ENTER CONFIRM / BATTERY BACKUP READY footer, or a viewport-height gap between the menu and device options.
 
@@ -69,17 +63,17 @@ The title mode choices and device update/backup/install options belong to one co
 
 **How to apply:** Keep shared scrolling limited to the title menu, not gameplay. Preserve update actions, backup controls and destructive-import confirmation.
 
-The opening/title/menu presentation has no original video audio or “hut.” Preserve intro sound effects, but start music only when the menu appears. The menu theme should be an original, celebratory Super Cup football cue with richer 32-bit-era console sound: chip melody, low synth bass, brass-style accents and supporting drums. Give it developed phrases and a resolved ending. Play once, not a continuous loop.
+The supplied intro video is for visuals only: no original sound and no “hut” anywhere in the opening/title/menu presentation. Preserve other intro effects. As the main title/menu appears, play an upbeat, celebratory, slightly longer NES football theme with better pacing, prominent triangle bass, pulse melody/harmony, restrained percussion and a resolved ending. Then remain silent except for ordinary selection effects; never loop it.
 
-**Why:** The user superseded the eight-bit-only soundtrack with “Create a 32 bit NES era football game music super cup theme to play on the menu screen.” They previously requested sound-on automatic startup without a separate prompt and removed looping/title cadence.
+**Why:** After removing the title cadence and continuous loop, the user requested a more upbeat, celebratory song with better pacing and a little more length, retaining eight-bit technology. They also requested sound-on automatic startup without a separate prompt.
 
 **How to apply:** Keep source video audio out of playback. Prevent ready/visibility events from replaying a completed theme or stacking music. Start automatically with sound enabled; never display a “Start with sound” option or block the intro waiting for audio. Where browsers require a gesture, use the first ordinary tap/key to unlock sound without a separate prompt or restarting the intro. Respect browser restrictions and preserve gameplay cadence. Stop title music for replay, gameplay or a hidden page. Do not display skip-intro or mute-sound options.
 
-The complete opening sequence should last 4–5 seconds and use richer 32-bit-era console graphics. Keep a football runner, stadium and KR ’86 / Super Cup identity, with dimensional low-poly shading and clear composition. Preserve the menu's separately chosen intro screenshot and the app icon.
+The opening video should use visibly low-resolution, sharp pixels and a limited NES-inspired palette, with no teal frame or decorative padding. Preserve the original composition and timing rather than stretching or aggressively cropping it.
 
-**Why:** The user explicitly replaced the older NES-only, original-video timing direction with “The opening sequence make it only 4 to 5 seconds and use 32 bit era graphics to render the opening scene.”
+**Why:** The user wanted the supplied opening to match the rest of the late-NES presentation rather than look high-resolution and smooth.
 
-**How to apply:** Interpret the mixed “32 bit NES era” phrasing as richer mid-1990s retro-console presentation, not a literal NES hardware limit. Count the entire opening, including black/logo stages, within the time budget; do not let video loading extend it. Aspect-fit the artwork in both orientations. Keep reduced-motion presentation static without extending the duration.
+**How to apply:** Use nearest-neighbor enlargement of genuinely lower-resolution artwork, not a blur filter. Preserve important title/player artwork when fitting different screen shapes.
 
 Preserve the supplied ’86 field lettering design. Treat it as slightly faded, smaller, worn pixel paint integrated into the turf, not a clean floating decal.
 

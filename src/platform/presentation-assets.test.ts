@@ -18,47 +18,15 @@ test('intro is natively low resolution, H.264 video-only, with the original 138 
   assert.match(processor, /flags=neighbor/); assert.match(processor, /paletteuse=dither=none/);
 });
 
-test('runtime intro uses the square local low-poly scene while the original menu artwork remains unchanged', () => {
+test('intro and its menu still retain aspect-fit nearest-pixel presentation', () => {
   const css = read('./retro-theme.css').toString();
-  const title = read('./TitleExperience.tsx').toString();
-  const canvas = read('./OpeningSceneCanvas.tsx').toString();
-  const renderer = read('./opening-scene.ts').toString();
-  assert.match(css, /\.kr-opening-canvas \{[^}]*aspect-ratio: 1 \/ 1;/);
-  assert.match(css, /width: min\(100vw, 100dvh\);[\s\S]*height: min\(100vw, 100dvh\)/);
+  const film = css.match(/\.kr-film \{([^}]+)\}/)![1]!;
+  assert.match(film, /width: 100%/); assert.match(film, /height: 100%/);
+  assert.match(film, /border: 0/); assert.match(film, /box-shadow: none/);
+  assert.match(css, /\.kr-film-video \{[^}]*object-fit: contain;[^}]*image-rendering: pixelated/);
   assert.match(css, /\.kr-art \{[^}]*aspect-ratio: 1(?: \/ 1)?;/);
-  assert.match(title, /src=\{menuIntro\}/);
-  assert.match(canvas, /super-cup-opening\.webp/);
-  assert.match(canvas, /canvas\.width = 640;[\s\S]*canvas\.height = 640/);
-  assert.match(canvas, /renderOpeningScene\(context, canvas\.width, canvas\.height, frameTime/);
-  assert.match(canvas, /cancelAnimationFrame\(frameId\)/);
-  assert.match(renderer, /ctx\.drawImage\(artwork,/);
-  assert.match(renderer, /drawChromeType\(ctx, width, height \* \.145, frame\.titleReveal\)/);
-  assert.match(renderer, /S U P E R\s+C U P/);
-  assert.doesNotMatch(renderer, /function drawRunner|function drawStadium|function rect\(/);
-  assert.doesNotMatch(title, /<video|kick-return-intro\.mp4|TitleWordmark/);
-});
-
-test('opening timeline fits one short automatic sequence and renders distinct authored console keyframes', async () => {
-  const timeline = await import('./opening-scene');
-  assert.equal(timeline.OPENING_DURATION_MS, 4500);
-  assert.equal(timeline.getOpeningStage(0), 'black');
-  assert.equal(timeline.getOpeningStage(timeline.OPENING_MARK_START_MS), 'mark');
-  assert.equal(timeline.getOpeningStage(timeline.OPENING_SCENE_START_MS), 'scene');
-  assert.equal(timeline.getOpeningStage(timeline.OPENING_DURATION_MS), 'scene');
-  const mark = timeline.getOpeningFrame(timeline.OPENING_MARK_START_MS);
-  const early = timeline.getOpeningFrame(timeline.OPENING_SCENE_START_MS + 250);
-  const late = timeline.getOpeningFrame(timeline.OPENING_DURATION_MS - 100);
-  assert.notEqual(mark.stage, early.stage);
-  assert.notEqual(early.cameraScale, late.cameraScale);
-  assert(early.titleReveal < late.titleReveal);
-  const snapshot = JSON.stringify(early);
-  timeline.getOpeningFrame(timeline.OPENING_DURATION_MS - 100);
-  assert.equal(JSON.stringify(early), snapshot, 'sampling later frames does not mutate an earlier presentation frame');
-  const source = read('./opening-scene.ts').toString();
-  const title = read('./TitleExperience.tsx').toString();
-  assert.match(source, /function renderOpeningScene/);
-  assert.doesNotMatch(source, /onChoose|setState|gameplay|franchise/);
-  assert.match(title, /setTimeout\(\(\) => \{[\s\S]*finishIntro\(\);[\s\S]*\}, OPENING_DURATION_MS\)/);
+  assert.match(read('./TitleExperience.tsx').toString(), /src=\{menuIntro\}/);
+  assert.doesNotMatch(read('./TitleExperience.tsx').toString(), /<TitleWordmark/);
 });
 
 // Small, test-only decoder for the non-interlaced RGBA PNG artwork.

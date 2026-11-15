@@ -147,14 +147,10 @@ test('every team uses solid primary jerseys and secondary helmets with long whit
       const { ctx, paints, pixels } = canvas();
       if (mode === 'classic') kickFootballArt.sprite(ctx, 100, 100, kit, 0);
       else slim(ctx, 100, 100, kit);
-      assert.equal(Math.min(...paints.map(p => p.y)), 87, `${team.name} ${mode} retains the compact upright silhouette`);
+      assert.equal(Math.min(...paints.map(p => p.y)), 85, `${team.name} ${mode} has the longer athletic silhouette`);
       assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `${team.name} ${mode} keeps the foot/shadow anchor`);
-       const shell = paints.filter(p => p.c === team.trim && p.y < 95);
-       const shellX = shell.flatMap(p => [p.x, p.x + p.w]);
-       const shellY = shell.flatMap(p => [p.y, p.y + p.h]);
-       assert(shell.length >= 4 && Math.max(...shellX) - Math.min(...shellX) >= 4 &&
-         Math.max(...shellY) - Math.min(...shellY) >= 3,
-       `${team.name} secondary-color shell remains a coherent stepped mass with visible rails`);
+      assert(paints.some(p => p.c === team.trim && p.y < 91 &&
+        p.w >= 4 && p.h >= 3), `${team.name} separate secondary-color helmet shell`);
       assert(!paints.some(p => p.c === team.trim && p.y >= 95), `${team.name} has no secondary-color jersey panels`);
       assert(paints.some(p => p.c === team.body && p.h >= (mode === 'classic' ? 5 : 4)), `${team.name} primary jersey`);
       assert([UNIFORM.pants, UNIFORM.pantsShade].includes(pixels.get('98,103') as typeof UNIFORM.pants),
@@ -174,15 +170,12 @@ test('nine athletic turn views keep distinct secondary shells, fine contours and
     assert.equal(JSON.stringify(kit), before, `view ${view}/${dir} leaves the uniform untouched`);
     assert.equal(Math.min(...paints.map(p => p.y)), 87.5, `view ${view}/${dir} retains the new upper-body anchor`);
     assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `view ${view}/${dir} keeps the ground anchor`);
-    // The cap is intentionally assembled from stepped rows, not one tall fill.
-    // Exclude the face cage here so these bounds measure the profile-specific shell.
-    const shell = paints.filter(p => p.c === kit.trim && p.y >= 88 && p.y < 89.5);
-    assert(shell.length >= 2 && new Set(shell.map(p => p.y)).size >= 2,
-      `view ${view} helmet crown is a multi-row silhouette`);
+    const shell = paints.filter(p => p.c === kit.trim && p.y >= 88 && p.y + p.h <= 92 && p.h >= 3);
+    assert(shell.length > 0);
     assert.equal(Math.max(...shell.map(p => p.x + p.w)) - Math.min(...shell.map(p => p.x)), shellWidths[view],
-      `view ${view} uses its profile-specific stepped shell width`);
-    assert.equal(Math.min(...shell.map(p => p.y)), 88);
-    assert.equal(Math.max(...shell.map(p => p.y + p.h)), 89.5);
+      `view ${view} uses the profile-specific shell width with finer corners`);
+    assert.equal(Math.min(...shell.map(p => p.y)), 88.5);
+    assert.equal(Math.max(...shell.map(p => p.y + p.h)), 91.5);
     for (const p of paints) for (const n of [p.x, p.y, p.w, p.h])
       assert(Number.isInteger(n * 2), `view ${view} draws integral pixels at doubled backing resolution`);
     const repeat = canvas();
@@ -190,7 +183,7 @@ test('nine athletic turn views keep distinct secondary shells, fine contours and
     assert.deepEqual(repeat.paints, paints, `view ${view}/${dir} is deterministic`);
     const enlarged = canvas();
     slim(enlarged.ctx, 100, 100, kit, { step: .25, ball: true, view: bodyView });
-    assert.equal(Math.min(...enlarged.paints.map(p => p.y)), 87, `view ${view}/${dir} keeps the compact silhouette`);
+    assert.equal(Math.min(...enlarged.paints.map(p => p.y)), 85, `view ${view}/${dir} keeps the longer silhouette`);
     assert.equal(Math.max(...enlarged.paints.map(p => p.y + p.h)), 107, `view ${view}/${dir} keeps scaled foot anchor`);
   }
 });
@@ -203,7 +196,7 @@ test('running gait keyframes add distinct intermediate pixel poses without shift
       if (mode === 'classic') kickFootballArt.sprite(ctx, 100, 100, kit, step, true);
       else slim(ctx, 100, 100, kit, { step, ball: true });
       frames.add(JSON.stringify(paints));
-      assert.equal(Math.min(...paints.map(p => p.y)), 87, `${mode} step ${step} keeps the compact silhouette`);
+      assert.equal(Math.min(...paints.map(p => p.y)), 85, `${mode} step ${step} keeps the longer silhouette`);
       assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `${mode} step ${step} keeps the foot anchor`);
       for (const p of paints) for (const n of [p.x, p.y, p.w, p.h]) assert(Number.isInteger(n * 2));
     }
@@ -221,9 +214,8 @@ test('all turn views keep uninterrupted primary jerseys above visibly longer whi
         assert.equal(pixels.get(`${x},${y}`), team.body, `solid chest without trim or patches: ${view}/${classic}/${dir}`);
       const trousers = [...pixels].filter(([, color]) => color === UNIFORM.pants || color === UNIFORM.pantsShade)
         .map(([key]) => Number(key.split(',')[1]));
-      const trouserRows = new Set(trousers);
-      assert(Math.max(...trousers) - Math.min(...trousers) >= 4 && trouserRows.size >= 5,
-        `long articulated white trousers retain at least five visible rows in view ${view}/${classic}/${dir}`);
+      assert(Math.max(...trousers) - Math.min(...trousers) >= 5,
+        `long articulated white trousers remain visible in view ${view}/${classic}/${dir}`);
     }
   }
 });

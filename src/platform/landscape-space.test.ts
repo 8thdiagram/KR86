@@ -7,7 +7,7 @@ test('landscape expansion reclaims cabinet gutters, not device safe areas or por
   const expansion = css.slice(css.indexOf('/* Landscape field expansion:'));
   assert.match(expansion, /@container gm \(min-aspect-ratio:3\/2\)/);
   assert.match(expansion, /--fb-rail: clamp\(72px, 9cqw, 96px\)/);
-  assert.match(expansion, /--kr-rail: clamp\(76px, 9cqw, 92px\)/);
+  assert.match(expansion, /--kr-rail: clamp\(58px, 7\.25cqw, 70px\)/);
   assert.match(expansion, /padding: 0 1px 1px/);
   assert.doesNotMatch(expansion, /\.gm-content|safe-area-inset|transform:|zoom:/);
 });

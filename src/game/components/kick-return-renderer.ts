@@ -169,16 +169,16 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     hr(kit.body, -1, -3, ball ? 5 : 9, 2);
     hr(kit.body, 0, 2, ball ? 5 : 9, 2);
     hr(playerSkin(kit), ball ? 4 : 10, 2, 2, 1);
-    // Stepped shell overlaps the shoulder, with a distinct crown and brow.
-    hr(C.ink, 3, -5, 4.5, .5);
+    // Crown overlaps the shoulder, avoiding a detached helmet at either facing.
+    // Shell expands a half-unit toward the crown; its lower edge remains at
+    // the same neck/shoulder overlap so the prone silhouette stays grounded.
+    hr(shell, 2.5, -4.5, 5.5, 4.5);
     hr(shell, 3.5, -4.5, 3.5, .5);
-    hr(shell, 2.5, -4, 5.5, 3.5);
+    hr(C.ink, 3, -5, 4.5, .5); // restrained exterior crown contour only
     hr(playerSkin(kit), 7.5, -2, 1, 1);
-    // Tiny skin opening remains open between distinct helmet-colored cage
-    // rails; there is no dark inset or face panel.
-    hr(shell, 6.5, -2.5, 3, .5);
-    hr(shell, 6.5, -1.5, .5, 2.5);
-    hr(shell, 9, -1.5, .5, 2.5);
+    // Same-color cage around the tiny visible face slot; never a dark recess.
+    hr(shell, 6.5, -1, .5, 2);
+    hr(shell, 9, -1, .5, 2);
     hr(shell, 6.5, 0, 3, .5);
     hr(shell, 6.5, 1, 3, .5);
     if (ball) {
@@ -195,14 +195,12 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     vr(kit.body, -3, -3, 7, 7);
     vr(C.ink, -2.5, -3.5, 6, .5);
     vr(kit.body, -6, -2, 2, 5); vr(kit.body, 4, -2, 2, 4); vr(playerSkin(kit), 5, 2, 1, 1);
-    vr(C.ink, -2, 2.5, 6, .5);
     vr(shell, -3.5, 3, 9, 5.5);
+    vr(C.ink, -2, 2.5, 6, .5);
     const faceX = kit.dir > 0 ? 1.5 : -1;
     vr(playerSkin(kit), faceX, 5, 1.5, 1);
-    vr(shell, faceX - .5, 4, 3, .5);
     vr(shell, faceX - .5, 4.5, .5, 2);
     vr(shell, faceX + 1.5, 4.5, .5, 2);
-    vr(shell, faceX - .5, 5.5, 3, .5);
     vr(shell, faceX - .5, 6.5, 3, .5);
     if (ball) {
       heldBall(ctx, kit.dir > 0 ? cx + 1 : cx - 7, cy + down);

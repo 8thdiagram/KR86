@@ -29,12 +29,7 @@ test('uniforms use bright white pants and clean secondary helmet shells in every
       const a = canvas();
       slim(a.ctx, 100, 100, kit, { view, step: 0 });
       const shell = a.paints.filter(p => p.y < 96 && p.color === helmetColor(kit));
-      const shellX = shell.flatMap(p => [p.x, p.x + p.w]);
-      const shellY = shell.flatMap(p => [p.y, p.y + p.h]);
-      assert(shell.length >= 4 && new Set(shell.map(p => p.y)).size >= 3 &&
-        Math.max(...shellX) - Math.min(...shellX) >= 4 &&
-        Math.max(...shellY) - Math.min(...shellY) >= 3,
-      `${team.name}/${dir}/${view}: stepped rows form a coherent secondary shell and cage`);
+      assert(shell.some(p => p.w >= 4 && p.h >= 3), `${team.name}/${dir}/${view}: clear secondary shell`);
       assert(a.paints.some(p => p.color === UNIFORM.pants), 'white pants remain visible');
     }
   }
