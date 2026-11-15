@@ -12,25 +12,24 @@ export const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number
 
 function helmet(ctx: CanvasRenderingContext2D, kit: Kit, hx: number, hy: number, d: 1 | -1) {
   hx += 1; hy += 1;
-  // The team's primary color is the shell; secondary color stays an accent.
+  // Stepped shell with an open, skin-colored sightline and matching-color cage.
   if (kit.edge) R(ctx, kit.edge, hx + 1, hy - 1, 5, 1);
-  R(ctx, INK, hx + 2, hy, 3, .5);
-  R(ctx, kit.body, hx + 1, hy, 5, 4.5);
+  R(ctx, kit.body, hx + 2, hy, 3, .5);
+  R(ctx, kit.body, hx + 1, hy + .5, 5, 4);
   R(ctx, kit.body, hx + 1.5, hy + 4.5, 4, .5);
   R(ctx, kit.trim, hx + 2, hy, 3, 1);
   R(ctx, tone(kit.body, 1.28), hx + 2, hy + 1, 2.5, .5);
   R(ctx, tone(kit.body, .68), hx + 4.5, hy + 3, 1, 1);
   R(ctx, kit.trim, d > 0 ? hx + 1 : hx + 5, hy + 2, 1, 2);
   const faceX = d > 0 ? hx + 3 : hx + 2;
-  R(ctx, INK, faceX - 1, hy + 1, 3, 2); // recessed mask opening
-  R(ctx, playerSkin(kit), faceX, hy + 1, 1, 1); // one-pixel face slot
-  R(ctx, kit.body, faceX - 1, hy + 2, 3, 1); // shell-color facemask bar
-  R(ctx, tone(kit.body, .62), faceX - 1, hy + 1.5, 3, .5);
-  R(ctx, INK, faceX - 1, hy + 3, .5, 1);
-  R(ctx, INK, faceX + 1.5, hy + 3, .5, 1);
-  R(ctx, INK, d > 0 ? hx + 5 : hx + 1, hy + 1, 1, 3);
+  R(ctx, playerSkin(kit), faceX, hy + 1, 1.5, 1);
+  // Rails sit over the opening; no dark inset or contrasting face outline.
+  R(ctx, kit.body, faceX - 1, hy + 1, .5, 2.5);
+  R(ctx, kit.body, faceX + 1.5, hy + 1, .5, 2.5);
+  R(ctx, kit.body, faceX - 1, hy + 2, 3, .5);
+  R(ctx, kit.body, faceX - 1, hy + 3.5, 3, .5);
   if (ART.players) {
-    R(ctx, tone(kit.body, 1.16), hx + 1, hy + 1, 1, 1);
+    R(ctx, tone(kit.body, 1.16), hx + 5, hy + 1, 1, 1);
     R(ctx, tone(kit.body, .78), hx + 5, hy + 4, 1, 1);
   }
 }
@@ -104,6 +103,8 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
       R(ctx, kit.trim, left + 1, top + 8, 1, 1); // compact secondary chest mark
     }
   }
+  // A higher white hip line leaves the trouser legs readable beneath the pads.
+  R(ctx, UNIFORM.pants, cx - (view === 2 ? 1 : 1.5), top + 9.5, view === 2 ? 2 : 3, 1);
   // Bulky shoulder pads retain their silhouette as the chest turns away.
   if (view === 2) {
     R(ctx, INK, cx - 2, top + 5, 4, 2);
@@ -129,15 +130,20 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
     R(ctx, shade, farX, top + 7, 2, 2); R(ctx, kit.body, farX, top + 7, 1, 2);
     R(ctx, tone(kit.body, 1.2), farX + .5, top + 7, .5, 1);
     R(ctx, playerSkin(kit), farX, top + 9, 1, 1);
-    R(ctx, INK, nearX, top + 7, 2, 3); R(ctx, kit.body, nearX, top + 7, 1, 2);
+    R(ctx, INK, nearX, top + 7, 2, 2); R(ctx, kit.body, nearX, top + 7, 1, 2);
     R(ctx, tone(kit.body, .72), nearX + 1, top + 8, 1, 1);
+    R(ctx, INK, nearX + (d > 0 ? 1 : -1), top + 8, 2, 2);
+    R(ctx, kit.body, nearX + (d > 0 ? 1 : -1), top + 8, 1, 1);
     if (!ball) R(ctx, playerSkin(kit), nearX, top + 9, 1, 1);
   } else {
     const leftY = top + 7 + f, rightY = top + 7 - f;
-    R(ctx, INK, cx - 4, leftY, 2, 3); R(ctx, shade, cx - 4, leftY, 1, 2);
-    R(ctx, kit.body, cx - 3, leftY, 1, 2);
-    R(ctx, INK, cx + 2, rightY, 2, 3); R(ctx, kit.body, cx + 2, rightY, 1, 2);
-    R(ctx, shade, cx + 3, rightY, 1, 2);
+    // Sleeves angle away from the pads and articulate back at the elbow.
+    R(ctx, INK, cx - 4, leftY, 2, 2); R(ctx, shade, cx - 4, leftY, 1, 1);
+    R(ctx, kit.body, cx - 3, leftY, 1, 1);
+    R(ctx, INK, cx - 4, leftY + 1, 1, 2); R(ctx, kit.body, cx - 4, leftY + 1, 1, 1);
+    R(ctx, INK, cx + 2, rightY, 2, 2); R(ctx, kit.body, cx + 2, rightY, 1, 1);
+    R(ctx, shade, cx + 3, rightY, 1, 1);
+    R(ctx, INK, cx + 3, rightY + 1, 1, 2); R(ctx, kit.body, cx + 3, rightY + 1, 1, 1);
     if (!ball || ballSide > 0) R(ctx, playerSkin(kit), cx - 4, leftY + 2, 1, 1);
     if (!ball || ballSide < 0) R(ctx, playerSkin(kit), cx + 3, rightY + 2, 1, 1);
     if (ball) {
@@ -153,18 +159,18 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
     R(ctx, tone(kit.body, 1.16), cx, top + 2, 2, 1);
     R(ctx, shade, cx + 2, top + 4, 1, 1);
     const faceX = cx + (d > 0 ? 1 : -1), maskX = cx + (d > 0 ? 0 : -1);
-    R(ctx, INK, maskX, top + 2, 3, 2);
-    R(ctx, playerSkin(kit), faceX, top + 2, 1, 1);
+    R(ctx, playerSkin(kit), faceX, top + 2, 1.5, 1);
+    R(ctx, kit.body, faceX - .5, top + 2, .5, 2);
+    R(ctx, kit.body, maskX + 2.5, top + 2, .5, 2);
     R(ctx, kit.body, maskX, top + 3, 3, 1);
   } else {
     const narrow = view === 1 || view === 3;
     const hw = narrow ? 5 : intermediate ? 6 : 7, hx = cx - Math.floor(hw / 2);
-    R(ctx, kit.body, hx, top + 1, hw, 4);
-    R(ctx, INK, hx + .5, top + 1, hw - 1, .5);
-    R(ctx, kit.body, hx + .5, top + 4, hw - 1, .5);
+    R(ctx, kit.body, hx + .5, top + 1, hw - 1, 4);
+    R(ctx, kit.body, hx, top + 1.5, hw, 3);
     R(ctx, kit.trim, hx + 1, top + 1, Math.max(1, hw - 2), 1);
-    R(ctx, tone(kit.body, 1.16), hx + 1, top + 2, Math.max(1, hw - 3), 1);
-    R(ctx, tone(kit.body, 1.3), hx + 1.5, top + 2, Math.max(1, hw - 3), .5);
+    R(ctx, tone(kit.body, 1.16), hx + 1, top + 1, Math.max(1, hw - 3), .5);
+    R(ctx, tone(kit.body, 1.3), hx + 1.5, top + 1.5, Math.max(1, hw - 3), .5);
     if (view !== 4 && view !== 8) R(ctx, kit.body, d > 0 ? hx + 1 : hx + hw - 2, top + 1, 1, 1);
     R(ctx, shade, hx + hw - 2, top + 4, 1, 1);
     if (view === 4 || view === 8) {
@@ -172,13 +178,11 @@ function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, k
     } else {
       const faceX = d > 0 ? hx + Math.floor(hw / 2) : hx + 1;
       const slit = narrow || view >= 6;
-      R(ctx, INK, faceX - 1, top + 2, slit ? 3 : 4, 2);
-      R(ctx, playerSkin(kit), faceX, top + 2, 1, 1);
+      R(ctx, playerSkin(kit), faceX, top + 2, 1.5, 1);
+      R(ctx, kit.body, faceX - 1, top + 2, .5, 2);
+      R(ctx, kit.body, faceX + (slit ? 1.5 : 2.5), top + 2, .5, 2);
       R(ctx, kit.body, faceX - 1, top + 3, slit ? 3 : 4, 1);
-      R(ctx, INK, d > 0 ? hx + hw - 1 : hx, top + 2, 1, 3);
-      R(ctx, INK, faceX - 1, top + 1.5, slit ? 3 : 4, .5);
-      R(ctx, tone(kit.body, .62), faceX - 1, top + 3.5, slit ? 3 : 4, .5);
-      R(ctx, tone(kit.body, 1.25), d > 0 ? hx + hw - 1.5 : hx, top + 2, .5, 2);
+      R(ctx, kit.body, faceX - 1, top + 3.5, slit ? 3 : 4, .5);
     }
   }
   if (kit.edge) R(ctx, kit.edge, cx - 2, top, 4, 1);
@@ -235,22 +239,29 @@ function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
   if (p.hold) {
     R(ctx, kit.body, px + (d > 0 ? 6 : 1) + lean, py + 7, 2, 1); R(ctx, playerSkin(kit), px + (d > 0 ? 8 : 0) + lean, py + 7, 1, 1);
   } else {
-    R(ctx, tone(kit.body, .76), px + 1 + lean, py + 7 + la, 1, 3);
+    R(ctx, tone(kit.body, .76), px + 1 + lean, py + 7 + la, 2, 2);
     R(ctx, tone(kit.body, .58), px + 1 + lean, py + 8 + la, .5, 1);
     R(ctx, kit.body, px + 2 + lean, py + 7 + la, 1, 2);
+    R(ctx, tone(kit.body, .76), px + 1 + lean, py + 9 + la, 1, 1);
     R(ctx, playerSkin(kit), px + 2 + lean, py + 9 + la, 1, 1);
     R(ctx, tone(playerSkin(kit), .78), px + 2.5 + lean, py + 9 + la, .5, .5);
-    R(ctx, tone(kit.body, .76), px + 6 + lean, py + 7 + ra, 1, 3);
+    R(ctx, tone(kit.body, .76), px + 5 + lean, py + 7 + ra, 2, 2);
     R(ctx, tone(kit.body, .58), px + 6.5 + lean, py + 8 + ra, .5, 1);
     R(ctx, kit.body, px + 6 + lean, py + 7 + ra, 1, 2);
+    R(ctx, tone(kit.body, .76), px + 6 + lean, py + 9 + ra, 1, 1);
     R(ctx, playerSkin(kit), px + 7 + lean, py + 9 + ra, 1, 1);
     R(ctx, tone(playerSkin(kit), .78), px + 7 + lean, py + 9 + ra, .5, .5);
   }
-  R(ctx, kit.body, px + 2 + lean, py + 5, 4, 1); // narrower shoulder line, same pad height
-  R(ctx, INK, px + 1.5 + lean, py + 5, 1, .5);
-  R(ctx, INK, px + 5.5 + lean, py + 5, 1, .5);
-  R(ctx, kit.trim, px + 1 + lean, py + 5, 1, 1); R(ctx, kit.trim, px + 6 + lean, py + 5, 1, 1); // pad caps
-  if (ART.players) R(ctx, tone(kit.body, 1.18), px + 3 + lean, py + 5, 2, 1);
+  // Broad rounded shoulder pads taper into a slim waist, not a boxy chest.
+  R(ctx, INK, px + 1 + lean, py + 5, 1, 1);
+  R(ctx, INK, px + 6 + lean, py + 5, 1, 1);
+  R(ctx, kit.body, px + 1 + lean, py + 5, 1, 1.5);
+  R(ctx, kit.body, px + 2 + lean, py + 4.5, 4, 2);
+  R(ctx, kit.body, px + 6 + lean, py + 5, 1, 1.5);
+  R(ctx, tone(kit.body, .72), px + 1 + lean, py + 6, 1, .5);
+  R(ctx, tone(kit.body, .72), px + 6 + lean, py + 6, 1, .5);
+  R(ctx, kit.trim, px + 1 + lean, py + 5, 1, 1); R(ctx, kit.trim, px + 6 + lean, py + 5, 1, 1);
+  if (ART.players) R(ctx, tone(kit.body, 1.18), px + 2 + lean, py + 5, 4, 1);
   if (kit.edge) { R(ctx, kit.edge, px + lean, py + 6, 1, 2); R(ctx, kit.edge, px + 8 + lean, py + 6, 1, 2); }
   R(ctx, kit.body, px + 3 + lean, py + 6, 2, 1);
   if (ART.players) {
@@ -267,6 +278,7 @@ function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
     R(ctx, UNIFORM.pantsShade, px + 2 + lean, py + 11, 1, 1);
     R(ctx, UNIFORM.pantsShade, px + 6 + lean, py + 11, 1, 1);
   }
+  R(ctx, UNIFORM.pants, px + 2 + lean, py + 9.5, 4, 1.5);
   helmet(ctx, kit, px + 1 + lean + (d > 0 ? 0 : 0), py - 1, d);
   if (p.ball) heldBall(ctx, d > 0 ? px + 5 + lean : px - 1 + lean, py + 7);
   ctx.restore();

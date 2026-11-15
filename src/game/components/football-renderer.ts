@@ -19,6 +19,7 @@ import { PLAYER_TARGET_PIXELS, PLAYER_TARGET_WHITE, PLAYER_TARGET_YELLOW } from 
 import { drawFieldGoalFlight } from './football-field-goal';
 import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
 import { drawBroadcastGoalPosts } from './football-broadcast-posts';
+import { refereeRenderY, REFEREE_WORLD_Y } from './football-referee-layout';
 
 /** Presentation only. Reads the engine state; never mutates it and never samples randomness. */
 const { field, moveSprite, prone, referee, football, crowd } = kickFootballArt;
@@ -143,6 +144,7 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   }
   const viewW = view?.width ?? KR.width, viewH = view?.height ?? KR.height;
   const { scale, offsetY } = broadcastViewportFrame(view);
+  const refereeY = refereeRenderY(view, scale, offsetY);
   const visibleW = viewW / scale;
   const live = g.live, sp = g.special;
   const focus = footballFocusX(g);
@@ -183,12 +185,12 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   } else if (sp) drawSpecial(ctx, g, sp, home, away, seconds, ground);
   else drawScrimmage(ctx, g, home, away, seconds, ground);
   drawTackle(ctx, g, home, away);
-  referee(ctx, clamp(focus + 34, 18, KR.worldWidth - 18), seconds, g.lastResult.startsWith('TOUCHDOWN') && ['play-dead', 'final'].includes(g.phase));
+  referee(ctx, clamp(focus + 34, 18, KR.worldWidth - 18), seconds, g.lastResult.startsWith('TOUCHDOWN') && ['play-dead', 'final'].includes(g.phase), refereeY);
   if ((g.turnoverNotice ?? 0) > 0) {
     // Referee's directional possession signal; never invent a kick on downs.
     const rx = clamp(focus + 34, 18, KR.worldWidth - 18);
-    withBroadcastAnchor(ctx, rx, 185, () => {
-    ctx.save(); ctx.translate(rx, 0); ctx.scale(attackDirection(g), 1); ctx.translate(-rx, 0);
+    withBroadcastAnchor(ctx, rx, refereeY, () => {
+    ctx.save(); ctx.translate(rx, refereeY - REFEREE_WORLD_Y); ctx.scale(attackDirection(g), 1); ctx.translate(-rx, 0);
     R(ctx, '#f1e6d0', rx + 3, 178, 12, 2); R(ctx, '#e0a370', rx + 14, 178, 3, 2);
     R(ctx, FIRST, rx + 18, 177, 5, 1); R(ctx, FIRST, rx + 21, 175, 2, 5);
     ctx.restore();

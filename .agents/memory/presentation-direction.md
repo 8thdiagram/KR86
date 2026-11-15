@@ -15,23 +15,29 @@ Keep the current enlarged player height. Favor slightly leaner equipped bodies a
 
 **How to apply:** Refine native pixel clusters across standing, turning, spinning, diving, falling, and kicking artwork. Keep foot anchors, helmet depth, uniform details, collision geometry, speeds, and action timing intact.
 
-Prioritize clear individual sprites: more white on pants, more primary team color on jerseys and helmets, and clear dark definition for facemasks and separating players. Do not add decorative lines around downed players.
+Prioritize clear individual sprites: more white on pants, more primary team color on jerseys and helmets, and readable helmet-colored facemasks. Use dark definition to separate limbs and external silhouettes, not to create black face panels or cages. Do not add decorative lines around downed players.
 
 **Why:** The user found the detailed sprites and lines around grounded players messy and asked for simpler, clearer uniforms and individual silhouettes.
 
 **How to apply:** Use broad readable color clusters, small secondary accents, minimal internal shading, and clean grounded poses. Keep gameplay, height, and animation timing unchanged; increase artwork resolution only if clarity requires it.
 
-Limit exposed face pixels and make facemask bars visible in the helmet's base team color. Use varied skin tones assigned consistently by player position, including hands and tackled poses.
+Limit exposed face pixels and make facemask bars visible in the helmet's base team color. Remove black/navy recessed face panels and dark mask bars from athlete faces, including moving, turned and grounded poses. Use varied skin tones assigned consistently by player position, including hands and tackled poses.
 
-**Why:** The user explicitly asked for less visible flesh, clearer helmet-colored facemasks, and different stable skin tones per position.
+**Why:** The user explicitly asked for less visible flesh, clearer helmet-colored facemasks and different stable skin tones per position, then reiterated “Remove the black from their faces. Make facemasks the same color as the helmets.”
 
-**How to apply:** Derive cosmetic tone from roster role or special-teams duty at render time, not from animation frame or a changing uniform. Keep this separate from gameplay, physics, and saved player state.
+**How to apply:** Derive cosmetic tone from roster role or special-teams duty at render time, not from animation frame or a changing uniform. Keep masks legible through stepped helmet corners, a small skin opening and separated matching-color rails, rather than reintroducing a dark recess. Keep this separate from gameplay, physics, and saved player state.
 
 Normal gameplay should resemble the supplied 16-bit football reference: near-overhead, left-to-right, with modest broadcast depth, horizontal sidelines and far-side compression. The user approved the far sideline and asked to stretch only the near sideline further. Preserve that far-side view in future refinements unless explicitly asked to change it. Match the reference, not a rigid ten-degree preset. Never make it an isometric or dramatic low sideline camera.
 
 **Why:** The user rejected earlier steep perspectives and explicitly prioritized readable overhead play with modest television-style depth, then said “The far sideline looks good.”
 
 **How to apply:** Keep projection render-only and consistent for field paint, artwork, athlete anchors, balls and shadows. Keep upright sprite height/proportions, actual team colors, HUD, controls, camera-follow behavior and all football coordinates intact; never skew the entire screen. Preserve the separate behind-the-kicker Kick View. Use disciplined textured greens, readable bitmap numbers, restrained contact shadows and team-colored pixel people within available stadium space, without shrinking the field merely for decoration.
+
+Keep the referee slightly higher and fully visible in landscape, with all touchdown and possession signals moving with him. Preserve portrait placement.
+
+**Why:** The user specifically asked to move the referee up so he is easier to see in landscape mode.
+
+**How to apply:** Adjust only the referee artwork's position to fit the visible apron; do not shrink the field, alter the approved camera, or change gameplay.
 
 For app icons, preserve the latest supplied artwork and use a subtle, sharp iPhone-style edge finish.
 

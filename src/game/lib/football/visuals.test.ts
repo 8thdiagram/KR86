@@ -171,8 +171,12 @@ test('nine compact turn helmets keep the same height, sharp pixels and authored 
     assert.equal(JSON.stringify(kit), before, `view ${view}/${dir} leaves the uniform untouched`);
     assert.equal(Math.min(...paints.map(p => p.y)), kit.edge ? 92 : 93, `view ${view}/${dir} keeps the crown line`);
     assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `view ${view}/${dir} keeps the ground anchor`);
-    assert(paints.some(p => p.c === kit.body && p.y === 93 && p.h === 4 && p.w === shellWidths[view]),
-      `view ${view} has its hand-authored primary-color shell`);
+    const shell = paints.filter(p => p.c === kit.body && p.y >= 93 && p.y + p.h <= 97 && p.h >= 3);
+    assert(shell.length > 0);
+    assert.equal(Math.max(...shell.map(p => p.x + p.w)) - Math.min(...shell.map(p => p.x)), shellWidths[view],
+      `view ${view} keeps the authored shell width while permitting stepped corners`);
+    assert.equal(Math.min(...shell.map(p => p.y)), 93);
+    assert.equal(Math.max(...shell.map(p => p.y + p.h)), 97);
     for (const p of paints) for (const n of [p.x, p.y, p.w, p.h])
       assert(Number.isInteger(n * 2), `view ${view} draws integral pixels at doubled backing resolution`);
     const repeat = canvas();

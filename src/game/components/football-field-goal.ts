@@ -310,7 +310,7 @@ function drawKickViewPlayers(
     R(ctx, tone(kickingKit.body, .64), x + 2.5, y - 16, .5, 3);
     R(ctx, '#f1e6d0', x - 3, y - 18, 5, 1);
     R(ctx, kickingKit.body, x, y - 17, 2, 4);
-    R(ctx, '#10213a', x - 5, y - 16, 5, 3);
+    R(ctx, kickingKit.body, x - 5, y - 16, 5, 3);
     R(ctx, playerSkin(holderKit), x - 3, y - 16, 1, 1);
     R(ctx, kickingKit.body, x - 5, y - 15, 5, 1);
     R(ctx, '#10213a', x - 5, y - 12, 12, 7);

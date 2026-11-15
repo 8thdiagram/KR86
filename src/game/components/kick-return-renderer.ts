@@ -11,6 +11,7 @@ import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadca
 import { drawBroadcastGoalPosts } from './football-broadcast-posts';
 import { heldBall, turnSprite, movementBodyView as motionView, type BodyView } from './football-sprites';
 import { drawPixelEnlarged } from './football-pixel-scale';
+import { refereeRenderY, REFEREE_WORLD_Y } from './football-referee-layout';
 
 const G: Record<string, string> = {
   A: '010101111101101', C: '111100100100111', T: '111010010010010', H: '101101111101101',
@@ -110,27 +111,27 @@ function field(ctx: CanvasRenderingContext2D, x0: number, x1: number, matchup?: 
 }
 
 type Kit = FootballKit;
-// Shared anatomy (all poses): compact primary-color helmet, visible mask,
-// team-colored jersey, bright split pants and small dark boots.
+// Shared anatomy (all poses): stepped shell, matching-color cage, tapered jersey,
+// articulated white trousers and compact cleats.
 type Put = (c: string, u: number, v: number, w: number, h: number) => void;
 function helmet(put: Put, kit: Kit, hx: number, hy: number, d: 1 | -1) {
-  // The helmet shell reads as the primary kit color; trim is only a small band.
+  // Rounded, stepped primary-color shell with an open skin sightline.
   hx += 1; hy += 1;
   if (kit.edge) put(kit.edge, hx + 1, hy - 1, 6, 1);
-  put(kit.body, hx + 1, hy, 6, 5);
-  put(C.ink, hx + 1.5, hy, 5, .5);
+  put(kit.body, hx + 1, hy + .5, 6, 4);
+  put(kit.body, hx + 2, hy, 4, .5);
   put(kit.body, hx + 1.5, hy + 4.5, 5, .5);
   put(kit.trim, hx + 2, hy, 3, 1);
   put(tone(kit.body, 1.28), hx + 2, hy + 1, 3, .5);
   put(tone(kit.body, .68), hx + 5.5, hy + 3, 1, 1);
   put(kit.trim, d > 0 ? hx + 1 : hx + 6, hy + 2, 1, 2);
   const faceX = d > 0 ? hx + 3 : hx + 2;
-  put(C.ink, faceX - 1, hy + 1, 3, 2); // dark recess keeps the shell-color cage legible
-  put(playerSkin(kit), faceX, hy + 1, 1, 1); // one-native-pixel face slot
-  put(kit.body, faceX - 1, hy + 2, 3, 1); // cage bar in helmet base color
-  put(C.ink, faceX - 1, hy + 1.5, 3, .5);
-  put(tone(kit.body, .62), faceX - 1, hy + 3, 3, .5);
-  put(C.ink, d > 0 ? hx + 6 : hx + 1, hy + 1, 1, 3);
+  put(playerSkin(kit), faceX, hy + 1, 1.5, 1);
+  // The short cage is the same color as the shell, with no dark inset/outline.
+  put(kit.body, faceX - 1, hy + 1, .5, 2.5);
+  put(kit.body, faceX + 1.5, hy + 1, .5, 2.5);
+  put(kit.body, faceX - 1, hy + 2, 3, .5);
+  put(kit.body, faceX - 1, hy + 3.5, 3, .5);
   if (ART.players) { // shell highlight + darker lower back edge, inside the helmet
     put(tone(kit.body, 1.16), hx + 1, hy + 1, 1, 1);
     put(tone(kit.body, .78), hx + 5, hy + 4, 1, 1);
@@ -156,14 +157,23 @@ function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: 
   const reach = shuffle ? 0 : Math.sin(step * Math.PI / 2) * 1.5;
   const lh = shuffle && f % 2 ? 2 : reach < 0 ? 2 : 3, rh = reach > 0 ? 2 : 3;
   const lx = px + 2 - reach, rx = px + 4 + reach;
-  R(ctx, UNIFORM.pants, lx, py + 10, 2, lh); R(ctx, UNIFORM.pants, rx, py + 10, 2, rh);
+  // Thigh, raised knee and offset calf form a crisp bent-leg silhouette.
+  const bend = d > 0 ? .5 : 0;
+  R(ctx, UNIFORM.pants, lx, py + 10, 2, 1);
+  R(ctx, UNIFORM.pants, lx + bend, py + 11, 1.5, 1);
+  if (lh > 2) R(ctx, UNIFORM.pants, lx + bend, py + 12, 1.5, lh - 2);
+  R(ctx, UNIFORM.pants, rx, py + 10, 2, 1);
+  R(ctx, UNIFORM.pants, rx + (1 - bend), py + 11, 1.5, 1);
+  if (rh > 2) R(ctx, UNIFORM.pants, rx + (1 - bend), py + 12, 1.5, rh - 2);
   R(ctx, C.ink, lx + (d > 0 ? 0 : -1), py + 9 + lh, 3, 1); R(ctx, C.ink, rx + (d > 0 ? 0 : -1), py + 9 + rh, 3, 1);
   if (ART.players) {
     R(ctx, UNIFORM.pantsShade, lx + 1, py + 11, 1, 1); R(ctx, UNIFORM.pantsShade, rx, py + 11, 1, 1);
     R(ctx, tone(UNIFORM.pants, 1.08), lx + .5, py + 10, .5, Math.max(1, lh - 1));
     R(ctx, tone(UNIFORM.pants, 1.08), rx + .5, py + 10, .5, Math.max(1, rh - 1));
+    R(ctx, UNIFORM.pantsShade, lx, py + 11, 1, 1);
   }
-  R(ctx, kit.body, px + 1, py + 6, 5, 5);
+    // Narrow waist beneath a sculpted, stepped shoulder silhouette.
+    R(ctx, kit.body, px + 1, py + 6, 5, 5);
   R(ctx, C.ink, px + 1.5, py + 5.5, 4, .5);
   R(ctx, tone(kit.body, 1.28), px + 2, py + 6, 3, .5);
   R(ctx, tone(kit.body, .64), px + 1, py + 9, .5, 1.5);
@@ -178,25 +188,32 @@ function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: 
   R(ctx, kit.trim, px + 5.5, py + 6, .5, 1.5);
   R(ctx, tone(kit.trim, 1.18), px + 3, py + 7, 1, .5);
   if (ART.players) R(ctx, tone(kit.body, .88), px + 5, py + 10, 1, 1);
+  // Knee highlight stays bright after jersey overlap; still inside the existing trouser silhouette.
+  R(ctx, UNIFORM.pants, lx + 1, py + 11, 1, 1);
   const la = -Math.sin(step * Math.PI / 2), ra = -la;
-  R(ctx, C.ink, px + 1 + lean, py + 7 + la, 1, 3);
+  // Sleeves angle out of the pads, with a clear inward elbow and forearm.
+  R(ctx, C.ink, px + 1 + lean, py + 7 + la, 2, 2);
   R(ctx, tone(kit.body, .76), px + 1 + lean, py + 7 + la, 1, 2);
-  R(ctx, tone(kit.body, .58), px + 1 + lean, py + 8 + la, .5, 1);
-  R(ctx, kit.body, px + 2 + lean, py + 7 + la, 1, 2);
-  R(ctx, playerSkin(kit), px + 1 + lean, py + 10 + la, 1, 1);
-  R(ctx, tone(playerSkin(kit), .78), px + 1.5 + lean, py + 10 + la, .5, .5);
-  R(ctx, C.ink, px + 6 + lean, py + 7 + ra, 1, 3);
+  R(ctx, kit.body, px + 2 + lean, py + 7 + la, 1, 1);
+  R(ctx, C.ink, px + lean, py + 9 + la, 2, 1);
+  R(ctx, kit.body, px + .5 + lean, py + 9 + la, 1, 1);
+  R(ctx, playerSkin(kit), px + lean, py + 10 + la, 1, 1);
+  R(ctx, tone(playerSkin(kit), .78), px + .5 + lean, py + 10 + la, .5, .5);
+  R(ctx, C.ink, px + 6 + lean, py + 7 + ra, 2, 2);
   R(ctx, kit.body, px + 6 + lean, py + 7 + ra, 1, 2);
-  R(ctx, tone(kit.body, .76), px + 7 + lean, py + 7 + ra, 1, 2);
-  R(ctx, playerSkin(kit), px + 7 + lean, py + 10 + ra, 1, 1);
+  R(ctx, tone(kit.body, .76), px + 7 + lean, py + 7 + ra, 1, 1);
+  R(ctx, C.ink, px + 7 + lean, py + 9 + ra, 2, 1);
+  R(ctx, kit.body, px + 7 + lean, py + 9 + ra, 1, 1);
+  R(ctx, playerSkin(kit), px + 8 + lean, py + 10 + ra, 1, 1);
   R(ctx, tone(kit.body, .58), px + 7.5 + lean, py + 8 + ra, .5, 1);
   R(ctx, tone(playerSkin(kit), .78), px + 7 + lean, py + 10 + ra, .5, .5);
-  R(ctx, kit.body, px + 1 + lean, py + 5, 6, 2);
-  R(ctx, C.ink, px + 1.5 + lean, py + 5, 5, .5);
-  R(ctx, tone(kit.body, .72), px + 2 + lean, py + 6.5, 4, .5);
+  R(ctx, kit.body, px + 2 + lean, py + 4.5, 4, .5);
+  R(ctx, kit.body, px + 1 + lean, py + 5, 6, 1.5);
+  R(ctx, tone(kit.body, .72), px + 1.5 + lean, py + 6, 5, .5);
   R(ctx, kit.trim, px + 1 + lean, py + 5, 1, 2); R(ctx, kit.trim, px + 6 + lean, py + 5, 1, 2);
   if (ART.players) R(ctx, tone(kit.body, 1.18), px + 2 + lean, py + 5, 4, 1);
   if (kit.edge) { R(ctx, kit.edge, px + lean, py + 6, 1, 2); R(ctx, kit.edge, px + 7 + lean, py + 6, 1, 2); }
+  R(ctx, UNIFORM.pants, px + 2 + lean, py + 9.5, 4, 1.5);
   helmet(put, kit, px + lean, py - 1, d);
   if (ball) {
     R(ctx, kit.body, px + lean + (d > 0 ? 6 : 1), py + 7, 1, 2);
@@ -230,6 +247,7 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     hr(tone(kit.body, .64), -3, 1, .5, 2);
     hr(tone(kit.body, .78), 2, 1, .5, 2);
     hr(tone(kit.trim, .74), 0, 0, .5, 1);
+    // Separated trouser/jersey masses preserve the athlete's long prone profile.
     hr(far, -1, -3, ball ? 5 : 9, 2);
     hr(kit.body, 0, 2, ball ? 5 : 9, 2);
     hr(tone(kit.body, 1.2), 1, 2, ball ? 2 : 4, .5);
@@ -238,10 +256,14 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     hr(kit.body, 3, -4, 5, 4);
     hr(kit.trim, 4, -4, 3, 1);
     hr(tone(kit.body, 1.16), 4, -3, 2, 1); hr(far, 6, -1, 1, 1);
-    hr(C.ink, 3.5, -4.5, 4, .5);
+    hr(C.ink, 3.5, -4.5, 4, .5); // exterior crown contour only
     hr(tone(kit.body, 1.28), 4, -3, 2.5, .5);
     hr(playerSkin(kit), 7, -2, 1, 1);
-    hr(C.ink, 6, -1, 3, 2); hr(kit.body, 6, 0, 3, 1);
+    // Same-color cage around the tiny visible face slot; never a dark recess.
+    hr(kit.body, 6, -1, .5, 2);
+    hr(kit.body, 8.5, -1, .5, 2);
+    hr(kit.body, 6, 0, 3, 1);
+    hr(kit.body, 6, 1, 3, .5);
     if (ball) {
       heldBall(ctx, forward > 0 ? cx - 1 : cx - 7, by + 1);
       hr(kit.body, 3, 1, 2, 1); hr(C.ink, 3, 2, 2, 1);
@@ -379,11 +401,15 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
 
 const BLOCKERS = [[22, 46], [14, 78], [22, 134], [14, 160], [34, 30]];
 
-function referee(ctx: CanvasRenderingContext2D, x: number, celebration: number, touchdown: boolean) {
-  return withBroadcastAnchor(ctx, x, 185, () => refereeAtAnchor(ctx, x, celebration, touchdown));
+function referee(ctx: CanvasRenderingContext2D, x: number, celebration: number, touchdown: boolean, y = REFEREE_WORLD_Y) {
+  return withBroadcastAnchor(ctx, x, y, () => {
+    ctx.save();
+    ctx.translate(0, y - REFEREE_WORLD_Y);
+    try { refereeAtAnchor(ctx, x, celebration, touchdown); } finally { ctx.restore(); }
+  });
 }
 function refereeAtAnchor(ctx: CanvasRenderingContext2D, x: number, celebration: number, touchdown: boolean) {
-  const y = 185;
+  const y = REFEREE_WORLD_Y;
   R(ctx, '#f7f7f2', x - 4, y - 5, 8, 7);
   for (const stripe of [-3, 0, 3]) R(ctx, '#15191d', x + stripe, y - 5, 1, 7);
   R(ctx, C.skin, x - 2, y - 10, 4, 4);
@@ -403,7 +429,7 @@ function crowd(ctx: CanvasRenderingContext2D, left: number, right: number, cheer
   drawBroadcastStadium(ctx, left, right, matchup, cheering, seconds);
 }
 
-function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number) {
+function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refereeY = REFEREE_WORLD_Y) {
   const p = a.player, kick = a.phase === 'kickoff';
   const imp = a.phase === 'tackled' ? (cel > 0 ? clamp(cel / .25, 0, 1) : 1) : 1;
   const lunge = (dx: number) => a.phase === 'tackled' ? Math.sign(p.x - dx) * Math.round(ease(clamp(imp / .4, 0, 1)) * 2) : 0;
@@ -507,7 +533,7 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number) {
       withBroadcastAnchor(ctx, sx, sy, () => R(ctx, i % 3 === 0 ? home.trim : i % 3 === 1 ? away.trim : C.lace, sx, sy, 2, 2));
     }
   }
-  referee(ctx, Math.min(a.player.x + 34, KR.worldWidth - 18), cel, a.phase === 'touchdown');
+  referee(ctx, Math.min(a.player.x + 34, KR.worldWidth - 18), cel, a.phase === 'touchdown', refereeY);
   void lowCam;
 }
 
@@ -556,7 +582,7 @@ export function drawKickReturn(ctx: CanvasRenderingContext2D, attempt: KickAttem
     fieldOverlay?.(ground);
     crowd(ground, range.left, range.right, attempt?.phase === 'touchdown', celebrationSeconds, attempt?.teams ?? matchup);
     if (ART.geometry) drawBroadcastGoalPosts(ctx, range.left, range.right, projection);
-    if (attempt) world(ctx, attempt, celebrationSeconds);
+    if (attempt) world(ctx, attempt, celebrationSeconds, refereeRenderY(viewport, scale, offY - camY * scale));
   });
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.restore();

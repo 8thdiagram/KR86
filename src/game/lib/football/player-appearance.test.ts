@@ -17,7 +17,7 @@ function canvas() {
   const pixels = new Map<string, string>();
   const target = { fillStyle: '', globalAlpha: 1, fillRect(x: number, y: number, w: number, h: number) {
     paints.push({ color: this.fillStyle, x, y, w, h });
-    for (let i = 0; i < w; i++) for (let j = 0; j < h; j++)
+    for (let i = 0; i < w; i += .5) for (let j = 0; j < h; j += .5)
       pixels.set(`${x + i},${y + j}`, this.fillStyle);
   } };
   const ctx = new Proxy(target, { get: (t, k) => Reflect.has(t, k) ? Reflect.get(t, k) : () => {} }) as unknown as CanvasRenderingContext2D;
@@ -69,6 +69,25 @@ test('Classic, move and prone artwork use the same position tone without changin
       assert(paints.some(p => p.color === kit.skin));
       assert(!paints.some(p => p.color === '#e0a370'), 'no fixed athlete face or hand tone');
       assert.equal(JSON.stringify(kit), before);
+    }
+  }
+});
+
+test('visible face slots and helmet-colored facemasks never contain a black face panel', () => {
+  const team = { body: '#cb353d', trim: '#f3eee3' };
+  for (const dir of [-1, 1] as const) for (const view of [undefined, 0, 1, 2, 3, 5, 6, 7] as const) {
+    const kit = positionKit(uniformKit(team, dir), 'WR');
+    for (const classic of [false, true]) {
+      const { ctx, paints, pixels } = canvas();
+      if (classic) kickFootballArt.sprite(ctx, 100, 100, kit, 0, false, 0, 0, view);
+      else slim(ctx, 100, 100, kit, { view });
+      const face = paints.find(p => p.color === kit.skin && p.y < 96)!;
+      assert(face, 'face remains a small, visible position-specific skin slot');
+      for (let x = face.x - .5; x < face.x + face.w + .5; x += .5)
+        for (let y = face.y; y < face.y + face.h + .5; y += .5)
+          assert.notEqual(pixels.get(`${x},${y}`), '#10213a', `no black visor or cage at view ${view}/${dir}/${classic}`);
+      assert(paints.some(p => p.color === kit.body && p.y === face.y + face.h && p.w >= 3),
+        'the facemask rail uses the exact helmet color');
     }
   }
 });
