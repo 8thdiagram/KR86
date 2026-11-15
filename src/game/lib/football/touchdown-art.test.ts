@@ -44,6 +44,20 @@ test('separate bulb clusters switch once from dim to bright with deterministic t
     assert(balanced());
   }
 });
+test('all four marquee edges use separate matching bulbs and switch with the letters', () => {
+  const lamps = (seconds: number) => touchdownArt(seconds).filter(r => r.w === 2 && r.h === 2);
+  const dim = lamps(0), bright = lamps(.4);
+  assert.deepEqual(dim.map(({ x, y }) => ({ x, y })), bright.map(({ x, y }) => ({ x, y })));
+  for (const side of [
+    bright.filter(r => r.y === 2),
+    bright.filter(r => r.y === TD_H - 4),
+    bright.filter(r => r.x === 2),
+    bright.filter(r => r.x === TD_W - 4),
+  ]) assert(side.length >= 9, 'each edge has individually separated lamps');
+  assert.equal(new Set(bright.map(r => `${r.x},${r.y}`)).size, bright.length, 'no duplicate corner lamps');
+  for (let i = 0; i < bright.length; i++) for (let j = i + 1; j < bright.length; j++)
+    assert(Math.abs(bright[i]!.x - bright[j]!.x) >= 3 || Math.abs(bright[i]!.y - bright[j]!.y) >= 3);
+});
 test('the actual Classic touchdown renderer draws the marquee without changing game state', () => {
   for (const width of [144, 320, 375, 852]) {
     const attempt = createKickAttempt(1986, 1); attempt.phase = 'touchdown';

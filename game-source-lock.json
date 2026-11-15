@@ -1,7 +1,7 @@
 {
   "description": "Frozen trytry game source. No automatic synchronization. Platform adapters are reviewed separately.",
   "gameplayOverrides": {
-    "components/football-touchdown-art.ts": "f9d96f1a2537001caf2ad8e5f6874c64722f116b7b38bab17aaccf14cd145571",
+    "components/football-touchdown-art.ts": "66ad8a2003a458aca2d8ef3fc4b82949259a02dbd1ce8fb8fe5cb213678f6fe8",
     "components/football-touchdown-marquee.tsx": "82ce2a7a1c063836512f537f5012b748ccbeaaa94203a4cbfe07de5d93e014d7",
     "components/football-touchdown-marquee.css": "b7b2b686bb7e4a67d00b351e4bca6be695e36a7a6912ebdcefbe203c1be8fb7e",
     "components/football-play-result.tsx": "c5ff8576cf3daed1269eea6e1b47036a35071271baef47b0e63e787f1682ec6a",

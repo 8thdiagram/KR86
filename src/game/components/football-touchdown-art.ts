@@ -15,8 +15,8 @@ export const TD_GLYPHS: Record<string, string> = {
 export const TD_WORD = 'TOUCHDOWN';
 /** One authored bulb occupies two square pixels, with a one-pixel dark gap. */
 export const TD_CELL = 1;
-export const TD_PAD_X = 3;
-export const TD_PAD_Y = 3;
+export const TD_PAD_X = 5;
+export const TD_PAD_Y = 5;
 const BULB = 2;
 const PITCH = 3;
 const LETTER_ADVANCE = 18;
@@ -50,6 +50,22 @@ function bulbRects(bright: boolean): TouchdownRect[] {
     { x: 0, y: 0, w: TD_W, h: TD_H, color: TD_COLORS.shadow },
     { x: 1, y: 1, w: TD_W - 2, h: TD_H - 2, color: TD_COLORS.panel },
   ];
+  const addBulb = (x: number, y: number, seed: number) => {
+    const palette = bright ? BRIGHT_BULBS : DIM_BULBS;
+    rects.push({ x, y, w: BULB, h: BULB, color: palette[seed % palette.length]! });
+    if (bright && seed % 4 === 0)
+      rects.push({ x, y, w: 1, h: 1, color: '#fff8dc' });
+  };
+  // Four sides of separate lamps, with the same dark gaps and palette as the
+  // lettering. Corners are authored once; the border lights up with the word.
+  for (let x = 2; x <= TD_W - 4; x += PITCH) {
+    addBulb(x, 2, (x * 11) % 13);
+    addBulb(x, TD_H - 4, (x * 11 + 17) % 13);
+  }
+  for (let y = 5; y < TD_H - 4; y += PITCH) {
+    addBulb(2, y, (y * 17 + 37) % 13);
+    addBulb(TD_W - 4, y, (y * 17 + 11) % 13);
+  }
   [...TD_WORD].forEach((character, letter) => {
     const glyph = TD_GLYPHS[character];
     if (!glyph) return;
@@ -61,11 +77,7 @@ function bulbRects(bright: boolean): TouchdownRect[] {
       const y = TD_PAD_Y + row * PITCH;
       // Stable authored variation: individual warm bulbs, never random flicker.
       const seed = (letter * 37 + row * 17 + column * 11) % 13;
-      const palette = bright ? BRIGHT_BULBS : DIM_BULBS;
-      rects.push({ x, y, w: BULB, h: BULB, color: palette[seed % palette.length]! });
-      if (bright && seed % 4 === 0) {
-        rects.push({ x, y, w: 1, h: 1, color: '#fff8dc' });
-      }
+      addBulb(x, y, seed);
     }
   });
   return rects;
