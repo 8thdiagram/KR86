@@ -9,6 +9,7 @@ import { drawFootball } from '../../components/football-renderer';
 import { fieldGoalFrame, fieldGoalSample, fieldGoalVerdictVisible, projectFieldGoal } from '../../components/football-field-goal';
 import { kickMatchupTeams } from '../kick-return-teams';
 import { isFootballGame } from './storage';
+import { FIELD_GOAL_FLIGHT_SCALE } from './celebration-timing';
 
 function kick(accuracy: number | undefined = undefined, distance = 35, hash = 96, side: 'home' | 'away' = 'home') {
   const g = createFootball(1986);
@@ -142,7 +143,7 @@ test('a centered but out-of-range historical attempt falls below the actual cros
   g.special = fieldGoalSequence(g); g.special.blockChecked = true;
   const s = g.special!;
   assert.equal(s.good, false);
-  s.stage = 'flight'; s.stageAge = s.duration - .01;
+  s.stage = 'flight'; s.stageAge = s.duration * FIELD_GOAL_FLIGHT_SCALE - .01;
   stepSpecialTeams(g, {}, .01);
   assert.equal(s.stage, 'resolved');
   assert(s.ball.z < FIELD_GOAL.crossbar);
@@ -206,7 +207,7 @@ test('camera covers pre-snap through verdict, green meter edges equal projected 
       for (const team of [teams.player, teams.opponent]) {
         assert(shirts.some(r => r.color === team.body || r.color === team.trim), 'crowd contains each actual team');
       }
-      const zone = rects.find(r => r.color === '#58c46a');
+      const zone = rects.find(r => r.color === '#58b867');
       if (stage === 'hold') {
         assert(zone);
         const left = projectFieldGoal({ y: 76, z: 10, depth: 1 }, f);

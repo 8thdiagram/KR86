@@ -1,12 +1,12 @@
-import { TD_W, TD_H, TD_ART_RECTS } from './football-touchdown-art';
+import { TD_W, TD_H, touchdownArt } from './football-touchdown-art';
 import './football-touchdown-marquee.css';
 
-export function FootballTouchdownMarquee({ label = 'TOUCHDOWN!' }: { label?: string }) {
+export function FootballTouchdownMarquee({ label = 'TOUCHDOWN!', elapsed = 0 }: { label?: string; elapsed?: number }) {
   const detail = label.replace(/touchdown!?/i, '').replace(/^[\s\-–—:·|]+|[\s\-–—:·|]+$/g, '').trim();
   return (
     <div className="fbtd" data-testid="graphic-touchdown">
       <svg className="fbtd-svg" viewBox={`0 0 ${TD_W} ${TD_H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={label}>
-        {TD_ART_RECTS.map((rect, index) => (
+        {touchdownArt(elapsed).map((rect, index) => (
           <rect
             key={`pixel-${index}`}
             x={rect.x}

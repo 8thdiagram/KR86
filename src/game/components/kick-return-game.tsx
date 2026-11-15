@@ -6,6 +6,7 @@ import { createKickMatchup, kickMatchupTeams } from '../lib/kick-return-teams';
 import { drawKickReturn, kickRenderCamera } from './kick-return-renderer';
 import { kickViewport, type KickViewport } from '../lib/kick-return-viewport';
 import { createKickCrowdAudio } from '../lib/kick-return-audio';
+import { TD_SECONDS } from '../lib/football/celebration-timing';
 import './kick-return-game.css';
 import { useGameModeRuntime } from './games/GameModeContext';
 import { FootballRanking } from './football-ranking';
@@ -124,7 +125,9 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
   };
   const draw = (seconds = 0, attempt = progressRef.current.current) => {
     const ctx = canvas.current?.getContext('2d');
-    if (ctx) drawKickReturn(ctx, attempt ?? null, seconds,
+    const shownSeconds = attempt?.phase === 'touchdown' && seconds === 0 && celebrationStart.current
+      ? Math.max(0, (performance.now() - celebrationStart.current) / 1000) : seconds;
+    if (ctx) drawKickReturn(ctx, attempt ?? null, shownSeconds,
       progressRef.current.outcome === 'downs-exhausted', view.current, progressRef.current.teams);
     if (import.meta.env.DEV && attempt && gameShell.current) {
       // Read-only frame-time diagnostics; no mutation hooks or throttled autosave data.
@@ -230,8 +233,8 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let frame = 0;
     const tick = (now: number) => {
-      draw(reduced ? 2 : Math.min(2, (now - start) / 1000));
-      if (!reduced && now - start < 2000) frame = requestAnimationFrame(tick);
+      draw(reduced ? TD_SECONDS : Math.min(TD_SECONDS, (now - start) / 1000));
+      if (!reduced && now - start < TD_SECONDS * 1000) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);

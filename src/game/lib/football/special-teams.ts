@@ -4,6 +4,7 @@ import { clamp, other, random, type Athlete, type FootballGame, type FootballInp
 import { startField } from './field';
 import { fieldGoalDistance } from './playbook';
 import { fieldGoalAim, fieldGoalHeight, fieldGoalMeterAccuracy, fieldGoalMeterSpeed } from './field-goal-geometry';
+import { FIELD_GOAL_FLIGHT_SCALE } from './celebration-timing';
 import { canDefensiveAction, startNearestDive } from './defensive-action';
 import { ELITE, eliteSlots } from './secondary';
 import { franchiseFactor, franchiseKickControl } from './franchise-upgrades';
@@ -207,7 +208,8 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
     return;
   }
   if (s.stage === 'flight' || s.stage === 'bounce') {
-    const t = clamp(s.stageAge / s.duration, 0, 1);
+    const flightDuration = s.duration * (s.kind === 'field-goal' ? FIELD_GOAL_FLIGHT_SCALE : 1);
+    const t = clamp(s.stageAge / flightDuration, 0, 1);
     s.ball.x = s.fromX + (s.toX - s.fromX) * t;
     // Bouncing kicks wander deterministically; no renderer-only random trajectory.
     s.ball.y = s.fromY + (s.toY - s.fromY) * t + (s.kind === 'squib' || s.kind === 'onside' ? Math.sin(t * 19) * 5 * t : 0);

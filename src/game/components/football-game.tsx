@@ -23,6 +23,7 @@ import { resultVisible } from '../lib/football/play-result';
 import { turnoverReturnLabel } from '../lib/football/interception';
 import { FootballPlayResult } from './football-play-result';
 import { TD_W, TD_H } from './football-touchdown-art';
+import { TD_SECONDS } from '../lib/football/celebration-timing';
 import { readSound, writeSound } from '../../platform/local-save';
 
 const DT = 1 / 60;
@@ -420,7 +421,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
       {!paused && g.sideSwitch && <div className="fb-play-result" role="status" data-testid="football-side-switch">
         QUARTER {g.sideSwitch.quarter} — TEAMS SWITCH SIDES
       </div>}
-      {!paused && resultVisible(g) && <FootballPlayResult text={g.playResult!.text} />}
+      {!paused && resultVisible(g) && <FootballPlayResult text={g.playResult!.text} elapsed={Math.max(0, TD_SECONDS - g.playResult!.remaining)} />}
 
       {!paused && !g.sideSwitch && g.phase === 'kickoff-choice' && <div className="fb-calls" data-testid="panel-kick-choice">
         <p className="fb-calls-head">YOU KICK OFF · CHOOSE THE KICK</p>

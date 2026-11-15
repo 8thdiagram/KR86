@@ -49,7 +49,7 @@ test('field-goal timing meter clears the scoreboard and keeps its label on scree
     const target = {
       fillStyle: '',
       fillRect(_x: number, y: number, _w: number, h: number) {
-        if (this.fillStyle === '#b33a2a') bars.push({ y, h });
+        if (this.fillStyle === '#a63e36') bars.push({ y, h });
       },
       fillText(text: string, _x: number, y: number) { labels.push({ text, y }); },
     };

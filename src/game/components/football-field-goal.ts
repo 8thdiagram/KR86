@@ -2,6 +2,7 @@ import type { FootballGame, SpecialTeams } from '../lib/football/types';
 import type { KickViewport } from '../lib/kick-return-viewport';
 import { resultVisible } from '../lib/football/play-result';
 import { FIELD_GOAL, kickGeometry } from '../lib/football/field-goal-geometry';
+import { FIELD_GOAL_FLIGHT_SCALE } from '../lib/football/celebration-timing';
 import { fieldGoalDistance } from '../lib/football/playbook';
 import { kickMatchupTeams } from '../lib/kick-return-teams';
 import { uniformKit } from './football-art';
@@ -50,7 +51,7 @@ export function fieldGoalFrame(width: number, height: number, s?: SpecialTeams) 
 
 export function fieldGoalSample(s: SpecialTeams) {
   const tail = s.stage === 'resolved' ? Math.min(s.stageAge, GOAL_VIEW.continuation) : 0;
-  const duration = Math.max(.001, s.duration);
+  const duration = Math.max(.001, s.duration * FIELD_GOAL_FLIGHT_SCALE);
   // Continue the committed flight; weak kicks use their actual terminal height,
   // rather than borrowing the in-range kick's visual trajectory.
   const terminalHeight = s.ball.z;
@@ -154,24 +155,55 @@ function drawField(ctx: CanvasRenderingContext2D, frame: ReturnType<typeof field
     R(ctx, band, 0, Math.round(y1), frame.width, Math.max(1, Math.ceil(y0 - y1)));
     if (i % 3 === 0) R(ctx, '#367a42', 0, Math.round(y1), frame.width, 1);
   }
-  const sidelines = [0, 192];
-  for (const side of sidelines) {
+  const paintAcrossField = (worldX: number, color: string, worn = false) => {
+    const depth = (worldX - frame.fromX) / frame.range;
+    const left = projectFieldGoal({ y: 0, z: 0, depth }, frame);
+    const right = projectFieldGoal({ y: 192, z: 0, depth }, frame);
+    const x0 = Math.round(left.x), x1 = Math.round(right.x);
+    const y = Math.round((left.ground + right.ground) / 2);
+    const span = Math.max(1, x1 - x0);
+    for (let px = Math.max(0, x0); px <= Math.min(frame.width, x1); px++) {
+      // Tiny deterministic breaks give the chalk a scuffed, hand-laid edge.
+      if (worn && hash(worldX * 7 + px * 13) % 19 === 0) continue;
+      R(ctx, color, px, y, 1, 1);
+    }
+    return { depth, x0, x1, y, span };
+  };
+  // Physical sidelines are projected from the field edges, not screen edges.
+  for (const side of [0, 192]) {
     const near = projectFieldGoal({ y: side, z: 0, depth: 0 }, frame);
     const far = projectFieldGoal({ y: side, z: 0, depth: 1 }, frame);
-    // Stair-step raster lines rather than anti-aliased vector polygons.
-    for (let y = Math.ceil(far.ground); y <= Math.floor(near.ground); y++) {
-      const t = (y - far.ground) / (near.ground - far.ground);
-      R(ctx, '#c3d0b8', far.x + (near.x - far.x) * t, y, 1, 1);
+    for (let row = Math.ceil(far.ground); row <= Math.floor(near.ground); row++) {
+      const t = (row - far.ground) / Math.max(1, near.ground - far.ground);
+      const x = far.x + (near.x - far.x) * t;
+      R(ctx, '#e0e1cf', x, row, 2, 1);
+      if (row % 7 === 0) R(ctx, '#aab99d', x + 2, row, 1, 1);
     }
   }
-  // Existing world scale: ten units per yard, 100 units per major stripe.
-  for (let x = Math.ceil(frame.fromX / 100) * 100; x < FIELD_GOAL.x; x += 100) {
-    const d = (x - frame.fromX) / frame.range, y = groundAtDepth(frame, d);
-    R(ctx, '#c2cfad', 0, y, frame.width, 1);
-    R(ctx, '#174a2a', 0, y + 1, frame.width, 1);
-    for (const side of [-1, 1]) {
-      const p = projectFieldGoal({ y: frame.fromY + side * 33, z: 0, depth: d }, frame);
-      R(ctx, '#c3d0b8', p.x, y - 2, 1, 4);
+  // Ten world units per yard: worn transverse chalk every five yards,
+  // stopping at the actual goal line. Each stripe spans only physical turf.
+  for (let x = Math.ceil(frame.fromX / 50) * 50; x <= 1100; x += 50) {
+    const line = paintAcrossField(x, '#e0e1cf', true);
+    if (x % 100 === 0) {
+      // A faint turf-side edge keeps major five-yard stripes legible without
+      // turning the field into a stack of hard, screen-wide bars.
+      for (let px = Math.max(0, line.x0); px <= Math.min(frame.width, line.x1); px += 2) {
+        if (hash(x + px * 3) % 4 === 0) R(ctx, '#aebd9f', px, line.y + 1, 1, 1);
+      }
+    }
+  }
+  // Fixed hash lanes at world y=65/127, marked at each one-yard (10-unit)
+  // interval. Their short cross-field strokes shrink with the same projection.
+  for (let x = Math.ceil(frame.fromX / 10) * 10; x <= 1100; x += 10) {
+    const depth = (x - frame.fromX) / frame.range;
+    for (const lane of [65, 127]) {
+      const a = projectFieldGoal({ y: lane - 2, z: 0, depth }, frame);
+      const b = projectFieldGoal({ y: lane + 2, z: 0, depth }, frame);
+      const left = Math.round(Math.min(a.x, b.x));
+      const right = Math.round(Math.max(a.x, b.x));
+      for (let px = left; px <= right; px++) {
+        if (hash(x * 7 + lane * 31 + px) % 13 !== 0) R(ctx, '#d8dfce', px, Math.round(a.ground), 1, 1);
+      }
     }
   }
   // Irregular divots, clipped turf tufts, and chalk scuffs recede with the surface.
@@ -249,30 +281,56 @@ function drawKickViewPlayers(
     slim(ctx, 0, 0, kickingKit, pose);
     ctx.restore();
   };
+  let holderPoint: { x: number; y: number } | undefined;
   const drawHolder = () => {
     if (!holder) return;
-    const p = screenPoint(holder.x, holder.y);
-    player(p, { hold: true, crouch: true });
+    holderPoint = screenPoint(holder.x, holder.y);
+    // A planted knee, bent white trouser leg and reaching hands distinguish
+    // the holder from the standing kicker. Leave the placed ball unobscured.
+    const x = Math.round(holderPoint.x + 9), y = Math.round(holderPoint.y);
+    R(ctx, '#173e27', x - 7, y, 15, 2);
+    R(ctx, '#10213a', x - 5, y - 19, 10, 8);
+    R(ctx, kickingKit.trim, x - 4, y - 18, 8, 6);
+    R(ctx, '#f1e6d0', x - 3, y - 18, 5, 1);
+    R(ctx, kickingKit.body, x, y - 17, 2, 4);
+    R(ctx, '#e0a370', x - 4, y - 15, 2, 2);
+    R(ctx, '#10213a', x - 5, y - 12, 12, 7);
+    R(ctx, kickingKit.body, x - 4, y - 11, 10, 5);
+    R(ctx, kickingKit.trim, x + 2, y - 11, 3, 2);
+    R(ctx, kickingKit.trim, x - 4, y - 10, 2, 2);
+    R(ctx, kickingKit.body, x - 6, y - 8, 3, 4);
+    R(ctx, '#e0a370', x - 8, y - 4, 3, 2);
+    R(ctx, '#b8bdd1', x + 2, y - 6, 4, 5);
+    R(ctx, '#f1e6d0', x - 2, y - 5, 7, 3);
+    R(ctx, '#f1e6d0', x - 4, y - 4, 3, 4);
+    R(ctx, '#10213a', x - 5, y - 1, 4, 2);
+    R(ctx, '#10213a', x + 3, y, 5, 1);
   };
   const drawKicker = () => {
     if (!kicker) return;
-    const p = screenPoint(kicker.x, kicker.y);
+    const projected = screenPoint(kicker.x, kicker.y);
+    // Compose the two authored sprites as one foreground kicking unit. Their
+    // gameplay coordinates remain untouched; only this camera's staging moves.
+    const p = holderPoint
+      ? { x: holderPoint.x - 12, y: Math.max(projected.y, holderPoint.y + 7) }
+      : { x: projected.x - 6, y: projected.y + 5 };
     const stage = s.stage;
     if (stage === 'approach' || stage === 'flight' && s.stageAge < .22) {
       const contact = stage === 'flight' ? Math.max(0, Math.min(1, .5 + s.stageAge / .44))
         : s.stageAge > .24 ? .35 : -1;
       if (contact >= 0) player(p, { kick: contact });
-      else player(p, { step: s.age * 9, lean: kickingKit.dir, hold: true });
+      else player(p, { step: s.age * 9, lean: kickingKit.dir, hold: true, view: 3 });
     } else {
       player(p, {
         hold: true,
         crouch: stage === 'snap',
+        view: 3,
       });
     }
   };
   // The receiver slot is the snap holder in a field-goal formation.
-  drawKicker();
   drawHolder();
+  drawKicker();
 }
 
 function drawKickMeter(ctx: CanvasRenderingContext2D, g: FootballGame, s: SpecialTeams, frame: ReturnType<typeof fieldGoalFrame>, width: number, height: number) {
@@ -283,16 +341,21 @@ function drawKickMeter(ctx: CanvasRenderingContext2D, g: FootballGame, s: Specia
   const x = width / 2 - barWidth / 2;
   const goalGround = projectFieldGoal({ y: FIELD_GOAL.center, z: 0, depth: 1 }, frame).ground;
   const crossbar = projectFieldGoal({ y: FIELD_GOAL.center, z: FIELD_GOAL.crossbar, depth: 1 }, frame);
-  const y = Math.round(Math.max(crossbar.y + 4, Math.min(116, goalGround + 18)) * frame.scale);
+  const y = Math.round(Math.max(crossbar.y + 4, Math.min(116, goalGround + 5)) * frame.scale);
   const unit = Math.max(1, Math.round(frame.scale));
   const h = Math.max(8, Math.round(8 * frame.scale));
   const successX = width / 2 + (geometry.center - geometry.half - .5) * barWidth;
   const successW = geometry.half * 2 * barWidth;
-  R(ctx, '#10213a', x - unit * 2, y - unit * 2, barWidth + unit * 4, h + unit * 4);
-  R(ctx, '#b33a2a', x, y, barWidth, h);
+  // Square-cut silver frame and dark outline; the bar remains tied to the
+  // projected upright opening through the shared sensor and kick geometry.
+  R(ctx, '#101b2a', x - unit * 2, y - unit * 2, barWidth + unit * 4, h + unit * 4);
+  R(ctx, '#78828a', x - unit, y - unit, barWidth + unit * 2, h + unit * 2);
+  R(ctx, '#c4c9c3', x, y, barWidth, h);
+  R(ctx, '#394957', x, y + h - unit, barWidth, unit);
+  R(ctx, '#a63e36', x, y, barWidth, h);
   // This is the exact projection of the two upright x positions onto the bar.
-  R(ctx, '#e3a83a', x, y, barWidth, Math.max(1, Math.round(unit * 1.5)));
-  R(ctx, fieldGoalDistance(g) <= g.profiles[s.kicking].kickMax ? '#58c46a' : '#e3a83a', successX, y, successW, h);
+  R(ctx, '#d9d7bf', x, y, barWidth, Math.max(1, Math.round(unit * 1.5)));
+  R(ctx, fieldGoalDistance(g) <= g.profiles[s.kicking].kickMax ? '#58b867' : '#c89638', successX, y, successW, h);
   R(ctx, '#f4d23c', successX, y, 1, h);
   const marker = width / 2 + (Math.max(0, Math.min(1, g.live?.kickMeter ?? .5)) - .5) * barWidth;
   R(ctx, '#f1e6d0', marker - unit, y - unit * 2, unit * 2, h + unit * 4);
@@ -301,8 +364,12 @@ function drawKickMeter(ctx: CanvasRenderingContext2D, g: FootballGame, s: Specia
   ctx.font = `bold ${size}px ui-monospace, monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
+  const distanceLabel = `${fieldGoalDistance(g)} YD ATTEMPT`;
+  const labelWidth = size * distanceLabel.length * .65 + unit * 4;
+  const labelY = y + h + size * 1.5;
+  R(ctx, '#10213a', (width - labelWidth) / 2, labelY - size, labelWidth, size + unit * 2);
   ctx.fillStyle = '#f1e6d0';
-  ctx.fillText(`${fieldGoalDistance(g)} YD ATTEMPT`, width / 2, y + h + size * 1.5);
+  ctx.fillText(distanceLabel, width / 2, labelY);
   ctx.fillStyle = '#f4d23c';
   ctx.fillText(fieldGoalDistance(g) <= g.profiles[s.kicking].kickMax ? 'ACTION: KICK' : 'OUT OF RANGE', width / 2, height - Math.max(8, size * .6));
 }
@@ -344,6 +411,7 @@ export function drawFieldGoalFlight(ctx: CanvasRenderingContext2D, g: FootballGa
     drawBall();
   }
   drawKickViewPlayers(ctx, s, frame, home, away);
+  if (s.stage === 'snap' || s.stage === 'hold' || s.stage === 'approach') drawBall();
   ctx.restore();
 
   ctx.save();

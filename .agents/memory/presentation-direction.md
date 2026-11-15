@@ -62,3 +62,9 @@ Keep a visible 0.7-second downed-player pause after the complete tackle impact a
 **Why:** The user explicitly chose 0.7 seconds instead of retaining the existing one-second hold.
 
 **How to apply:** Preserve this separate pause during future player-art or presentation changes; do not shorten the impact or fall to make the total animation last 0.7 seconds.
+
+The TOUCHDOWN sign uses separate, visibly spaced NES pixel bulbs, not connected bitmap strokes. Use deterministic warm brightness variations and a minimal dark stadium-sign background. Illuminate dim for about 0.4 seconds, then bright for 2 seconds, once, without smooth glow or continuous flashing.
+
+**Why:** The user refined the earlier pixelated-letter request to specifically require an individual-bulb stadium sign and a longer two-stage celebration.
+
+**How to apply:** Share the bulb artwork and palette threshold across Classic and Full Game. Preserve touchdown scoring and sounds; the longer presentation must not consume game-clock time.

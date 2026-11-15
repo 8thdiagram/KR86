@@ -1,6 +1,7 @@
 import { DEFENSE_IDS, isBlitz, type FootballGame } from './types';
 import { isKickMatchup } from '../kick-return-teams';
 import { beginPlayResult } from './play-result';
+import { TD_SECONDS } from './celebration-timing';
 import { inFootballFrame } from './direction';
 import { franchiseFactor } from './franchise-upgrades';
 import { MVP_IDS, type MvpCounts } from './mvp';
@@ -213,7 +214,8 @@ export function isFootballGame(value: unknown): value is FootballGame {
   if (g.returnAttempt?.kickoffBoost !== undefined && g.returnAttempt.kickoffBoost !== 1.04) return false;
   if (g.playClock !== undefined && (!finite(g.playClock) || g.playClock < 0 || g.playClock > 15)) return false;
   if (g.playResult && (!['play-dead', 'penalty', 'final'].includes(g.phase) ||
-      !finite(g.playResult.remaining) || g.playResult.remaining < 0 || g.playResult.remaining > 1 ||
+      !finite(g.playResult.remaining) || g.playResult.remaining < 0 ||
+      g.playResult.remaining > (typeof g.playResult.text === 'string' && g.playResult.text.includes('TOUCHDOWN') ? TD_SECONDS : 1) ||
       typeof g.playResult.text !== 'string' || !g.playResult.text.trim() || g.playResult.text.length > 300 ||
       g.playClockRunning)) return false;
   if (g.playClockRunning !== undefined && typeof g.playClockRunning !== 'boolean') return false;

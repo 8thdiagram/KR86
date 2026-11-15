@@ -1,14 +1,16 @@
 import type { FieldResult } from './field';
 import type { SpecialResult } from './special-teams';
 import type { FootballGame } from './types';
+import { TD_SECONDS } from './celebration-timing';
 
 export const RESULT_SECONDS = 1;
 export function beginPlayResult(g: FootballGame, text: string) {
-  g.playResult = { remaining: RESULT_SECONDS, text };
+  g.playResult = { remaining: text.includes('TOUCHDOWN') ? TD_SECONDS : RESULT_SECONDS, text };
   g.playClockRunning = false;
 }
 /** Recovery, falling bodies and referee signals finish before the text appears. */
 export const resultVisible = (g: FootballGame) => !!g.playResult &&
+  !(g.playResult.text.includes('TOUCHDOWN') && g.tackleScene) &&
   (!g.tackleScene || g.tackleScene.phase === 'ground') &&
   !(g.turnoverNotice! > 0) && !(g.delayPenalty?.remaining! > 0);
 

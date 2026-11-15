@@ -7,6 +7,7 @@ import { clamp, other, random, type Defense, type FootballGame, type FootballInp
 import { captureFieldTackle, captureReturnTackle, stepTackleScene } from './tackle-scene';
 import { secondaryRoster } from './secondary';
 import { beginPlayResult, fieldResultText, specialResultText } from './play-result';
+import { FIELD_GOAL_FLIGHT_SCALE } from './celebration-timing';
 import { inFootballFrame } from './direction';
 import { FOOTBALL_SIDELINES } from './sidelines';
 import { lockClutch } from './clutch';
@@ -253,9 +254,11 @@ function advanceFootballPresentationLocal(g: FootballGame, elapsed: number) {
       g.turnoverNotice = Math.max(0, g.turnoverNotice! - used); left -= used;
     }
     const done = stepTackleScene(g.tackleScene, left);
-    if (g.playResult && g.tackleScene.phase === 'ground') g.playResult.remaining = g.tackleScene.holdRemaining;
+    const touchdown = g.playResult?.text.includes('TOUCHDOWN');
+    if (g.playResult && !touchdown && g.tackleScene.phase === 'ground') g.playResult.remaining = g.tackleScene.holdRemaining;
     if (!done) return;
     g.tackleScene = undefined;
+    if (touchdown && g.playResult) return; // Start its own full visible hold after the ordinary downed-player pause.
   } else if (g.playResult) {
     let left = elapsed;
     if (g.delayPenalty && g.delayPenalty.remaining > 0) {
@@ -403,7 +406,11 @@ function stepFootballLocal(g: FootballGame, input: FootballInput = {}, dt = KR.d
   g.totalTime += dt;
   if (g.phase === 'play-dead') { if (g.clockRunning) consumeClock(g, dt); return g; }
   if (g.special && (g.phase === 'kickoff' || g.phase === 'live')) {
-    if (specialBallLive(g.special)) { consumeClock(g, dt); g.clockRunning = true; delete g.clockStoppage; }
+    if (specialBallLive(g.special)) {
+      // Slower field-goal presentation must not cost extra game-clock time.
+      const visualScale = g.special.kind === 'field-goal' && g.special.stage === 'flight' ? FIELD_GOAL_FLIGHT_SCALE : 1;
+      consumeClock(g, dt / visualScale); g.clockRunning = true; delete g.clockStoppage;
+    }
     const result = stepSpecialTeams(g, input, dt * worldSpeed);
     if (result) { captureReturnTackle(g); finishSpecial(g, result); beginPlayResult(g, specialResultText(g, result)); }
     return g;
