@@ -9,6 +9,10 @@ import { footballAthletePose } from '../../components/football-player-state';
 import { movementStep } from '../../components/football-sprites';
 import { selectFootballPlayerConceptFrame } from '../../components/football-player-concepts';
 import {
+  applyEliteCPosition, ELITE_C_ARMS, ELITE_C_DIRECTIONAL_TOPS, ELITE_C_GAME_ARMS,
+  ELITE_C_RUN_LEGS, type EliteCPosition,
+} from '../../components/football-player-sheets';
+import {
   selectFootballPlayerFrame, footballPlayerPalette, PLAYER_RUN_PHASES, PLAYER_ACTIONS,
   PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, refineFootballHelmetWidth, type FootballPlayerFrame,
 } from '../../components/football-player-frames';
@@ -52,6 +56,46 @@ function connectedShare(frame: FootballPlayerFrame) {
     largest = Math.max(largest, count);
   }
   return largest / total;
+}
+function gameplayArmPixelMask(
+  view: 0 | 1 | 2, phase: number, position: EliteCPosition,
+  legacy: readonly string[], gameplay: readonly string[],
+) {
+  const composeTopAndArms = (arms: readonly string[]) => {
+    const grid = Array.from({ length: 22 }, () => Array<string>(16).fill('.'));
+    const stamp = (source: readonly string[], atY = 0) => source.forEach((line, y) => {
+      [...line].forEach((glyph, x) => {
+        if (glyph !== '.') grid[atY + y]![x] = glyph;
+      });
+    });
+    stamp(ELITE_C_DIRECTIONAL_TOPS[view]);
+    stamp(ELITE_C_RUN_LEGS[phase]!, 13);
+    stamp(arms);
+    const composed = grid.map(row => row.join(''));
+    applyEliteCPosition(composed, position);
+    return composed.map(row => [...row]);
+  };
+  const legacyGrid = composeTopAndArms(legacy);
+  const gameplayGrid = composeTopAndArms(gameplay);
+  const armPixels = new Set<string>();
+  legacyGrid.forEach((row, y) => [...row].forEach((glyph, x) => {
+    if (glyph === gameplayGrid[y]![x]) return;
+    // This is the exact arm-layer delta plus only pad pixels that the existing
+    // position pass derives from those contours; no whole-row torso masking.
+    for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++)
+      armPixels.add(`${x * 2 + dx},${y * 2 + dy}`);
+  }));
+  return armPixels;
+}
+function outsideGameplayArmPixels(
+  runs: readonly { row: number; x: number; length: number; color: string }[],
+  armPixels: ReadonlySet<string>,
+) {
+  const kept: [string, string][] = [];
+  for (const run of runs) for (let x = run.x; x < run.x + run.length; x++) {
+    if (!armPixels.has(`${x},${run.row}`)) kept.push([`${x},${run.row}`, run.color]);
+  }
+  return kept.sort(([a], [b]) => a.localeCompare(b));
 }
 function canvas() {
   const rects: { c: string; x: number; y: number; w: number; h: number }[] = [];
@@ -167,8 +211,17 @@ test('the selected C concept is the actual production art rather than a comparis
     'production differs from selected C only by the documented native-pixel helmet contour trim');
     for (let phase = 0; phase < 6; phase++) {
       const runConcept = selectFootballPlayerConceptFrame('C', 'run', role, view, phase);
-      assert.deepEqual(selectFootballPlayerFrame('run', view, phase, false, role).runs,
-        conceptAfterHelmetRefinement(runConcept),
+      const legacyArms = ELITE_C_ARMS[phase % 2 ? 'pumpB' : 'pumpA'];
+      const gameplayArms = ELITE_C_GAME_ARMS[phase < 3 ? 'pumpA' : 'pumpB'];
+      const armMask = gameplayArmPixelMask(view, phase, role, legacyArms, gameplayArms);
+      const maskedCoreTorso = [...armMask].filter(point => {
+        const [x, y] = point.split(',').map(Number);
+        return x! >= 8 && x! < 24 && y! >= 16 && y! < 28;
+      }).length;
+      assert(maskedCoreTorso < 112, 'changed arm/pad pixels leave more than 80 center-torso pixels exact');
+      assert.deepEqual(
+        outsideGameplayArmPixels(selectFootballPlayerFrame('run', view, phase, false, role).runs, armMask),
+        outsideGameplayArmPixels(conceptAfterHelmetRefinement(runConcept), armMask),
       `${role}/${view}/${phase}: production retains the exact C pose apart from helmet contour trim`);
     }
   }

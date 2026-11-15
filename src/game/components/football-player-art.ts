@@ -37,7 +37,18 @@ function resolveAction(options: FootballPlayerOptions): FootballPlayerAction {
 
 function resolvePhase(action: FootballPlayerAction, options: FootballPlayerOptions): number {
   if (options.action && options.progress !== undefined) {
-    return Math.min(5, Math.floor(clamp01(options.progress) * 6));
+    const progress = clamp01(options.progress);
+    if (action === 'throw') {
+      // State emits <=.59 while the QB still owns the ball, then starts flight
+      // at .60. Keep that release boundary visible in the authored arm phases.
+      if (progress < .18) return 0;
+      if (progress < .4) return 1;
+      if (progress < .6) return 2;
+      if (progress < .72) return 3;
+      if (progress < .9) return 4;
+      return 5;
+    }
+    return Math.min(5, Math.floor(progress * 6));
   }
   if (action === 'kick' && options.kick !== undefined) {
     return Math.min(5, Math.floor(clamp01(options.kick) * 6));

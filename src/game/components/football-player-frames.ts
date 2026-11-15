@@ -16,6 +16,7 @@ import {
   applyEliteCPosition,
   ELITE_C_ARMS,
   ELITE_C_DIRECTIONAL_TOPS,
+  ELITE_C_GAME_ARMS,
   ELITE_C_KICK_LEGS,
   ELITE_C_KNEEL_LEGS,
   ELITE_C_PLANTED_LEGS,
@@ -96,9 +97,9 @@ const LOWER = (rows: readonly string[]): Grid => [...blank(13), ...rows, '......
 const RUN_LEGS: readonly Grid[] = ELITE_C_RUN_LEGS.map(LOWER);
 const GROUNDED_RUN_LEGS = RUN_LEGS;
 
-// Selected C supplies every production limb and action reach; no old draft
-// limb catalog is layered over the chosen body.
-const ARMS = ELITE_C_ARMS;
+// The production atlas keeps the selected C body/legs and uses a separate
+// gameplay arm pass so the approved concept comparison remains unchanged.
+const ARMS = ELITE_C_GAME_ARMS;
 const IDLE_LEGS = LOWER(ELITE_C_PLANTED_LEGS);
 const STANCE_LEGS = LOWER(ELITE_C_STANCE_LEGS);
 const KNEEL_LEGS = LOWER(ELITE_C_KNEEL_LEGS);
@@ -109,10 +110,10 @@ const ACTION_LEGS: Partial<Record<FootballPlayerAction, Grid>> = {
   kneel: KNEEL_LEGS, fall: GROUNDED_RUN_LEGS[4], dive: GROUNDED_RUN_LEGS[5], ground: KNEEL_LEGS,
 };
 const ACTION_ARMS: Partial<Record<FootballPlayerAction, Grid>> = {
-  idle: ARMS.guard, stance: ARMS.guard, hold: ARMS.pumpA, snap: ARMS.reach,
-  handoff: ARMS.reach, throw: ARMS.throw, catch: ARMS.reach, block: ARMS.block,
+  idle: ELITE_C_ARMS.guard, stance: ELITE_C_ARMS.guard, hold: ARMS.carryA, snap: ARMS.reach,
+  handoff: ARMS.reach, throw: ARMS.drawBack, catch: ARMS.reach, block: ARMS.block,
   break: ARMS.pumpB, backpedal: ARMS.pumpB, jump: ARMS.reach, kick: ARMS.pumpA,
-  kneel: ARMS.guard, fall: ARMS.reach, dive: ARMS.reach, ground: ARMS.guard,
+  kneel: ELITE_C_ARMS.guard, fall: ARMS.reach, dive: ARMS.reach, ground: ELITE_C_ARMS.guard,
 };
 
 const ACTION_ORDER = PLAYER_ACTIONS as readonly FootballPlayerAction[];
@@ -138,26 +139,33 @@ for (const [name, sheet] of Object.entries(ARMS)) validateSheet(`arms:${name}`, 
 for (const [name, sheet] of Object.entries(ACTION_LEGS)) validateSheet(`action-legs:${name}`, sheet!);
 KICK_LEGS.forEach((sheet, index) => validateSheet(`kick:${index}`, sheet));
 
-function actionPose(action: FootballPlayerAction, phase: number): { arms: Grid; legs: Grid; bodyShift?: number } {
+function actionPose(action: FootballPlayerAction, phase: number, ball: boolean): { arms: Grid; legs: Grid; bodyShift?: number } {
   if (action === 'run' || action === 'backpedal') {
     const p = action === 'backpedal' ? (phase + 3) % 6 : phase;
-    return { arms: p % 2 ? ARMS.pumpB : ARMS.pumpA, legs: GROUNDED_RUN_LEGS[p]! };
+    const arms = ball
+      ? (p < 3 ? ARMS.carryA : ARMS.carryB)
+      : (p < 3 ? ARMS.pumpA : ARMS.pumpB);
+    return { arms, legs: GROUNDED_RUN_LEGS[p]! };
   }
   if (action === 'throw') {
-    return { arms: phase < 2 ? ARMS.guard : phase < 4 ? ARMS.throw : ARMS.reach,
+    const throwArms = [ARMS.guard, ARMS.drawBack, ARMS.throwForward, ARMS.release, ARMS.followThrough, ARMS.guard];
+    return { arms: throwArms[phase]!,
       legs: STANCE_LEGS, bodyShift: 1 };
   }
   if (action === 'catch') {
-    return { arms: phase < 3 ? ARMS.reach : ARMS.guard, legs: phase < 3 ? STANCE_LEGS : IDLE_LEGS,
-      bodyShift: phase < 3 ? 1 : 0 };
+    return { arms: phase < 5 ? ARMS.reach : ARMS.guard, legs: phase < 5 ? STANCE_LEGS : IDLE_LEGS,
+      bodyShift: phase < 5 ? 1 : 0 };
   }
   if (action === 'block') {
     return { arms: phase % 2 ? ARMS.block : ARMS.guard, legs: STANCE_LEGS, bodyShift: 1 };
   }
-  if (action === 'break') return { arms: phase % 2 ? ARMS.pumpA : ARMS.pumpB, legs: GROUNDED_RUN_LEGS[(phase + 2) % 6]! };
+  if (action === 'break') return {
+    arms: phase < 3 ? ARMS.reach : phase % 2 ? ARMS.pumpA : ARMS.pumpB,
+    legs: GROUNDED_RUN_LEGS[(phase + 2) % 6]!,
+  };
   if (action === 'jump') return { arms: phase < 3 ? ARMS.reach : ARMS.guard, legs: GROUNDED_RUN_LEGS[phase < 3 ? 2 : 5]! };
   if (action === 'kick') {
-    const kickArms = [ARMS.pumpA, ARMS.guard, ARMS.throw, ARMS.reach, ARMS.pumpB, ARMS.guard];
+    const kickArms = [ARMS.pumpA, ARMS.guard, ARMS.throwForward, ARMS.reach, ARMS.pumpB, ARMS.guard];
     return { arms: kickArms[phase]!, legs: KICK_LEGS[phase]! };
   }
   if (action === 'dive' || action === 'fall') {
@@ -189,7 +197,7 @@ function buildGlyphGrid(view: FootballPlayerView, action: FootballPlayerAction, 
   const out = blank(22);
   const baseName = VIEW_BASE[view];
   const mirror = VIEW_MIRROR[view];
-  const pose = actionPose(action, phase);
+  const pose = actionPose(action, phase, ball);
   const bodyShift = pose.bodyShift ?? 0;
   overlay(out, UPRIGHT[baseName]!, VIEW_OFFSETS[view], bodyShift, mirror);
   overlay(out, pose.legs, 0, 0, mirror);
@@ -375,9 +383,10 @@ export const FOOTBALL_PLAYER_FRAME_CATALOG = new Proxy(Object.create(null) as Re
     const [view, action, phase, ball, build] = key.split(':');
     if (!PLAYER_FRAME_DIRECTIONS.includes(Number(view) as FootballPlayerView)
       || !ACTION_ORDER.includes(action as FootballPlayerAction)
-      || !['standard', 'bulky', 'compact', 'linebacker', 'lean'].includes(build ?? '')) return undefined;
+      || !['standard', 'bulky', 'compact', 'linebacker', 'lean'].includes(build ?? '')
+      || !Number.isInteger(Number(phase))) return undefined;
     return cachedFrame(Number(view) as FootballPlayerView, action as FootballPlayerAction,
-      Number(phase), ball === '1', build as Build);
+      ((Number(phase) % 6) + 6) % 6, ball === '1', build as Build);
   },
   set() { return false; },
 }) as Readonly<Record<string, FootballPlayerFrame>>;

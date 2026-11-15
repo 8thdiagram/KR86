@@ -5,6 +5,7 @@ import { kickDivePose } from '../lib/kick-return-dive';
 import { kickDiveRules } from '../lib/kick-return-burst';
 import type { KickViewport } from '../lib/kick-return-viewport';
 import { drawFootballBall, positionKit, classicSkinPosition, uniformKit, type FootballKit } from './football-art';
+import { drawCachedFootballPitch } from './football-pitch-cache';
 import { FOOTBALL_ART_STAGES as ART, drawDeluxeTurf, drawEndZoneLettering, drawFieldFixtures, drawYardNumber, tone } from './football-deluxe-art';
 import { drawBroadcastStadium } from './football-stadium-art';
 import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
@@ -83,7 +84,7 @@ function endZoneName(ctx: CanvasRenderingContext2D, name: string, color: string,
   ctx.restore();
 }
 
-function field(ctx: CanvasRenderingContext2D, x0: number, x1: number, matchup?: KickAttempt['teams']) {
+function fieldBase(ctx: CanvasRenderingContext2D, x0: number, x1: number, matchup?: KickAttempt['teams']) {
   const teams = kickMatchupTeams(matchup);
   R(ctx, C.turfB, x0, 0, x1 - x0, KR.height);
   for (let x = Math.floor(x0 / 50) * 50; x < x1; x += 50) {
@@ -108,6 +109,15 @@ function field(ctx: CanvasRenderingContext2D, x0: number, x1: number, matchup?: 
       drawYardNumber(ctx, yd, wx, 153, C.line, 2);
     }
   }
+}
+
+function field(ctx: CanvasRenderingContext2D, x0: number, x1: number, matchup?: KickAttempt['teams']) {
+  const teams = kickMatchupTeams(matchup);
+  const key = `${teams.player.body}:${teams.opponent.body}:${ART.field}`;
+  if (!drawCachedFootballPitch(ctx, key, native => fieldBase(native, 0, KR.worldWidth, matchup)))
+    fieldBase(ctx, x0, x1, matchup);
+  // Keep lettering/fixtures in their original projection, not baked into a
+  // reduced-resolution image. Midfield marks and animated crowd are separate.
   // The top of each name faces its back line, readable when approaching from midfield.
   if (ART.field) {
     drawEndZoneLettering(ctx, teams.player.name, teams.player.trim, 50, -Math.PI / 2, C.ink);

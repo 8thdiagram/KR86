@@ -61,8 +61,8 @@ export function carrierMark(ctx: CanvasRenderingContext2D, x: number, y: number,
   });
 }
 /** Ball in the air: shadow on the turf, ball raised by z. */
-export function airBall(ctx: CanvasRenderingContext2D, x: number, y: number, z: number, spin: number) {
-  drawFootballBall(ctx, x, y, { z, spin, small: true, shadow: true });
+export function airBall(ctx: CanvasRenderingContext2D, x: number, y: number, z: number, spin: number, tumble = true) {
+  drawFootballBall(ctx, x, y, { z, spin, small: true, shadow: true, tumble });
 }
 export function landingMark(ctx: CanvasRenderingContext2D, x: number, y: number, seconds: number) {
   withBroadcastAnchor(ctx, x, y, () => landingMarkAtAnchor(ctx, x, y, seconds));

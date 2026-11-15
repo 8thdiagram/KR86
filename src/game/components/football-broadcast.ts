@@ -93,6 +93,15 @@ export function broadcastFieldContext(ctx: CanvasRenderingContext2D, view: Broad
       const tl = projectBroadcastPoint(b.x, top, view), tr = projectBroadcastPoint(b.right, top, view);
       const bl = projectBroadcastPoint(b.x, bottom, view), br = projectBroadcastPoint(b.right, bottom, view);
       const y0 = Math.round(m.d * tl.y + m.f), y1 = Math.round(m.d * bl.y + m.f);
+      // The stands and sideline aprons are affine planes. Painting one exact
+      // rectangle here is pixel-identical to hundreds of one-row rectangles,
+      // and keeps animated fans inexpensive without removing any animation.
+      if (tl.x === bl.x && tr.x === br.x) {
+        const left = Math.round(m.a * tl.x + m.e), right = Math.round(m.a * tr.x + m.e);
+        if (right > left && y1 > y0)
+          ctx.fillRect((left - m.e) / m.a, (y0 - m.f) / m.d, (right - left) / m.a, (y1 - y0) / m.d);
+        continue;
+      }
       // All authored plane transforms are axis-aligned or exact quarter turns.
       // Rasterize in actual display pixels; no anti-aliasing or image readbacks.
       for (let row = y0; row < y1; row++) {

@@ -1,5 +1,6 @@
 import type { Athlete, LivePlay } from '../lib/football/types';
 import { updateFootballAnimation } from './football-animation-clock';
+import { PLAYBOOK } from '../lib/football/playbook';
 import type { Pose } from './football-sprites';
 
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
@@ -25,6 +26,11 @@ export function footballAthletePose(live: LivePlay, athlete: Athlete,
       return { ...base, action: 'throw', progress: .6 + .4 * clamp(live.flight.age / .22), ball: false };
     if (ball && live.holdingPass)
       return { ...base, action: 'throw', progress: Math.min(.59, clamp((live.time - (live.holdStarted ?? live.time)) / .28)) };
+    if (ball && live.mode === 'dropback' && live.offense === 'away') {
+      const releaseRead = live.target ?? PLAYBOOK[live.play].develop;
+      if (live.time >= releaseRead - .28)
+        return { ...base, action: 'throw', progress: Math.min(.59, clamp((live.time - releaseRead + .28) / .28) * .59) };
+    }
     if (ball && (live.snapAge ?? 1) < .3)
       return { ...base, action: 'snap', progress: clamp(((live.snapAge ?? .18) - .18) / .12) };
     if (live.mode === 'handoff') return { ...base, action: 'handoff', progress: clamp(live.time / .45) };

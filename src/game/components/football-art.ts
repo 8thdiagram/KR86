@@ -1,6 +1,8 @@
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
 import { withBroadcastAnchor } from './football-broadcast';
 import { sharpPixelRect } from './football-pixel-scale';
+import { BALL_ART, footballFlightPixels } from './football-ball-art';
+export { BALL_ART } from './football-ball-art';
 /** Shared kit policy: body is the solid primary jersey; trim is the secondary helmet. */
 export type FootballKit = { body: string; trim: string; dir: 1 | -1; edge?: string; skin?: string; position?: SkinPosition };
 /** Rendering-only helmet identity; never swap the team palette used by field art. */
@@ -41,8 +43,6 @@ export function uniformKit(team: TeamPalette, dir: 1 | -1, opponent?: TeamPalett
 }
 
 export type PixelPut = (color: string, x: number, y: number, w: number, h: number) => void;
-export const BALL_ART = { leather: '#8a4a1f', highlight: '#b87538', shade: '#60351e',
-  stripe: '#fffaf0', outline: '#10213a' } as const;
 /** Crisp pointed football with TWO end stripes; held and flight art share the same anatomy. */
 export function footballPixels(put: PixelPut, x: number, y: number, held = false, tall = false) {
   const w = held ? 9 : 11, h = held ? 5 : 7;
@@ -72,18 +72,19 @@ export function footballPixels(put: PixelPut, x: number, y: number, held = false
   }
 }
 export function drawFootballBall(ctx: CanvasRenderingContext2D, x: number, y: number,
-  options: { held?: boolean; small?: boolean; z?: number; spin?: number; shadow?: boolean } = {}) {
+  options: { held?: boolean; small?: boolean; z?: number; spin?: number; shadow?: boolean; tumble?: boolean } = {}) {
   return withBroadcastAnchor(ctx, x, y, () => ballAtAnchor(ctx, x, y, options));
 }
 function ballAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
-  options: { held?: boolean; small?: boolean; z?: number; spin?: number; shadow?: boolean }) {
+  options: { held?: boolean; small?: boolean; z?: number; spin?: number; shadow?: boolean; tumble?: boolean }) {
   const held = !!options.held, small = held || !!options.small;
-  const z = options.z ?? 0, tall = !held && Math.floor((options.spin ?? 0) * 8) % 2 !== 0;
-  const width = tall ? small ? 5 : 7 : small ? 9 : 11, height = tall ? small ? 9 : 11 : small ? 5 : 7;
-  const put: PixelPut = (c, u, v, w, h) => { ctx.fillStyle = c; sharpPixelRect(ctx, Math.round(u * 2) / 2, Math.round(v * 2) / 2, w, h); };
+  const z = options.z ?? 0;
+  const put: PixelPut = (c, u, v, w, h) => { ctx.fillStyle = c; sharpPixelRect(ctx, u, v, w, h); };
   if (options.shadow) {
     const w = Math.max(3, 8 - Math.round(z / 14));
     put('rgba(8,40,16,.35)', x - w / 2, y + 2, w, 2);
   }
-  footballPixels(put, Math.round(x) - Math.floor(width / 2), Math.round(y - z) - Math.floor(height / 2), small, tall);
+  if (held) footballPixels(put, x - 4, y - 2, true);
+  else for (const pixel of footballFlightPixels(small, options.spin ?? 0, options.tumble ?? true))
+    put(pixel.color, x + pixel.x, y - z + pixel.y, pixel.width, 1);
 }

@@ -3,7 +3,7 @@ name: Retro presentation direction
 description: User's standing visual direction and audio boundaries for Kick Return ’86.
 ---
 
-Kick Return ’86 uses exceptional late-1980s NES character art: deliberately authored raster poses, strong outlines, substantial adult anatomy, thick articulated thighs and calves, recognizable cleats, readable shoulder pads, and restrained discrete shading. This complete character-art reset supersedes the earlier skinny, smoother, less-pixelated and long-stick-leg directions. Keep the existing field, camera, interface, intro and audio.
+Kick Return ’86 uses exceptional late-1980s NES character art: deliberately authored raster poses, strong outlines, substantial adult anatomy, thick articulated thighs and calves, recognizable cleats, readable shoulder pads, and restrained discrete shading. This complete character-art reset supersedes the earlier skinny, smoother, less-pixelated and long-stick-leg directions. Keep the existing field geometry, camera perspective, interface, intro and audio.
 
 **Why:** The user explicitly requested a complete NES football character redesign, not incremental modification of the previous sprites, and supplied a fighting-game screenshot as the physical-anatomy reference.
 
@@ -20,6 +20,12 @@ Keep the newly approved sprite designs. Refine them with approximately 10% faste
 **Why:** The user explicitly liked the new sprites and asked for faster, smoother motion and smaller helmets, not another redesign. This supersedes the earlier instruction to leave player speed unchanged.
 
 **How to apply:** Keep strides recognizable rather than excessively fast or jittery. Smooth render positioning without changing ball speed, game/pressure clocks, probabilities, controls, field/camera, saves, or established sound effects.
+
+Further flow refinements must preserve the existing speed and difficulty balance, not add another player-speed increase. The user confirmed the improved designs look significantly better; refine natural bent arm pumps and event-specific reaches without replacing those designs.
+
+**Why:** The user explicitly prioritized restoring smooth ball movement, camera scrolling and responsiveness while keeping the improved graphics, current game speed and all audio.
+
+**How to apply:** Improve presentation and rendering performance rather than using faster physics or simplified animation as a shortcut. Keep the television texture barely perceptible and retain crisp native pixels.
 
 Prioritize clear individual sprites: white pants, primary-team-color jerseys, secondary-team-color helmets, and white facemasks. Discrete highlight/shadow and cuff pixels are allowed by the complete redesign, but team identity must remain obvious. Use dark definition for silhouettes and limb separation, not black face panels. Do not add decorative lines around downed players.
 

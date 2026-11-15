@@ -124,12 +124,13 @@ test('Classic, Full Game, carried, airborne and ground footballs all use shared 
   ]) {
     const { ctx, paints } = canvas(); draw(ctx);
     assert(paints.some(p => p.c === BALL_ART.leather));
-    assert.equal(paints.filter(p => p.c === BALL_ART.stripe && (p.h >= 3 || p.w >= 3)).length, 2);
+    assert(paints.filter(p => p.c === BALL_ART.stripe).reduce((area, p) => area + p.w * p.h, 0) >= 3,
+      'recognizable white detailing remains present across the authored rotation cels');
   }
 });
 test('Full Game airborne balls keep carried size; passes stay horizontal while kicks can tumble', () => {
-  const bounds = (spin: number, z: number) => {
-    const { ctx, paints } = canvas(); airBall(ctx, 100, 100, z, spin);
+  const bounds = (spin: number, z: number, tumble = true) => {
+    const { ctx, paints } = canvas(); airBall(ctx, 100, 100, z, spin, tumble);
     const ball = paints.filter(p => p.c !== 'rgba(8,40,16,.35)');
     return {
       width: Math.max(...ball.map(p => p.x + p.w)) - Math.min(...ball.map(p => p.x)),
@@ -138,7 +139,10 @@ test('Full Game airborne balls keep carried size; passes stay horizontal while k
   };
   assert.deepEqual(bounds(0, 0), { width: 9, height: 5 });
   assert.deepEqual(bounds(0, 40), { width: 9, height: 5 });
-  assert.deepEqual(bounds(.15, 40), { width: 5, height: 9 });
+  assert.deepEqual(bounds(.125, 40), { width: 7, height: 7 }, 'kicks rotate through diagonal cels, not a 90-degree flip');
+  assert.deepEqual(bounds(.25, 40), { width: 5, height: 9 });
+  for (const spin of [.1, .25, .6]) assert.deepEqual(bounds(spin, 40, false), { width: 9, height: 5 },
+    'passes spiral along a stable elongated silhouette');
 });
 test('every team uses solid primary jerseys and secondary helmets with long white pants in both modes', () => {
   for (const team of KICK_TEAMS) for (const dir of [-1, 1] as const) {

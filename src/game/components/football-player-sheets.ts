@@ -122,6 +122,8 @@ export const ELITE_C_RUN_LEGS = Object.freeze(C_PLANTED_AND_RUN[1]!.slice(0, 6))
 
 export type EliteCArmPose = 'pumpA' | 'pumpB' | 'guard' | 'reach' | 'throw' | 'block';
 const arms22 = (poseRows: readonly string[]) => fit([...Array.from({ length: 8 }, () => D), ...poseRows, ...Array.from({ length: 22 - 8 - poseRows.length }, () => D)]);
+const armRow = (left: string, right: string) =>
+  '...' + left.padStart(4, '.').slice(-4) + '..' + right.padEnd(4, '.').slice(0, 4) + '...';
 export const ELITE_C_ARMS: Readonly<Record<EliteCArmPose, PlayerDesignGrid>> = Object.freeze({
   pumpA: arms22(['..KJJJ..........','...KJJJKK........','....KJJJKK.......','.....KSSK........','.........KJJ.....','........KKJJ.....','........KSSK.....']),
   pumpB: arms22(['..........JJJ...','.........KKJJJ...','........KKJJJK...','........KSSK.....','....KJJ..........','....KJJKK.........','.....KSSK.........']),
@@ -129,6 +131,79 @@ export const ELITE_C_ARMS: Readonly<Record<EliteCArmPose, PlayerDesignGrid>> = O
   reach: arms22(['...KJJJ..........','...KJJJJKKKKK....','....KJJJKKKKK....','.....KKJJK........','......KSSK........']),
   throw: arms22(['.........KSSK...','.........KJJJ...','........KKJJ....','.......KKJJ.....','......KKJJ......','...KJJJKKKKK....','...KJJJJJKK.....']),
   block: arms22(['..KJJJ....KJJJ..','...KJJJKKKKJJJ...','....KSSK..KSSK..']),
+});
+
+/**
+ * Gameplay-only action arms. The reviewed concept sheets above remain the
+ * untouched comparison baseline; these compact, outlined bends are layered
+ * over the same approved bodies only in the live atlas.
+ */
+export const ELITE_C_GAME_ARMS = Object.freeze({
+  pumpA: arms22([
+    armRow('..KJ', 'KJ..'),
+    armRow('.KJJ', '..KSS'),
+    armRow('KKJ.', '..KJ'),
+    armRow('.KJ.', '...K'),
+    armRow('.KSS', '....'),
+  ]),
+  pumpB: arms22([
+    armRow('KJ..', '..KJ'),
+    armRow('KSS.', '.KJJ'),
+    armRow('KJ..', '.KKJ'),
+    armRow('K...', '..KJ'),
+    armRow('....', '..KSS'),
+  ]),
+  guard: arms22([
+    armRow('..KJ', 'KJ..'),
+    armRow('.KJJ', 'JJKK'),
+    armRow('..SS', 'SS..'),
+  ]),
+  reach: arms22([
+    armRow('.KKJ', 'KJKK'),
+    armRow('KJJJ', 'KKJJ'),
+    armRow('..SS', 'SS..'),
+  ]),
+  drawBack: arms22([
+    armRow('..KJ', 'KJ..'),
+    armRow('.KJJ', 'KJJ.'),
+    armRow('KJJ.', '..KK'),
+    armRow('.KSS', '...S'),
+  ]),
+  throwForward: arms22([
+    armRow('.KJ.', 'KJ..'),
+    armRow('.KJJ', 'KKJJ'),
+    armRow('....', 'KJJJ'),
+    armRow('....', '.KSS'),
+  ]),
+  release: arms22([
+    armRow('.KJ.', 'KJ..'),
+    armRow('.KJJ', 'KKJJ'),
+    armRow('....', '..KJJ'),
+    armRow('....', '...S'),
+  ]),
+  followThrough: arms22([
+    armRow('.KJ.', 'KJ..'),
+    armRow('.KJJ', 'KKJ.'),
+    armRow('KJJ.', '..KJJ'),
+    armRow('.KSS', '..KSS'),
+  ]),
+  block: arms22([
+    armRow('KJJ.', '.KJJ'),
+    armRow('.KJJ', 'KJJ.'),
+    armRow('..SS', 'SS..'),
+  ]),
+  carryA: arms22([
+    armRow('..KJ', 'KJ..'),
+    armRow('.KJJ', 'KKJJ'),
+    armRow('.KJJ', 'KKJ.'),
+    armRow('..KSS', '...S'),
+  ]),
+  carryB: arms22([
+    armRow('KJ..', 'KJ..'),
+    armRow('KKJJ', 'KKJJ'),
+    armRow('.KJJ', 'KKJ.'),
+    armRow('..KSS', '...S'),
+  ]),
 });
 
 export const ELITE_C_STANCE_LEGS = fit([

@@ -8,6 +8,7 @@ import { fieldGoalHeight } from '../lib/football/field-goal-geometry';
 import { highlightedReceiver } from '../lib/football/passing';
 import { primaryPlayer } from '../lib/football/execution';
 import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
+import { stepRenderCamera, type RenderCamera } from '../lib/football/render-camera';
 import { slim, carrierMark, airBall, landingMark, goalPosts, R, type Kit } from './football-sprites';
 import { updateFootballAnimation } from './football-animation-clock';
 import { footballAthletePose } from './football-player-state';
@@ -32,7 +33,7 @@ export const spotX = (spot: number) => 100 + spot * 10;
 /** Match Classic's ahead-of-carrier composition, not a centered new football camera. */
 export function footballCameraX(focus: number, viewW: number, scale: number, landscape: boolean, direction: 1 | -1 = 1) {
   const visible = viewW / scale;
-  const behind = landscape ? Math.min(64, visible * .24) : Math.min(90, viewW * .3);
+  const behind = landscape ? Math.min(64, visible * .24) : Math.min(90, visible * .42);
   return clamp(direction === 1 ? focus - behind : focus - visible + behind, 0, Math.max(0, KR.worldWidth - visible));
 }
 
@@ -72,24 +73,18 @@ export function footballFocusX(g: FootballGame) {
   return c ? c.x : worldX(spotX(live.snapSpot), g.fieldFrame ?? 1);
 }
 
-/** Visual-only camera smoothing. Keyed by game object; reset on new match / non-animated jumps. */
-type Cam = { x: number; at: number; seed: number; plays: number; phase: string };
-const cams = new WeakMap<FootballGame, Cam>();
-let lastCam: Cam | undefined;
-function smoothCam(g: FootballGame, target: number, ball: number | undefined, visible: number) {
+/** Visual-only camera smoothing, owned by the stable canvas rather than a
+ * temporary formation snapshot. Reset on new matches and non-animated cuts. */
+type Cam = RenderCamera & { seed: number };
+const cams = new WeakMap<CanvasRenderingContext2D, Cam>();
+function smoothCam(ctx: CanvasRenderingContext2D, g: FootballGame, target: number, ball: number | undefined, visible: number) {
   const now = typeof performance !== 'undefined' ? performance.now() : 0;
-  const prev = cams.get(g) ?? (lastCam && lastCam.seed === g.seed ? lastCam : undefined);
-  const animated = g.phase === 'live' || g.phase === 'kickoff' || !!g.special && g.special.stage !== 'resolved';
-  let x = target;
-  if (prev && animated && prev.seed === g.seed && Math.abs(prev.x - target) < visible * 1.5 && now - prev.at < 500) {
-    const dt = clamp((now - prev.at) / 1000, 0, .1);
-    x = prev.x + (target - prev.x) * (1 - Math.exp(-dt * 7));
-  }
-  if (ball !== undefined) x = clamp(x, ball - visible + 16, ball - 16); // ball never leaves the frame
-  x = clamp(x, 0, Math.max(0, KR.worldWidth - visible));
-  const s: Cam = { x, at: now, seed: g.seed, plays: g.plays, phase: g.phase };
-  cams.set(g, s); lastCam = s;
-  return x;
+  const prev = cams.get(ctx);
+  const animated = ['live', 'kickoff', 'play-dead', 'final'].includes(g.phase);
+  const s = stepRenderCamera(animated && prev?.seed === g.seed ? prev : undefined,
+    target, now, visible, KR.worldWidth, ball);
+  cams.set(ctx, { ...s, seed: g.seed });
+  return s.x;
 }
 
 function ballX(g: FootballGame): number | undefined {
@@ -151,7 +146,7 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   const live = g.live, sp = g.special;
   const focus = footballFocusX(g);
   const cameraTarget = footballCameraX(focus, viewW, scale, !!view?.landscape, playTravelDirection(g));
-  const camX = smoothCam(g, cameraTarget, ballX(g), visibleW);
+  const camX = smoothCam(ctx, g, cameraTarget, ballX(g), visibleW);
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.imageSmoothingEnabled = false;
@@ -286,8 +281,8 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
   }
   if (carrierAt && g.phase === 'live') carrierMark(ctx, carrierAt.x, carrierAt.y, seconds);
   if (snap && g.phase !== 'final') { const b = snapBall(live); airBall(ctx, b.x, b.y + 2, b.z + 2, 0); }
-  if (live.flight) { const f = live.flight; landingMark(ctx, f.toX, f.toY, seconds); airBall(ctx, f.x, f.y, f.z, 0); }
-  if(live.option?.ball) {const b=live.option.ball;airBall(ctx,b.x,b.y,b.z,0);}
+  if (live.flight) { const f = live.flight; landingMark(ctx, f.toX, f.toY, seconds); airBall(ctx, f.x, f.y, f.z, f.age, false); }
+  if(live.option?.ball) {const b=live.option.ball;airBall(ctx,b.x,b.y,b.z,b.age,false);}
   if (live.loose) airBall(ctx, live.loose.x, live.loose.y, live.loose.z ?? 0, live.loose.time * 4);
   if (live.mode === 'kick' && live.kickAccuracy !== undefined && g.phase === 'live') {
     const kicker = live.athletes[5]!, k = clamp(live.kickAge / .9, 0, 1);

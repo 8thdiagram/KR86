@@ -25,7 +25,8 @@ test('TV treatment stays faint and static, with no double video scanlines', () =
   assert.match(css, /repeating-linear-gradient/);
   const alphas = [...css.matchAll(/rgba\(\s*\d+,\s*\d+,\s*\d+,\s*([\d.]+)\s*\)/g)]
     .map(match => Number(match[1]));
-  assert.equal(alphas.length, 2);
+  assert.equal(alphas.length, 4);
+  assert(alphas.slice(0, 2).every(alpha => alpha <= .01), 'the added warmth must remain barely perceptible');
   assert(alphas.every(alpha => alpha > 0 && alpha <= .08), 'Individual effects must remain subtle.');
   assert.doesNotMatch(css, /animation:|filter:|backdrop-filter:|mix-blend-mode:|transform:/);
   assert.match(source('./retro-theme.css'), /\.kr-film-scan\s*\{\s*display:\s*none/);
