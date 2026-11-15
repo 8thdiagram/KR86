@@ -6,7 +6,7 @@ import { fieldGoalDistance, fieldGoalAllowed, PLAYBOOK } from '../lib/football/p
 import { highlightedReceiver } from '../lib/football/passing';
 import { primaryPlayer } from '../lib/football/execution';
 import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
-import { slim, carrierMark, airBall, landingMark, goalPosts, heldBall, R, type Kit } from './football-sprites';
+import { slim, carrierMark, airBall, landingMark, goalPosts, heldBall, R, type Kit, type BodyView } from './football-sprites';
 import { uniformKit } from './football-art';
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
 import { isTackleActor } from '../lib/football/tackle-scene';
@@ -21,6 +21,12 @@ const { field, moveSprite, prone, referee, football, crowd } = kickFootballArt;
 const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 const LACE = '#f1e6d0', INK = '#10213a', FIRST = '#f4d23c', LOS = '#7fc8ff', ORANGE = '#ff8a2a';
 const SNAP = .18, CATCH_HOLD = .38;
+const motionView = (vx: number, vy: number, facing: 1 | -1): BodyView | undefined => {
+  if (Math.hypot(vx, vy) < 3 || Math.abs(vy) < Math.abs(vx) * .55) return undefined;
+  if (Math.abs(vx) < 3) return vy > 0 ? 0 : 4;
+  const lateral = Math.sign(vx) === facing;
+  return vy > 0 ? (lateral ? 1 : 3) : (lateral ? 3 : 1);
+};
 export const spotX = (spot: number) => 100 + spot * 10;
 /** Match Classic's ahead-of-carrier composition, not a centered new football camera. */
 export function footballCameraX(focus: number, viewW: number, scale: number, landscape: boolean, direction: 1 | -1 = 1) {
@@ -238,7 +244,10 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
     } else if (hasBall && (live.mode === 'run' || live.mode === 'scramble') && moveSprite(ctx, a.x, a.y, kit, t, { ...live.movement, player: { x: a.x, y: a.y } })) { /* original move pose */ }
     else if (snap && a.role === 'OL' && a === centerOf(live)) slim(ctx, a.x, a.y, kit, { crouch: true, hold: live.time <= 0 });
     else if (snap && a.role === 'QB') slim(ctx, a.x, a.y, kit, { hold: true });
-    else slim(ctx, a.x, a.y, { ...kit, dir: facing }, { step: moving ? t + a.id : 0, ball: hasBall, engaged, lean: engaged ? facing : 0, crouch: snap });
+    else slim(ctx, a.x, a.y, { ...kit, dir: facing }, {
+      step: moving ? t + a.id : 0, ball: hasBall, engaged, lean: engaged ? facing : 0, crouch: snap,
+      view: moving ? motionView(a.vx, a.vy, facing) : undefined,
+    });
     if (g.phase === 'live' && a.id === read && g.possession === 'home' && !ic) {
       playerTarget(ctx, a.x, a.y, live.holdingPass ? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE);
     }
@@ -315,7 +324,11 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       if (st !== 'recovery' || age >= .32) heldBall(ctx, Math.round(a.x + Math.cos(ang) * 6) - 2, Math.round(a.y + Math.sin(ang) * 6) - 2);
     } else {
       const fielding = a.id === sp.returner && (st === 'flight' || st === 'bounce') && Math.hypot(a.x - sp.ball.x, a.y - sp.ball.y) < 26;
-      slim(ctx, a.x, a.y, { ...kit, dir: fielding ? (sp.ball.x < a.x ? -1 : 1) : facing }, { step: moving ? t + a.id : 0, hold: fielding, engaged: a.engaged > sp.age, lean: a.engaged > sp.age ? facing : 0 });
+      const actualFacing = fielding ? (sp.ball.x < a.x ? -1 : 1) : facing;
+      slim(ctx, a.x, a.y, { ...kit, dir: actualFacing }, {
+        step: moving ? t + a.id : 0, hold: fielding, engaged: a.engaged > sp.age, lean: a.engaged > sp.age ? facing : 0,
+        view: moving ? motionView(a.vx, a.vy, actualFacing) : undefined,
+      });
     }
     ctx.restore();
   }

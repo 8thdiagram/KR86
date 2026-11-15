@@ -149,7 +149,9 @@ test('every configured team uses its primary jersey, secondary helmet and white 
         p.w === (mode === 'classic' ? 7 : 6) && p.h === 5), `${team.name} smaller secondary helmet`);
       assert.equal(pixels.has('100,91'), false, `${mode}: helmet is one pixel shorter`);
       assert(paints.some(p => p.c === team.body && p.h === (mode === 'classic' ? 5 : 4)), `${team.name} primary jersey`);
-      assert.equal(pixels.get('98,103'), UNIFORM.pants, `${team.name} white pants, ${mode}`);
+      assert([UNIFORM.pants, UNIFORM.pantsShade].includes(pixels.get('98,103') as typeof UNIFORM.pants),
+        `${team.name} white pants or their far-leg shade, ${mode}`);
+      assert([...pixels.values()].includes(UNIFORM.pants), `${team.name} retains white near-leg pixels, ${mode}`);
     }
   }
 });

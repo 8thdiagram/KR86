@@ -1,11 +1,13 @@
 {
   "description": "Frozen trytry game source. No automatic synchronization. Platform adapters are reviewed separately.",
   "gameplayOverrides": {
-    "components/football-renderer.ts": "e6f0bb21b2cdbe25762a37aa8b0e649e76311eb9c19aed816b20fd58e9c2e15c",
+    "components/football-renderer.ts": "b2433361d37f7ba14257b1722da0ee5dd70b53cc16b98eba6033672d6af45003",
+    "components/football-sprites.ts": "a58a42e22e2be670a727b1bc4cfb3856a5431d5ac7ffb4399eef4bc19d5f7da3",
+    "components/football-tackle.ts": "4e50d64651a5d72e2d3b6945a842fa5f6f0ba79ccdd6b588e6c21a154453520b",
     "components/football-field-goal.ts": "2e79742ba1355d27c406e8f6880c5e0fe861032c33f94cf1292e4a33686e038d",
     "components/football-preplay.tsx": "5ef1ab0a5b00711c2c80fdd91bb3abea4bff2044ad697a54292cf52f465c3396",
     "components/football-preplay.css": "f29b65ed982773a32afde79b5e5eaab735247afb01491d064303b26bc7a10f4e",
-    "components/kick-return-renderer.ts": "ee3844423b11958211af9368c0e88adbf1a99dae7b504c593ee806903a090449",
+    "components/kick-return-renderer.ts": "576a1e589eaabadc248080e98ee64456a9189d860e1c19f0601f4d665154ecb7",
     "lib/football/types.ts": "9e2227d915a63a6b6ea7e3fe914fa52059b94ee6657e465455a35bccb04f67fc",
     "lib/football/controls.ts": "19aab4514da064d23cfb49ffe66c739eba0ff4475f75a4f53731e2fe7e0e34e7",
     "lib/football/pursuit.ts": "d7128bf39097da35dd11add048f4830037434bf5207a821ad382f28bd95ed71b",

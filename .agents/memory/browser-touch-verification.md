@@ -14,3 +14,9 @@ Visibility tests also activate the retained-game host's pause overlay, including
 **Why:** A legitimate pause overlay makes later replay/menu clicks inert; that is not a broken click handler or audio lifecycle.
 
 **How to apply:** After a hidden/visible audio check, resume through the host's existing pause dialog before testing other controls. Inspect the rendered overlay before changing input simulation.
+
+Headless Chromium can list built-in extension background pages before its actual browser tab.
+
+**Why:** A background page accepts a debugger connection but can stall ordinary navigation and screenshot requests.
+
+**How to apply:** Select the explicitly created target by its returned ID, or filter for `type === 'page'`; never assume the first debugger target is the app.
