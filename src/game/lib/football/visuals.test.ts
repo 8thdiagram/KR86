@@ -58,7 +58,7 @@ test('field-goal timing meter clears the scoreboard and keeps its label on scree
     assert.equal(bars.length, 1);
     assert(bars[0]!.y - 3 * height / 192 > 40, 'meter pointer must clear the HUD');
     const label = labels.find(l => l.text.endsWith('YD ATTEMPT'));
-    assert(label && label.y > bars[0]!.y + bars[0]!.h && label.y < height - 56);
+    assert(label && label.y > bars[0]!.y + bars[0]!.h && label.y < height - 28, 'attempt label clears the meter and players');
     g.live.kickAccuracy = .5;
     bars.length = 0;
     drawFootball(ctx, g, { width, height }, 0);

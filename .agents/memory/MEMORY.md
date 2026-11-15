@@ -2,3 +2,4 @@
 - [NES presentation direction](presentation-direction.md) — intro-still menu, no opening/title hut, upbeat once-only chip theme, subtle TV overlay and worn field paint; preserve gameplay and saves.
 - [Defensive control boundaries](defensive-control-boundaries.md) — fully CPU-controlled defense; no selected defenders or manual movement; retain original ACTION and three-second pressure checks.
 - [Browser touch verification](browser-touch-verification.md) — isolate saves, release the correct CDP contacts, and resume the host after visibility tests.
+- [Interactive field goals](interactive-field-goals.md) — Kick View owns aiming through verdict; projected posts, meter and real crossing must agree.

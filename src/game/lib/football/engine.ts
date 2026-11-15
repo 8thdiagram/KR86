@@ -289,6 +289,12 @@ function remember(g: FootballGame, play: string, result: string, gain: number, o
 }
 function finishField(g: FootballGame, result: FieldResult) {
   const l = g.live!, offense = l.offense ?? g.possession, stat = g.stats[offense];
+  // Retain the actual dead-ball lane for Kick View only. This does not move
+  // scrimmage formations or change the spot/down/clock. Incompletions retain it.
+  if (result.reason !== 'incomplete') {
+    const carrier = l.athletes.find(a => a.id === l.carrier);
+    if (carrier) g.fieldGoalSpotY = clamp(carrier.y, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
+  }
   const originalGainSpot = l.turnoverSpot ?? result.spot;
   const gain = result.reason === 'incomplete' || result.reason === 'interception' ? 0 : originalGainSpot - l.snapSpot;
   const isPass = PLAYBOOK[l.play].kind === 'pass';
@@ -353,6 +359,8 @@ function stepKickPlay(g: FootballGame, input: FootballInput, dt: number) {
 }
 function finishSpecial(g: FootballGame, result: SpecialResult) {
   const s = g.special!, kicking = s.kicking;
+  if (result.kind !== 'good' && result.kind !== 'miss')
+    g.fieldGoalSpotY = clamp(g.returnAttempt?.player.y ?? s.ball.y, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
   g.phase = 'play-dead'; g.nextPhase = 'play-call'; g.playClockRunning = false; stopGameClock(g, 'possession');
   if (s.kind === 'punt') g.stats[kicking].punts++;
   if (result.kind === 'safety') {

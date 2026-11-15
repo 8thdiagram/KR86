@@ -3,6 +3,7 @@ import { FOOTBALL_SIDELINES } from './sidelines';
 import { clamp, other, random, type Athlete, type FootballGame, type FootballInput, type Side, type SpecialTeams } from './types';
 import { startField } from './field';
 import { fieldGoalDistance } from './playbook';
+import { fieldGoalAim, fieldGoalHeight, fieldGoalMeterAccuracy } from './field-goal-geometry';
 import { canDefensiveAction, startNearestDive } from './defensive-action';
 import { ELITE, eliteSlots } from './secondary';
 import { franchiseFactor, franchiseKickControl } from './franchise-upgrades';
@@ -75,23 +76,19 @@ export function puntSequence(g: FootballGame): SpecialTeams {
     travel, touchback: toX <= 100 };
 }
 
-function fieldGoalAim(g: FootballGame, accuracy: number) {
-  const distance = fieldGoalDistance(g), max = g.profiles[g.possession].kickMax;
-  const window = clamp(.26 - Math.max(0, distance - 20) / Math.max(1, max - 20) * .235, .025, .26);
-  const good = Math.abs(accuracy - .5) <= window;
-  const offset = good ? (accuracy - .5) / window * 13 : Math.sign(accuracy - .5 || 1) * (28 + Math.abs(accuracy - .5) * 30);
-  return { good, toY: 96 + offset };
-}
 export function fieldGoalSequence(g: FootballGame): SpecialTeams {
   const l = g.live!, accuracy = l.kickAccuracy;
   const aim = accuracy === undefined ? { toY: 96 } : fieldGoalAim(g, accuracy);
   const athletes = l.athletes.map(a => ({ ...a, vx: 0, vy: 0 }));
   const holder = athletes[6]!, kicker = athletes[5]!;
-  holder.x = 100 + g.spot * 10 - 55; holder.y = 96; kicker.x = holder.x - 22; kicker.y = 108;
-  // Good timing passes between the visible uprights; a miss finishes outside.
+  holder.x = 100 + g.spot * 10 - 55;
+  holder.y = Number.isFinite(g.fieldGoalSpotY)
+    ? clamp(g.fieldGoalSpotY!, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY) : holder.y;
+  kicker.x = holder.x - 22; kicker.y = holder.y + 12;
+  // The same continuous goal-plane aim drives both flight and scoring.
   return { kind: 'field-goal', stage: 'snap', age: 0, stageAge: 0, receiver: other(g.possession), kicking: g.possession,
-    fromX: holder.x, fromY: 96, toX: 1194, ...aim, duration: 1.65,
-    ball: { x: 100 + g.spot * 10, y: 96, z: 0 }, athletes, kicker: 5, returner: 6, accuracy };
+    fromX: holder.x, fromY: holder.y, toX: 1194, ...aim, duration: 1.65,
+    ball: { x: 100 + g.spot * 10, y: holder.y, z: 0 }, athletes, kicker: 5, returner: 6, accuracy };
 }
 
 export type SpecialResult = { kind: 'return' | 'touchdown' | 'recovery' | 'touchback' | 'good' | 'miss' | 'scrimmage' | 'safety'; side: Side; spot: number; detail?: string };
@@ -185,7 +182,7 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
   if (s.stage === 'snap') {
     const t = clamp(s.stageAge / .28, 0, 1);
     const los = s.kind === 'punt' ? 1200 - (100 + g.spot * 10) : 100 + g.spot * 10;
-    s.ball = { x: los + (s.fromX - los) * t, y: 96, z: Math.sin(t * Math.PI) * 3 };
+    s.ball = { x: los + (s.fromX - los) * t, y: s.fromY, z: Math.sin(t * Math.PI) * 3 };
     if (t >= 1) stage(s, s.kind === 'field-goal' && s.accuracy === undefined ? 'hold' : 'approach');
     return;
   }
@@ -195,7 +192,7 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
     l.time += dt; l.kickMeter = .5 + Math.sin(l.time * (.85 + Math.max(0, distance - 25) * .06) * control * Math.PI * 2) * .5;
     if (g.possession === 'home' ? input.action : s.stageAge > .8) {
       const error = g.possession === 'home' ? 0 : (random(g) - .5) * (.24 + Math.max(0, distance - 35) * .009) * control;
-      s.accuracy = l.kickAccuracy = g.possession === 'home' ? l.kickMeter : clamp(.5 + error, 0, 1);
+      s.accuracy = l.kickAccuracy = g.possession === 'home' ? fieldGoalMeterAccuracy(g, s, l.kickMeter) : clamp(.5 + error, 0, 1);
       Object.assign(s, fieldGoalAim(g, s.accuracy)); stage(s, 'approach');
     }
     return;
@@ -216,8 +213,9 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
     s.ball.y = s.fromY + (s.toY - s.fromY) * t + (s.kind === 'squib' || s.kind === 'onside' ? Math.sin(t * 19) * 5 * t : 0);
     s.ball.z = s.kind === 'squib' || s.kind === 'onside'
       ? Math.abs(Math.sin(t * Math.PI * (s.kind === 'squib' ? 4 : 3))) * (1 - t * .65) * 12
-      : Math.sin(t * Math.PI) * (s.kind === 'field-goal' ? 42 : 55) + (s.kind === 'field-goal' ? t * 23 : 0);
-    s.ball.z = Math.min(s.ball.z, s.ball.y - 24);
+      : s.kind === 'field-goal' ? fieldGoalHeight(g, t) : Math.sin(t * Math.PI) * 55;
+    // The overhead sideline-height clamp is not a physical altitude limit.
+    if (s.kind !== 'field-goal') s.ball.z = Math.min(s.ball.z, s.ball.y - 24);
     if (s.stageAge <= .12 && contactKickBlock(g, s)) return;
     if ((s.kind === 'squib' || s.kind === 'onside') && s.stage === 'flight' && t > .25) s.stage = 'bounce'; // retain flight age
     if (s.kind !== 'field-goal') {

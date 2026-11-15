@@ -2,7 +2,9 @@ import { KR } from '../lib/kick-return-engine';
 import { kickMatchupTeams } from '../lib/kick-return-teams';
 import { fieldViewportFrame, type KickViewport } from '../lib/kick-return-viewport';
 import type { Athlete, FootballGame, LivePlay, SpecialTeams } from '../lib/football/types';
-import { fieldGoalDistance, fieldGoalAllowed, PLAYBOOK } from '../lib/football/playbook';
+import { fieldGoalAllowed, PLAYBOOK } from '../lib/football/playbook';
+import { fieldGoalSequence } from '../lib/football/special-teams';
+import { fieldGoalHeight } from '../lib/football/field-goal-geometry';
 import { highlightedReceiver } from '../lib/football/passing';
 import { primaryPlayer } from '../lib/football/execution';
 import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
@@ -14,7 +16,7 @@ import { drawTackle } from './football-tackle';
 import { attackDirection, playTravelDirection, worldX } from '../lib/football/direction';
 import { drawRegularSeasonMidfield } from '../../platform/midfield-logo';
 import { PLAYER_TARGET_PIXELS, PLAYER_TARGET_WHITE, PLAYER_TARGET_YELLOW } from '../lib/football/player-target';
-import { drawFieldGoalFlight, GOAL_VIEW } from './football-field-goal';
+import { drawFieldGoalFlight } from './football-field-goal';
 
 /** Presentation only. Reads the engine state; never mutates it and never samples randomness. */
 const { field, moveSprite, prone, referee, football, crowd } = kickFootballArt;
@@ -109,10 +111,33 @@ function kits(g: FootballGame) {
 }
 
 export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, view: KickViewport | undefined, seconds: number) {
-  // Keep the original leg follow-through and the complete kick-block window.
-  if (g.special?.kind === 'field-goal' && (g.special.stage === 'resolved' ||
-      g.special.stage === 'flight' && g.special.stageAge >= GOAL_VIEW.followThrough)) {
+  // A block still belongs to the existing overhead loose-ball/return sequence.
+  const overheadKickStages = ['loose', 'return', 'recovery', 'bounce'];
+  if (g.special?.kind === 'field-goal' && !overheadKickStages.includes(g.special.stage)) {
     drawFieldGoalFlight(ctx, g, view);
+    return;
+  }
+  // Keep older/pre-special live field-goal states in the same camera. Sequence
+  // construction is deterministic and presentation-only; it never consumes RNG.
+  if (!g.special && g.live?.play === 'field-goal' && (g.phase === 'pre-snap' || g.phase === 'live')) {
+    const preview = fieldGoalSequence(g);
+    if (g.phase === 'pre-snap') {
+      preview.stage = 'snap';
+    } else if (g.live.kickAccuracy === undefined) {
+      preview.stage = 'hold';
+      preview.ball = { x: preview.fromX, y: preview.fromY, z: 0 };
+    } else {
+      const t = clamp(g.live.kickAge / .9, 0, 1);
+      preview.stage = 'flight';
+      preview.duration = .9;
+      preview.stageAge = g.live.kickAge;
+      preview.ball = {
+        x: preview.fromX + (preview.toX - preview.fromX) * t,
+        y: preview.fromY + (preview.toY - preview.fromY) * t,
+        z: fieldGoalHeight(g, t),
+      };
+    }
+    drawFieldGoalFlight(ctx, { ...g, special: preview }, view);
     return;
   }
   if (g.phase === 'kickoff' && g.returnAttempt && !g.special) {
@@ -169,24 +194,6 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
   }
   ctx.restore();
 
-  // Keep the entire meter below the overlaid landscape scoreboard, not in its top stripe.
-  if (g.phase === 'live' && live?.mode === 'kick' && live.play === 'field-goal' && live.kickAccuracy === undefined &&
-      (!sp || sp.stage === 'hold')) {
-    ctx.save();
-    ctx.imageSmoothingEnabled = false;
-    const w = Math.min(viewW - 24, 180 * scale), h = 8 * scale, x = (viewW - w) / 2, y = Math.round(viewH * .3);
-    R(ctx, INK, x - 2, y - 2, w + 4, h + 4);
-    R(ctx, '#b33a2a', x, y, w, h);
-    const distance = fieldGoalDistance(g), max = g.profiles[g.possession].kickMax;
-    const window = clamp(.26 - Math.max(0, distance - 20) / Math.max(1, max - 20) * .235, .025, .26);
-    R(ctx, '#e3a83a', x + w * (.5 - window * 1.7), y, w * window * 3.4, h);
-    R(ctx, '#58c46a', x + w * (.5 - window), y, w * window * 2, h);
-    const m = clamp(live.kickMeter, 0, 1);
-    R(ctx, LACE, x + w * m - scale, y - 3 * scale, 2 * scale, h + 6 * scale);
-    ctx.fillStyle = LACE; ctx.font = `bold ${Math.round(7 * scale)}px ui-monospace, monospace`;
-    ctx.textAlign = 'center'; ctx.fillText(`${fieldGoalDistance(g)} YD ATTEMPT`, viewW / 2, y + h + 10 * scale);
-    ctx.restore();
-  }
 }
 
 /** The exact shared eight-rectangle targeting symbol. */

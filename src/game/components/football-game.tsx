@@ -365,7 +365,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
     : live?.option?.phase === 'read' ? 'ACTION pitches · otherwise keep'
     : live?.option?.phase === 'pitch' ? 'Pitch airborne'
     : live?.mode === 'scramble' ? 'Keep running · steer UP/DOWN'
-    : live?.mode === 'kick' ? live.play === 'field-goal' ? 'Stop the meter in the middle' : 'Tap to punt'
+    : live?.mode === 'kick' ? live.play === 'field-goal' ? 'Stop the marker between the uprights' : 'Tap to punt'
     : g.possession === 'away' && g.phase === 'live' ? 'Defense plays itself'
     : 'Tap: burst · hold: hesitate'
     : g.phase === 'pre-snap' ? g.possession === 'home' ? 'Press ACTION to snap' : 'Watch the snap'

@@ -81,6 +81,8 @@ export type TackleScene = { space: 'scrimmage' | 'special' | 'legacy-return';
   carrier: TackleActor; defender: TackleActor; direction: 1 | -1 };
 export type ClockStoppage = 'incomplete' | 'out-of-bounds' | 'timeout' | 'possession' | 'score' | 'penalty' | 'quarter-transition';
 export type FootballGame = {
+  /** Lateral dead-ball position for the next field goal; absent in older saves. */
+  fieldGoalSpotY?: number;
   rushing?: Partial<Record<Side, Partial<Record<'QB' | 'RB', { carries: number; yards: number; touchdowns: number; fumbles: number }>>>>;
   coaching?: import('./coaching').CoachingMemory;
   /** Snap-locked situational state; never a permanent player attribute. */
