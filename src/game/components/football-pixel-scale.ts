@@ -26,10 +26,14 @@ function drawEnlargedPixels(
   ctx: CanvasRenderingContext2D, x: number, y: number, draw: PixelDraw, footOffset: number,
 ) {
   const ax = Math.round(x), ay = Math.round(y), foot = ay + footOffset;
-  // Symmetric half-pixel rounding preserves mirrored rectangle silhouettes.
-  const snap = (v: number) => Math.sign(v) * Math.round(Math.abs(v));
-  const mapX = (v: number) => ax + snap((v - ax) * PLAYER_ART_SCALE);
-  const mapY = (v: number) => foot + snap((v - foot) * PLAYER_ART_SCALE);
+  // Keep original whole-pixel silhouette edges exactly where they were.
+  // Newly authored half-grid details use the extra backing-buffer resolution.
+  const edge = (v: number, anchor: number) => {
+    const delta = v - anchor, grid = Number.isInteger(delta) ? 1 : 2;
+    return anchor + Math.sign(delta) * Math.round(Math.abs(delta) * PLAYER_ART_SCALE * grid) / grid;
+  };
+  const mapX = (v: number) => edge(v, ax);
+  const mapY = (v: number) => edge(v, foot);
   const fillRect = (u: number, v: number, w: number, h: number) => {
     const left = mapX(u), top = mapY(v);
     sharpPixelRect(ctx, left, top, mapX(u + w) - left, mapY(v + h) - top);

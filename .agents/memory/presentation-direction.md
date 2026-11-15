@@ -1,13 +1,13 @@
 ---
-name: NES presentation direction
+name: Retro presentation direction
 description: User's standing visual direction and audio boundaries for Kick Return ’86.
 ---
 
-Kick Return ’86 should look like a believable late-NES football game from roughly 1986–1988, adapted for mobile, not a modern mobile app or SaaS dashboard. Use sharp pixel art, crisp separated colors, slightly larger readable player sprites, square frames, a night stadium, chrome/white/blue lettering, and red accents inspired by the supplied icon artwork.
+Kick Return ’86 should now use 16-bit-capable graphics game-wide, as close as possible to the supplied football screenshot, adapted for mobile rather than a modern mobile app or SaaS dashboard. Keep sharp pixel art, crisp separated colors, readable player sprites, square frames, a stadium setting, chrome/white/blue lettering, and red accents inspired by the supplied icon artwork.
 
-**Why:** The user explicitly requested a cohesive visual redesign while preserving all modes, game logic, and saved progress, then supplied a classic NES screenshot as a reference for sharper graphics, crisper colors, and slightly larger sprites.
+**Why:** The user explicitly upgraded the former NES-only constraint to “16-bit capability” game-wide and asked to get as close as possible to the supplied football reference, with a slightly stronger camera angle.
 
-**How to apply:** Keep title, Franchise management, and supporting interfaces visually consistent. Keep browser audio activation restrictions in mind and preserve existing gameplay sounds. Follow the intro/menu audio boundaries below.
+**How to apply:** Permit richer discrete shade ramps and finer authored pixel detail without blur or modern 3D effects. Preserve player size, animation timing, gameplay and saves. Keep title, Franchise management and supporting interfaces visually consistent; follow the separate intro/menu/audio boundaries below.
 
 Keep the current enlarged player height. Favor slightly leaner equipped bodies and smaller helmets, with fluid late-NES pixel poses rather than blur, anti-aliasing, whole-sprite compression, or altered movement physics.
 
@@ -27,7 +27,7 @@ Limit exposed face pixels and make facemask bars visible in the helmet's base te
 
 **How to apply:** Derive cosmetic tone from roster role or special-teams duty at render time, not from animation frame or a changing uniform. Keep this separate from gameplay, physics, and saved player state.
 
-Normal gameplay should resemble the supplied late-NES football reference: near-overhead, left-to-right, with gentle broadcast depth, horizontal sidelines and slight far-side compression. Match the reference, not a rigid ten-degree preset. Never make it an isometric or dramatic low sideline camera.
+Normal gameplay should resemble the supplied 16-bit football reference: near-overhead, left-to-right, with modest broadcast depth, horizontal sidelines and far-side compression. The user asked to increase the angle slightly beyond the first subtle pass. Match the reference, not a rigid ten-degree preset. Never make it an isometric or dramatic low sideline camera.
 
 **Why:** The user rejected earlier steep perspectives and explicitly prioritized readable overhead play with modest television-style depth.
 

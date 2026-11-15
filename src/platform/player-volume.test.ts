@@ -26,11 +26,11 @@ function canvas() {
     scale() { assert.fail('player anatomy must not be squeezed or stretched'); },
     createLinearGradient() { assert.fail('player shading must use solid pixels'); },
     fillRect(x: number, y: number, w: number, h: number) {
-      assert([x, y, w, h].every(Number.isInteger), 'every player rectangle uses whole pixels');
+      assert([x, y, w, h].every(n => Number.isInteger(n * 2)), 'every player rectangle uses whole doubled-resolution pixels');
       x += offset[0]!; y += offset[1]!;
       calls.push([this.fillStyle, x, y, w, h]);
       if (this.fillStyle.startsWith('rgba')) return; // Exclude the subtle turf shadow.
-      for (let u = x; u < x + w; u++) for (let v = y; v < y + h; v++)
+      for (let u = x; u < x + w; u += .5) for (let v = y; v < y + h; v += .5)
         pixels.set(`${u},${v}`, this.fillStyle);
     },
   };
@@ -87,7 +87,7 @@ test('horizontal ground anatomy mirrors correctly and remains connected in both 
       let size = 0;
       while (component.length) {
         const [x, y] = component.pop()!.split(',').map(Number); size++;
-        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -.5; dx <= .5; dx += .5) for (let dy = -.5; dy <= .5; dy += .5) {
           const key = `${x! + dx},${y! + dy}`;
           if (remaining.delete(key)) component.push(key);
         }
@@ -97,7 +97,7 @@ test('horizontal ground anatomy mirrors correctly and remains connected in both 
     assert(Math.max(...groups) >= points.size * .9, 'helmet, pads and limbs must join the body');
   }
   const mirrored = [...silhouettes[0]!].map(k => {
-    const [x, y] = k.split(',').map(Number); return `${-x! - 1},${y}`;
+    const [x, y] = k.split(',').map(Number); return `${-x! - .5},${y}`;
   });
   assert.deepEqual(new Set(mirrored), silhouettes[1], 'left-facing pose mirrors rectangle widths too');
 });

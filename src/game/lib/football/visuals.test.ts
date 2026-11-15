@@ -174,7 +174,7 @@ test('nine compact turn helmets keep the same height, sharp pixels and authored 
     assert(paints.some(p => p.c === kit.body && p.y === 93 && p.h === 4 && p.w === shellWidths[view]),
       `view ${view} has its hand-authored primary-color shell`);
     for (const p of paints) for (const n of [p.x, p.y, p.w, p.h])
-      assert(Number.isInteger(n), `view ${view} draws integral pixel rectangles`);
+      assert(Number.isInteger(n * 2), `view ${view} draws integral pixels at doubled backing resolution`);
     const repeat = canvas();
     turnSprite(repeat.ctx, 100, 100, kit, bodyView, { step: .25, ball: true });
     assert.deepEqual(repeat.paints, paints, `view ${view}/${dir} is deterministic`);
@@ -195,7 +195,7 @@ test('running gait keyframes add distinct intermediate pixel poses without shift
       frames.add(JSON.stringify(paints));
       assert.equal(Math.min(...paints.map(p => p.y)), 90, `${mode} step ${step} keeps the crown height`);
       assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `${mode} step ${step} keeps the foot anchor`);
-      for (const p of paints) for (const n of [p.x, p.y, p.w, p.h]) assert(Number.isInteger(n));
+      for (const p of paints) for (const n of [p.x, p.y, p.w, p.h]) assert(Number.isInteger(n * 2));
     }
     assert(frames.size >= 4, `${mode} sub-beat gait samples produce intermediate silhouettes`);
   }
@@ -215,7 +215,7 @@ test('spin, cut and dive pose samples are deterministic drawings and never mutat
       assert.equal(JSON.stringify(attempt), before, `${kind} drawing is read-only`);
       frames.add(JSON.stringify(paints));
       for (const p of paints) for (const n of [p.x, p.y, p.w, p.h])
-        assert(Number.isInteger(n), `${kind} keeps crisp native-pixel edges`);
+        assert(Number.isInteger(n * 2), `${kind} keeps crisp doubled-resolution pixel edges`);
     }
     assert(frames.size >= (kind === 'stutter' ? 2 : 3), `${kind} keyframes contain useful visual transitions`);
   }
@@ -242,7 +242,7 @@ test('tackle buckle-to-ground art adds a quarter-turn bridge without changing sc
     drawTackle(ctx, game, home, away);
     assert.equal(JSON.stringify(game), before, `${pose.phase}/${pose.elapsed} drawing is read-only`);
     assert(paints.length > 0);
-    for (const p of paints) for (const n of [p.x, p.y, p.w, p.h]) assert(Number.isInteger(n));
+    for (const p of paints) for (const n of [p.x, p.y, p.w, p.h]) assert(Number.isInteger(n * 2));
     signatures.add(JSON.stringify(paints));
   }
   assert.equal(signatures.size, poses.length, 'impact, crouch, buckle, landing and settle are distinct art poses');

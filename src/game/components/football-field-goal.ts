@@ -5,7 +5,8 @@ import { FIELD_GOAL, kickGeometry } from '../lib/football/field-goal-geometry';
 import { FIELD_GOAL_FLIGHT_SCALE } from '../lib/football/celebration-timing';
 import { fieldGoalDistance } from '../lib/football/playbook';
 import { kickMatchupTeams } from '../lib/kick-return-teams';
-import { uniformKit, positionKit, playerSkin } from './football-art';
+import { uniformKit, positionKit, playerSkin, SKIN_TONES } from './football-art';
+import { tone } from './football-deluxe-art';
 import { slim, R, type Kit, type Pose } from './football-sprites';
 import { drawFieldGoalPadding } from './football-field-goal-padding';
 
@@ -130,10 +131,14 @@ function drawCrowd(ctx: CanvasRenderingContext2D, frame: ReturnType<typeof field
       const shirt = (seed % 5 < 3) ? teamColor.body : shirts[(seed >>> 5) % shirts.length]!;
       // Dark, irregular silhouettes with separate heads and jersey blocks.
       R(ctx, '#10131b', headX - 1, headY, 4, 3);
-      R(ctx, (seed & 32) ? '#c99670' : '#e0b28a', headX, headY, 2, 1);
+      const skin = SKIN_TONES[(seed >>> 3) % SKIN_TONES.length]!;
+      R(ctx, skin, headX, headY, 2, 1);
+      R(ctx, tone(skin, .76), headX + 1.5, headY, .5, 1);
       R(ctx, '#202633', headX, headY + 1, 2, 1);
       R(ctx, '#111923', headX - 2, headY + 3, 6, 4);
       R(ctx, shirt, headX - 1, headY + 3, 4, 3);
+      R(ctx, tone(shirt, 1.23), headX - .5, headY + 3, 2, .5);
+      R(ctx, tone(shirt, .65), headX + 2.5, headY + 4, .5, 2);
       R(ctx, teamColor.trim, headX, headY + 3, 1, 1);
       if (seed & 128) R(ctx, '#d8d2bd', headX + 1, headY + 4, 1, 1);
       x += 6 + gap;
@@ -227,6 +232,7 @@ function drawField(ctx: CanvasRenderingContext2D, frame: ReturnType<typeof field
       R(ctx, seed % 4 === 0 ? '#71905a' : seed % 2 ? '#397746' : '#174a2b',
         x, markY, Math.max(1, size + (seed % 3 === 0 ? 1 : 0)), Math.max(1, size - (seed % 3 === 0 ? 0 : 1)));
       if (seed % 11 === 0) R(ctx, '#b8c5a3', x + size, markY, 1, 1);
+      R(ctx, seed % 2 ? '#31803d' : '#1b542b', x + .5, markY + .5, .5, .5);
     }
   }
 }
@@ -300,6 +306,8 @@ function drawKickViewPlayers(
     R(ctx, '#173e27', x - 7, y, 15, 2);
     R(ctx, '#10213a', x - 5, y - 19, 10, 8);
     R(ctx, kickingKit.body, x - 4, y - 18, 8, 6);
+    R(ctx, tone(kickingKit.body, 1.24), x - 3.5, y - 17, 3, .5);
+    R(ctx, tone(kickingKit.body, .64), x + 2.5, y - 16, .5, 3);
     R(ctx, '#f1e6d0', x - 3, y - 18, 5, 1);
     R(ctx, kickingKit.body, x, y - 17, 2, 4);
     R(ctx, '#10213a', x - 5, y - 16, 5, 3);
@@ -307,6 +315,8 @@ function drawKickViewPlayers(
     R(ctx, kickingKit.body, x - 5, y - 15, 5, 1);
     R(ctx, '#10213a', x - 5, y - 12, 12, 7);
     R(ctx, kickingKit.body, x - 4, y - 11, 10, 5);
+    R(ctx, tone(kickingKit.body, 1.23), x - 3, y - 11, 4, .5);
+    R(ctx, tone(kickingKit.body, .65), x + 4.5, y - 10, .5, 3);
     R(ctx, kickingKit.trim, x + 2, y - 11, 3, 2);
     R(ctx, kickingKit.trim, x - 4, y - 10, 2, 2);
     R(ctx, kickingKit.body, x - 6, y - 8, 3, 4);
@@ -316,6 +326,7 @@ function drawKickViewPlayers(
     R(ctx, '#f1e6d0', x - 4, y - 4, 3, 4);
     R(ctx, '#10213a', x - 5, y - 1, 4, 2);
     R(ctx, '#10213a', x + 3, y, 5, 1);
+    R(ctx, '#c9d8e3', x + 4, y, 2, .5);
   };
   const drawKicker = () => {
     if (!kicker) return;

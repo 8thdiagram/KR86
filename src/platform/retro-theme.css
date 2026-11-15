@@ -466,6 +466,29 @@
   display: none !important;
 }
 
+/* 16-bit sports presentation: discrete silver/blue bevels, never soft glow. */
+.ga-scope :is(.kr-mode-option, .frn-panel, .frn-btn, .frn-tab, .krt-panel, .krt-btn) {
+  box-shadow: inset 1px 1px 0 #b7cbe3, inset -2px -2px 0 #101a35, 2px 2px 0 #02050c !important;
+}
+.ga-scope :is(.fb-screen, .fb-summary, .fb-playcard, .kr-overlay) {
+  box-shadow: inset 1px 1px 0 #7f9fc8, inset -2px -2px 0 #040a18;
+}
+.ga-scope .fb-hud :is(.fb-team, .fb-clock) {
+  background: #05080f !important;
+  border-color: #d6e0ec !important;
+  box-shadow: inset 0 1px 0 #748598, inset 0 -1px 0 #202c40;
+}
+.ga-scope .fb-hud .fb-team {
+  box-shadow: inset 3px 0 0 var(--kit), inset 0 1px 0 #748598, inset 0 -1px 0 #202c40;
+}
+.ga-scope :is(.fb-controls, .kr-controls) button {
+  box-shadow: inset 1px 1px 0 #739dc8, inset -2px -2px 0 #06152d;
+}
+.ga-scope :is(.fb-controls, .kr-controls) button:active,
+.ga-scope :is(.frn-btn, .krt-btn):active {
+  box-shadow: inset 2px 2px 0 #06152d, inset -1px -1px 0 #739dc8 !important;
+}
+
 /* Landscape field expansion: reclaim only interior cabinet gutters. The host's
    safe-area insets remain untouched, and 44px control/action targets stay intact. */
 @container gm (min-aspect-ratio:3/2) {

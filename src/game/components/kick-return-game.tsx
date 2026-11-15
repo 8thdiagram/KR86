@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { prepareFootballCanvas } from './football-resolution';
 import { KickBackToMenu } from './kick-back-confirm';
 import { beginKickReturn, emptyKickProgress, enforceKickDowns, kickDownName, KR, returnedYards, restartKickReturn, skipKickReturn, stepKickAttempt,
   updateKickProgress, type KickReturnProgress } from '../lib/kick-return-engine';
@@ -124,7 +125,7 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
     return saved;
   };
   const draw = (seconds = 0, attempt = progressRef.current.current) => {
-    const ctx = canvas.current?.getContext('2d');
+    const ctx = canvas.current && prepareFootballCanvas(canvas.current, view.current?.width ?? KR.width, view.current?.height ?? KR.height);
     const shownSeconds = attempt?.phase === 'touchdown' && seconds === 0 && celebrationStart.current
       ? Math.max(0, (performance.now() - celebrationStart.current) / 1000) : seconds;
     if (ctx) drawKickReturn(ctx, attempt ?? null, shownSeconds,
@@ -158,8 +159,6 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
       resizeUntil.current = performance.now() + 140;
       clearInput();
       view.current = next;
-      element.width = next.width;
-      element.height = next.height ?? KR.height;
       draw(progressRef.current.outcome ? 2 : 0);
     };
     const observer = new ResizeObserver(measure);

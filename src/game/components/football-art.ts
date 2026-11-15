@@ -63,6 +63,10 @@ export function footballPixels(put: PixelPut, x: number, y: number, held = false
     draw('#d29150', x + 3, y + 1, 1, 1);
     draw(BALL_ART.shade, x + 1, y + h - 3, 1, 1);
     draw(BALL_ART.shade, x + w - 2, y + h - 3, 1, 1);
+    // Fine leather ridge and inset seams use the extra 16-bit pixel grid.
+    draw('#dca06a', x + 3.5, y + 1.5, Math.max(1, w - 7), .5);
+    draw('#4b291b', x + 3, y + h - 1.5, Math.max(1, w - 6), .5);
+    draw(BALL_ART.stripe, x + Math.floor(w / 2) - .5, y + Math.floor(h / 2), .5, 1);
   }
 }
 export function drawFootballBall(ctx: CanvasRenderingContext2D, x: number, y: number,
@@ -74,7 +78,7 @@ function ballAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
   const held = !!options.held, small = held || !!options.small;
   const z = options.z ?? 0, tall = !held && Math.floor((options.spin ?? 0) * 8) % 2 !== 0;
   const width = tall ? small ? 5 : 7 : small ? 9 : 11, height = tall ? small ? 9 : 11 : small ? 5 : 7;
-  const put: PixelPut = (c, u, v, w, h) => { ctx.fillStyle = c; sharpPixelRect(ctx, Math.round(u), Math.round(v), w, h); };
+  const put: PixelPut = (c, u, v, w, h) => { ctx.fillStyle = c; sharpPixelRect(ctx, Math.round(u * 2) / 2, Math.round(v * 2) / 2, w, h); };
   if (options.shadow) {
     const w = Math.max(3, 8 - Math.round(z / 14));
     put('rgba(8,40,16,.35)', x - w / 2, y + 2, w, 2);

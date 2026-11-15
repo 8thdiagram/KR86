@@ -31,7 +31,8 @@ const C = {
 const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 const ease = (t: number) => t * t * (3 - 2 * t);
 const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number, w: number, h: number) => {
-  ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h);
+  // Authored half-grid edges are mapped to the doubled backing canvas cleanly.
+  ctx.fillStyle = c; ctx.fillRect(Math.round(x * 2) / 2, Math.round(y * 2) / 2, w, h);
 };
 
 function text(ctx: CanvasRenderingContext2D, s: string, x: number, y: number, c: string, px = 1, shadow = false) {
@@ -116,12 +117,18 @@ function helmet(put: Put, kit: Kit, hx: number, hy: number, d: 1 | -1) {
   hx += 1; hy += 1;
   if (kit.edge) put(kit.edge, hx + 1, hy - 1, 6, 1);
   put(kit.body, hx + 1, hy, 6, 5);
+  put(C.ink, hx + 1.5, hy, 5, .5);
+  put(kit.body, hx + 1.5, hy + 4.5, 5, .5);
   put(kit.trim, hx + 2, hy, 3, 1);
+  put(tone(kit.body, 1.28), hx + 2, hy + 1, 3, .5);
+  put(tone(kit.body, .68), hx + 5.5, hy + 3, 1, 1);
   put(kit.trim, d > 0 ? hx + 1 : hx + 6, hy + 2, 1, 2);
   const faceX = d > 0 ? hx + 3 : hx + 2;
   put(C.ink, faceX - 1, hy + 1, 3, 2); // dark recess keeps the shell-color cage legible
   put(playerSkin(kit), faceX, hy + 1, 1, 1); // one-native-pixel face slot
   put(kit.body, faceX - 1, hy + 2, 3, 1); // cage bar in helmet base color
+  put(C.ink, faceX - 1, hy + 1.5, 3, .5);
+  put(tone(kit.body, .62), faceX - 1, hy + 3, 3, .5);
   put(C.ink, d > 0 ? hx + 6 : hx + 1, hy + 1, 1, 3);
   if (ART.players) { // shell highlight + darker lower back edge, inside the helmet
     put(tone(kit.body, 1.16), hx + 1, hy + 1, 1, 1);
@@ -150,24 +157,42 @@ function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: 
   const lx = px + 2 - reach, rx = px + 4 + reach;
   R(ctx, UNIFORM.pants, lx, py + 10, 2, lh); R(ctx, UNIFORM.pants, rx, py + 10, 2, rh);
   R(ctx, C.ink, lx + (d > 0 ? 0 : -1), py + 9 + lh, 3, 1); R(ctx, C.ink, rx + (d > 0 ? 0 : -1), py + 9 + rh, 3, 1);
-  if (ART.players) { R(ctx, UNIFORM.pantsShade, lx + 1, py + 11, 1, 1); R(ctx, UNIFORM.pantsShade, rx, py + 11, 1, 1); }
+  if (ART.players) {
+    R(ctx, UNIFORM.pantsShade, lx + 1, py + 11, 1, 1); R(ctx, UNIFORM.pantsShade, rx, py + 11, 1, 1);
+    R(ctx, tone(UNIFORM.pants, 1.08), lx + .5, py + 10, .5, Math.max(1, lh - 1));
+    R(ctx, tone(UNIFORM.pants, 1.08), rx + .5, py + 10, .5, Math.max(1, rh - 1));
+  }
   R(ctx, kit.body, px + 1, py + 6, 5, 5);
+  R(ctx, C.ink, px + 1.5, py + 5.5, 4, .5);
+  R(ctx, tone(kit.body, 1.28), px + 2, py + 6, 3, .5);
+  R(ctx, tone(kit.body, .64), px + 1, py + 9, .5, 1.5);
+  R(ctx, tone(kit.body, .8), px + 5.5, py + 8, .5, 2);
   if (ART.players) {
     R(ctx, tone(kit.body, 1.16), px + 3, py + 6, 1, 1);
     R(ctx, tone(kit.body, .88), px + 5, py + 7, 1, 3);
   }
   R(ctx, kit.trim, px + 2, py + 8, 1, 1);
+  R(ctx, tone(kit.trim, .72), px + 2.5, py + 8.5, .5, .5);
+  R(ctx, kit.trim, px + 1.5, py + 6, .5, 1.5);
+  R(ctx, kit.trim, px + 5.5, py + 6, .5, 1.5);
+  R(ctx, tone(kit.trim, 1.18), px + 3, py + 7, 1, .5);
   if (ART.players) R(ctx, tone(kit.body, .88), px + 5, py + 10, 1, 1);
   const la = -Math.sin(step * Math.PI / 2), ra = -la;
   R(ctx, C.ink, px + 1 + lean, py + 7 + la, 1, 3);
   R(ctx, tone(kit.body, .76), px + 1 + lean, py + 7 + la, 1, 2);
+  R(ctx, tone(kit.body, .58), px + 1 + lean, py + 8 + la, .5, 1);
   R(ctx, kit.body, px + 2 + lean, py + 7 + la, 1, 2);
   R(ctx, playerSkin(kit), px + 1 + lean, py + 10 + la, 1, 1);
+  R(ctx, tone(playerSkin(kit), .78), px + 1.5 + lean, py + 10 + la, .5, .5);
   R(ctx, C.ink, px + 6 + lean, py + 7 + ra, 1, 3);
   R(ctx, kit.body, px + 6 + lean, py + 7 + ra, 1, 2);
   R(ctx, tone(kit.body, .76), px + 7 + lean, py + 7 + ra, 1, 2);
   R(ctx, playerSkin(kit), px + 7 + lean, py + 10 + ra, 1, 1);
+  R(ctx, tone(kit.body, .58), px + 7.5 + lean, py + 8 + ra, .5, 1);
+  R(ctx, tone(playerSkin(kit), .78), px + 7 + lean, py + 10 + ra, .5, .5);
   R(ctx, kit.body, px + 1 + lean, py + 5, 6, 2);
+  R(ctx, C.ink, px + 1.5 + lean, py + 5, 5, .5);
+  R(ctx, tone(kit.body, .72), px + 2 + lean, py + 6.5, 4, .5);
   R(ctx, kit.trim, px + 1 + lean, py + 5, 1, 2); R(ctx, kit.trim, px + 6 + lean, py + 5, 1, 2);
   if (ART.players) R(ctx, tone(kit.body, 1.18), px + 2 + lean, py + 5, 4, 1);
   if (kit.edge) { R(ctx, kit.edge, px + lean, py + 6, 1, 2); R(ctx, kit.edge, px + 7 + lean, py + 6, 1, 2); }
@@ -196,15 +221,24 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     if (lift <= 0) hr('#173923', -3, 3, 8, 1);
     hr(UNIFORM.pants, -8, 1, 5, 3);
     hr(UNIFORM.pantsShade, -7, 3, 3, 1);
+    hr(tone(UNIFORM.pants, 1.08), -7, 1, 3, .5);
+    hr(C.ink, -8, 3.5, 4, .5);
     hr(kit.body, -3, -1, 6, 4);
     hr(light, -3, -1, 3, 1); hr(kit.trim, 0, -1, 1, 2);
+    hr(C.ink, -2.5, -1.5, 5, .5);
+    hr(tone(kit.body, .64), -3, 1, .5, 2);
+    hr(tone(kit.body, .78), 2, 1, .5, 2);
+    hr(tone(kit.trim, .74), 0, 0, .5, 1);
     hr(far, -1, -3, ball ? 5 : 9, 2);
     hr(kit.body, 0, 2, ball ? 5 : 9, 2);
+    hr(tone(kit.body, 1.2), 1, 2, ball ? 2 : 4, .5);
     hr(playerSkin(kit), ball ? 4 : 10, 2, 2, 1);
     // Crown overlaps the shoulder, avoiding a detached helmet at either facing.
     hr(kit.body, 3, -4, 5, 4);
     hr(kit.trim, 4, -4, 3, 1);
     hr(tone(kit.body, 1.16), 4, -3, 2, 1); hr(far, 6, -1, 1, 1);
+    hr(C.ink, 3.5, -4.5, 4, .5);
+    hr(tone(kit.body, 1.28), 4, -3, 2.5, .5);
     hr(playerSkin(kit), 7, -2, 1, 1);
     hr(C.ink, 6, -1, 3, 2); hr(kit.body, 6, 0, 3, 1);
     if (ball) {
@@ -218,11 +252,18 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     if (lift <= 0) vr('#173923', -2, 7, 5, 1);
     vr(UNIFORM.pants, -2, -7, 3, 5);
     vr(UNIFORM.pants, 1, -7, 3, 5);
+    vr(tone(UNIFORM.pants, 1.08), -1.5, -7, .5, 3);
+    vr(UNIFORM.pantsShade, 1.5, -4, 1, 2);
     vr(kit.body, -3, -3, 7, 7);
     vr(light, -2, -2, 3, 1); vr(kit.trim, -2, 0, 2, 1);
+    vr(C.ink, -2.5, -3.5, 6, .5);
+    vr(tone(kit.body, .64), -3, 1, .5, 2);
+    vr(tone(kit.body, 1.18), 1, -2, 2, .5);
     vr(far, -6, -2, 2, 5); vr(kit.body, 4, -2, 2, 4); vr(playerSkin(kit), 5, 2, 1, 1);
     vr(kit.body, -3, 3, 8, 5); vr(kit.trim, -2, 3, 2, 1);
     vr(tone(kit.body, 1.16), -2, 4, 3, 1); vr(far, 3, 5, 2, 1);
+    vr(C.ink, -2, 2.5, 6, .5);
+    vr(tone(kit.body, .72), 3, 6, 1, 1);
     if (ball) {
       heldBall(ctx, kit.dir > 0 ? cx + 1 : cx - 7, cy + down);
       vr(kit.body, kit.dir > 0 ? 4 : -6, 0, 2, 2);

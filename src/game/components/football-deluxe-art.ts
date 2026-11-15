@@ -22,7 +22,7 @@ export const FIELD_ART = {
 } as const;
 
 const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number, w: number, h: number) => {
-  ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h);
+  ctx.fillStyle = c; ctx.fillRect(Math.round(x * 2) / 2, Math.round(y * 2) / 2, w, h);
 };
 
 const toneCache = new Map<string, string>();
@@ -47,27 +47,28 @@ export function tone(hex: string, f: number): string {
 type GrassPixel = { x: number; y: number; w: number; h: number; c: string };
 let grass: GrassPixel[] | null = null;
 const GRASS_SHADES = [
-  'rgba(13,54,23,.25)', 'rgba(17,67,29,.22)', 'rgba(185,222,133,.10)',
-  'rgba(123,183,91,.12)',
+  'rgba(10,48,20,.30)', 'rgba(17,60,24,.28)', 'rgba(25,76,29,.24)',
+  'rgba(148,195,93,.15)', 'rgba(194,218,119,.11)', 'rgba(46,103,36,.26)',
 ];
 function grassClusters(): GrassPixel[] {
   if (grass) return grass;
   const out: GrassPixel[] = [];
-  // Fixed world-space seeds keep each tiny, irregular patch pinned to the turf.
-  // Cluster spacing and low alpha preserve clean reads beneath players and paint.
-  for (let sx = FIELD_ART.goalLeft + 6; sx < FIELD_ART.goalRight - 4; sx += 11) {
-    for (let sy = FIELD_ART.turfTop + 5; sy < FIELD_ART.turfBottom - 5; sy += 9) {
+  // Fine, irregular single blades and tiny stepped flecks emulate dense
+  // 16-bit turf grain without repeating large dash clusters.
+  for (let sx = FIELD_ART.goalLeft + 2; sx < FIELD_ART.goalRight - 2; sx += 4) {
+    for (let sy = FIELD_ART.turfTop + 2; sy < FIELD_ART.turfBottom - 2; sy += 3) {
       let seed = (Math.imul(sx + 31, 73856093) ^ Math.imul(sy + 17, 19349663)) >>> 0;
       seed = Math.imul(seed ^ (seed >>> 13), 1274126177) >>> 0;
-      if (seed % 100 > 41) continue;
-      const ox = (seed >>> 7) % 5 - 2, oy = (seed >>> 12) % 4 - 1;
+      if (seed % 100 > 37) continue;
+      const x = sx + ((seed >>> 7) % 5 - 2), y = sy + ((seed >>> 12) % 3 - 1);
       const c = GRASS_SHADES[(seed >>> 17) % GRASS_SHADES.length]!;
-      const x = sx + ox, y = sy + oy;
-      out.push({ x, y, w: 2 + ((seed >>> 22) % 3), h: 1, c });
-      // An occasional offset second blade makes a small connected, non-grid cluster.
+      out.push({ x, y, w: (seed & 3) === 0 ? 1.5 : 1, h: 1, c });
       if ((seed & 7) < 4) out.push({
-        x: x + ((seed >>> 25) % 3), y: y + 1 + ((seed >>> 27) % 2),
-        w: 1 + ((seed >>> 29) % 2), h: 1, c: GRASS_SHADES[(seed >>> 19) % GRASS_SHADES.length]!,
+        x: x + ((seed >>> 22) % 3) - 1, y: y + ((seed >>> 25) % 3) - 1,
+        w: (seed & 16) ? 1 : .5, h: 1, c: GRASS_SHADES[(seed >>> 19) % GRASS_SHADES.length]!,
+      });
+      if ((seed & 15) === 3) out.push({
+        x: x + 1.5, y: y + 1, w: 1, h: 1, c: GRASS_SHADES[(seed >>> 27) % GRASS_SHADES.length]!,
       });
     }
   }

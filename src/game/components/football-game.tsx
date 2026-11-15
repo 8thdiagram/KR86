@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { prepareFootballCanvas } from './football-resolution';
 import { KR } from '../lib/kick-return-engine';
 import { createKickMatchup, kickMatchupTeams } from '../lib/kick-return-teams';
 import { footballHudClearance, kickViewport, type KickViewport } from '../lib/kick-return-viewport';
@@ -85,7 +86,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
     setSaveError(ok ? '' : 'This browser could not save the game. Keep the tab open to avoid losing progress.');
   };
   const draw = (seconds = 0) => {
-    const ctx = canvas.current?.getContext('2d');
+    const ctx = canvas.current && prepareFootballCanvas(canvas.current, view.current?.width ?? KR.width, view.current?.height ?? KR.height);
     if (ctx && gRef.current) {
       drawFootball(ctx, footballFormationPreview(gRef.current), view.current, seconds);
     }
@@ -142,7 +143,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
       const v = { ...(next.landscape ? next : { ...next, height: KR.height }),
         topClearance: footballHudClearance(stage, hud) };
       if (JSON.stringify(view.current) === JSON.stringify(v)) return;
-      view.current = v; el.width = v.width; el.height = v.height ?? KR.height;
+      view.current = v;
       clearInput(); draw();
     };
     const ro = new ResizeObserver(measure); ro.observe(stage); if (hud) ro.observe(hud); measure();

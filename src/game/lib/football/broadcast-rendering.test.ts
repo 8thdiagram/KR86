@@ -27,16 +27,16 @@ function canvas() {
   return { ctx, fills, images, translations };
 }
 
-test('broadcast camera keeps sidelines horizontal with only six-percent far-side compression', () => {
+test('broadcast camera keeps sidelines horizontal with modest twelve-percent far-side compression', () => {
   const view = { centerX: 600 };
   for (const y of [0, 16, 18, 174, 176, 192]) {
     const a = projectBroadcastPoint(100, y, view), b = projectBroadcastPoint(1100, y, view);
     assert.equal(a.y, y); assert.equal(b.y, y);
-    assert(Math.abs((b.x - a.x) / 1000 - (y <= 18 ? .94 : 1)) < 1e-10);
+    assert(Math.abs((b.x - a.x) / 1000 - (y <= 18 ? .88 : 1)) < 1e-10);
   }
   const spacing = (y: number) => projectBroadcastPoint(600, y + 10, view).y - projectBroadcastPoint(600, y, view).y;
   assert(spacing(20) < spacing(150), 'far field has modestly compressed depth spacing');
-  assert(spacing(20) > 9 && spacing(150) < 11, 'angle remains near overhead, not dramatic');
+  assert(spacing(20) > 8.5 && spacing(150) < 11.5, 'angle remains near overhead, not dramatic');
   assert.equal(BROADCAST.bottom - BROADCAST.top, 156, 'playing surface height is preserved');
 });
 
@@ -87,6 +87,7 @@ test('painted end-zone rotations and midfield images share the field projection 
   ground.save(); ground.translate(50, 96); ground.rotate(-Math.PI / 2); ground.fillRect(-3, -3, 6, 6); ground.restore();
   assert(fills.every(r => r.x > 40 && r.x < 90 && r.y > 85 && r.y < 100));
   assert.deepEqual(ctx.getTransform(), { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
   ground.drawImage({ naturalWidth: 100, naturalHeight: 100 } as HTMLImageElement, 570, 66, 60, 60);
   assert.equal(images.length, 60, 'existing artwork is sampled in sharp projected strips, not replaced');
   assert(images.every(row => row.length === 8 && row.slice(4).every(Number.isFinite)));
