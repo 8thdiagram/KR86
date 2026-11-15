@@ -21,6 +21,12 @@ Prioritize clear individual sprites: more white on pants, more primary team colo
 
 **How to apply:** Use broad readable color clusters, small secondary accents, minimal internal shading, and clean grounded poses. Keep gameplay, height, and animation timing unchanged; increase artwork resolution only if clarity requires it.
 
+Limit exposed face pixels and make facemask bars visible in the helmet's base team color. Use varied skin tones assigned consistently by player position, including hands and tackled poses.
+
+**Why:** The user explicitly asked for less visible flesh, clearer helmet-colored facemasks, and different stable skin tones per position.
+
+**How to apply:** Derive cosmetic tone from roster role or special-teams duty at render time, not from animation frame or a changing uniform. Keep this separate from gameplay, physics, and saved player state.
+
 For app icons, preserve the latest supplied artwork and use a subtle, sharp iPhone-style edge finish.
 
 **Why:** The user requested this finish for replacement app icons.

@@ -3,6 +3,23 @@ import { tackleFrame } from '../lib/football/tackle-scene';
 import { slim, heldBall, R, type Kit } from './football-sprites';
 import { kickFootballArt } from './kick-return-renderer';
 import { drawPixelEnlarged } from './football-pixel-scale';
+import { positionKit, specialSkinPosition, classicSkinPosition, type SkinPosition } from './football-art';
+
+/** Read the same roster duty used before contact; do not store cosmetic state in saves. */
+export function tackleSkinPosition(g: FootballGame, actor: TackleActor): SkinPosition {
+  if (g.tackleScene?.space === 'scrimmage') {
+    const athlete = g.live?.athletes.find(a => a.id === actor.id);
+    if (athlete) return athlete.role;
+  } else if (g.tackleScene?.space === 'special') {
+    const athlete = g.special?.athletes.find(a => a.id === actor.id);
+    if (g.special && athlete) return specialSkinPosition(g.special, athlete);
+  } else {
+    if (actor.id === g.tackleScene?.carrier.id) return 'KR';
+    const defender = g.returnAttempt?.defenders.find(a => a.id === actor.id);
+    if (defender) return classicSkinPosition(defender);
+  }
+  return actor.id === g.tackleScene?.carrier.id ? 'RB' : 'DL';
+}
 
 /** Five held pixel-art poses. Outcome coordinates remain untouched. No camera
  * shake or enlarged hitboxes; two bodies visibly connect, buckle and settle. */
@@ -17,8 +34,8 @@ export function drawTackle(ctx: CanvasRenderingContext2D, g: FootballGame,
   const dx = s.defender.x + (s.carrier.x - dir * 5 - s.defender.x) * settle;
   const dy = s.defender.y + (s.carrier.y + 6 - s.defender.y) * settle;
   const pose = (a: TackleActor, x: number, y: number, carrier: boolean) => {
-    const kit: Kit = { ...(a.team === 'home' ? home : away),
-      dir: carrier ? dir : s.carrier.x < s.defender.x ? -1 : 1 };
+    const kit: Kit = positionKit({ ...(a.team === 'home' ? home : away),
+      dir: carrier ? dir : s.carrier.x < s.defender.x ? -1 : 1 }, tackleSkinPosition(g, a));
     if (frame <= 1) {
       slim(ctx, x, y, kit, { ball: carrier && !carrierFumbled, crouch: frame === 1,
         lean: frame === 0 ? (carrier ? -dir : kit.dir) : 0, hold: !carrier,

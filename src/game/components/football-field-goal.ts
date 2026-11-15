@@ -5,7 +5,7 @@ import { FIELD_GOAL, kickGeometry } from '../lib/football/field-goal-geometry';
 import { FIELD_GOAL_FLIGHT_SCALE } from '../lib/football/celebration-timing';
 import { fieldGoalDistance } from '../lib/football/playbook';
 import { kickMatchupTeams } from '../lib/kick-return-teams';
-import { uniformKit } from './football-art';
+import { uniformKit, positionKit, playerSkin } from './football-art';
 import { slim, R, type Kit, type Pose } from './football-sprites';
 import { drawFieldGoalPadding } from './football-field-goal-padding';
 
@@ -271,7 +271,8 @@ function drawKickViewPlayers(
   away: Kit,
 ) {
   const sourceKit = s.kicking === 'home' ? home : away;
-  const kickingKit: Kit = { ...sourceKit, dir: s.toX >= s.fromX ? 1 : -1 };
+  const kickingKit: Kit = positionKit({ ...sourceKit, dir: s.toX >= s.fromX ? 1 : -1 }, 'K');
+  const holderKit = positionKit(sourceKit, 'H');
   const kicker = s.athletes.find(a => a.id === s.kicker);
   const holder = s.athletes.find(a => a.id === s.returner);
   const screenPoint = (x: number, y: number) => {
@@ -298,16 +299,18 @@ function drawKickViewPlayers(
     const x = Math.round(holderPoint.x + 9), y = Math.round(holderPoint.y);
     R(ctx, '#173e27', x - 7, y, 15, 2);
     R(ctx, '#10213a', x - 5, y - 19, 10, 8);
-    R(ctx, kickingKit.trim, x - 4, y - 18, 8, 6);
+    R(ctx, kickingKit.body, x - 4, y - 18, 8, 6);
     R(ctx, '#f1e6d0', x - 3, y - 18, 5, 1);
     R(ctx, kickingKit.body, x, y - 17, 2, 4);
-    R(ctx, '#e0a370', x - 4, y - 15, 2, 2);
+    R(ctx, '#10213a', x - 5, y - 16, 5, 3);
+    R(ctx, playerSkin(holderKit), x - 3, y - 16, 1, 1);
+    R(ctx, kickingKit.body, x - 5, y - 15, 5, 1);
     R(ctx, '#10213a', x - 5, y - 12, 12, 7);
     R(ctx, kickingKit.body, x - 4, y - 11, 10, 5);
     R(ctx, kickingKit.trim, x + 2, y - 11, 3, 2);
     R(ctx, kickingKit.trim, x - 4, y - 10, 2, 2);
     R(ctx, kickingKit.body, x - 6, y - 8, 3, 4);
-    R(ctx, '#e0a370', x - 8, y - 4, 3, 2);
+    R(ctx, playerSkin(holderKit), x - 8, y - 4, 3, 2);
     R(ctx, '#b8bdd1', x + 2, y - 6, 4, 5);
     R(ctx, '#f1e6d0', x - 2, y - 5, 7, 3);
     R(ctx, '#f1e6d0', x - 4, y - 4, 3, 4);

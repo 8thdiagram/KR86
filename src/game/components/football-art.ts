@@ -1,7 +1,28 @@
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
 /** Shared kit policy: body is the primary jersey/shell; trim is a restrained secondary mark. */
-export type FootballKit = { body: string; trim: string; dir: 1 | -1; edge?: string };
+export type FootballKit = { body: string; trim: string; dir: 1 | -1; edge?: string; skin?: string };
 export const UNIFORM = { pants: '#fffdf5', pantsShade: '#d8dfe2', ink: '#10213a' } as const;
+/** Cosmetic position palette only: never stored on athletes or used by gameplay. */
+export const SKIN_TONES = ['#f0bd93', '#d99b6c', '#af734c', '#825038', '#563726'] as const;
+const POSITION_TONE = { QB: 1, OL: 3, RB: 4, WR: 0, TE: 2, DL: 0, LB: 2, DB: 3,
+  K: 4, H: 1, KR: 4 } as const;
+export type SkinPosition = keyof typeof POSITION_TONE;
+export const positionSkin = (position: SkinPosition): string => SKIN_TONES[POSITION_TONE[position]];
+export const playerSkin = (kit: Pick<FootballKit, 'skin'>): string => kit.skin ?? positionSkin('RB');
+export function positionKit<T extends Pick<FootballKit, 'body' | 'trim'>>(kit: T, position: SkinPosition): T & { skin: string } {
+  return { ...kit, skin: positionSkin(position) };
+}
+/** Special-team duty remains fixed while that player runs, turns or is tackled. */
+export function specialSkinPosition(
+  special: { kind: string; kicker: number; returner: number },
+  athlete: { id: number; role: SkinPosition },
+): SkinPosition {
+  return athlete.id === special.kicker ? 'K'
+    : athlete.id === special.returner ? special.kind === 'field-goal' ? 'H' : 'KR'
+    : athlete.role;
+}
+export const classicSkinPosition = (defender: { id: number; roamer?: unknown; motion?: unknown }): SkinPosition =>
+  defender.id === 10 ? 'K' : defender.roamer || defender.motion ? 'LB' : 'DB';
 type TeamPalette = { body: string; trim?: string };
 function luminance(hex: string) {
   const channels = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)

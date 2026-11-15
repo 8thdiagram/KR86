@@ -9,7 +9,7 @@ import { highlightedReceiver } from '../lib/football/passing';
 import { primaryPlayer } from '../lib/football/execution';
 import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
 import { slim, carrierMark, airBall, landingMark, goalPosts, heldBall, R, movementBodyView as motionView, type Kit } from './football-sprites';
-import { uniformKit } from './football-art';
+import { uniformKit, positionKit, specialSkinPosition, classicSkinPosition } from './football-art';
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
 import { isTackleActor } from '../lib/football/tackle-scene';
 import { drawTackle } from './football-tackle';
@@ -173,7 +173,7 @@ export function drawFootball(ctx: CanvasRenderingContext2D, g: FootballGame, vie
 
   if (g.tackleScene?.space === 'legacy-return' && g.returnAttempt) {
     for (const d of g.returnAttempt.defenders) if (!isTackleActor(g, d, 'legacy-return'))
-      slim(ctx, d.x, d.y, { ...(g.kickReceiver === 'home' ? away : home), dir: -1 });
+      slim(ctx, d.x, d.y, positionKit({ ...(g.kickReceiver === 'home' ? away : home), dir: -1 }, classicSkinPosition(d)));
   } else if (sp) drawSpecial(ctx, g, sp, home, away, seconds);
   else drawScrimmage(ctx, g, home, away, seconds);
   drawTackle(ctx, g, home, away);
@@ -223,7 +223,7 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
   let carrierAt: { x: number; y: number } | undefined;
   for (const a of sorted) {
     if (isTackleActor(g, a, 'scrimmage')) continue;
-    const kit = a.side === 'offense' ? offenseKit : defenseKit;
+    const kit = positionKit(a.side === 'offense' ? offenseKit : defenseKit, a.role);
     const moving = !snap && Math.hypot(a.vx, a.vy) > 3;
     const facing: 1 | -1 = a.vx < -6 ? -1 : a.vx > 6 ? 1 : kit.dir;
     const hasBall = !snap && a.id === live.carrier && !live.flight && !live.loose && !live.option?.ball && !(live.mode === 'kick' && live.kickAccuracy !== undefined);
@@ -287,7 +287,7 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
   const ballHeld = st === 'lineup' || st === 'approach' && sp.kind !== 'punt' && !fg;
   for (const a of sorted) {
     if (isTackleActor(g, a, 'special')) continue;
-    const kit = a.side === 'offense' ? kickKit : recvKit;
+    const kit = positionKit(a.side === 'offense' ? kickKit : recvKit, specialSkinPosition(sp, a));
     if (ret && a.id === sp.returner) {
       ctx.save(); ctx.translate(a.x - Math.round(a.x), a.y - Math.round(a.y));
       const ra = g.returnAttempt;
@@ -315,7 +315,7 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       if (contact >= 0) slim(ctx, a.x, a.y, { ...kit, dir: kit.dir }, { kick: contact, hold: sp.kind === 'punt' && contact < .5 });
       else slim(ctx, a.x, a.y, { ...kit, dir: kit.dir }, { step: t, lean: kit.dir, hold: sp.kind === 'punt' });
     } else if (fg && a.id === sp.returner && (st === 'hold' || st === 'approach')) {
-      slim(ctx, a.x, a.y, kickKit, { hold: true, crouch: true });
+      slim(ctx, a.x, a.y, kit, { hold: true, crouch: true });
     } else if (a.id === sp.kicker && (st === 'snap' || st === 'hold' || st === 'lineup') && (sp.kind === 'punt' || fg)) {
       slim(ctx, a.x, a.y, kit, { hold: true, crouch: st === 'snap' && fg });
     } else if (a.id === sp.recovery && sp.kind !== 'onside' && (st === 'recovery' || st === 'resolved')) {
