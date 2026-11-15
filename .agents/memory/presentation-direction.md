@@ -56,3 +56,9 @@ Call the championship game **Super Cup**, not Super Bowl.
 **Why:** The user explicitly requested this name for all mentions and animations.
 
 **How to apply:** Use Super Cup in future UI text, championship presentations, spoken announcements, and generated promotional media.
+
+Keep a visible 0.7-second downed-player pause after the complete tackle impact and fall animations.
+
+**Why:** The user explicitly chose 0.7 seconds instead of retaining the existing one-second hold.
+
+**How to apply:** Preserve this separate pause during future player-art or presentation changes; do not shorten the impact or fall to make the total animation last 0.7 seconds.

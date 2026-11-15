@@ -1,6 +1,7 @@
 {
   "description": "Frozen trytry game source. No automatic synchronization. Platform adapters are reviewed separately.",
   "gameplayOverrides": {
+    "lib/football/tackle-scene.ts": "5cfafbd7562f13d20489de62a307f7989f12c47645da61816baf3ff13782015c",
     "components/football-renderer.ts": "b2433361d37f7ba14257b1722da0ee5dd70b53cc16b98eba6033672d6af45003",
     "components/football-sprites.ts": "a58a42e22e2be670a727b1bc4cfb3856a5431d5ac7ffb4399eef4bc19d5f7da3",
     "components/football-tackle.ts": "4e50d64651a5d72e2d3b6945a842fa5f6f0ba79ccdd6b588e6c21a154453520b",

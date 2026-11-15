@@ -2,7 +2,7 @@ import { isKickContact } from '../kick-return-engine';
 import { canTackle } from './defensive-action';
 import { other, type Athlete, type FootballGame, type Side, type TackleActor, type TackleScene } from './types';
 
-export const TACKLE_TIMING = { impact: .09, fall: .27, groundHold: 1 } as const;
+export const TACKLE_TIMING = { impact: .09, fall: .27, groundHold: .7 } as const;
 type Body = { id: number; x: number; y: number; vx?: number; vy?: number };
 /** Freeze the real contact pair, not a random nearby defender. */
 export function beginTackle(g: FootballGame, carrier: Body, defender: Body,
@@ -34,7 +34,7 @@ export function captureReturnTackle(g: FootballGame) {
   const defender = s?.athletes[d.id] ?? { ...d, vx: d.motion?.vx ?? -d.speed, vy: d.motion?.vy ?? 0 };
   beginTackle(g, runner, defender, s?.returnSide ?? s?.receiver ?? g.kickReceiver, s ? 'special' : 'legacy-return');
 }
-/** Wall-time presentation. The one-second result countdown starts ONLY after all falling
+/** Wall-time presentation. The 0.7-second downed hold starts ONLY after all falling
  * frames finish. Large deltas split at boundaries; pause simply never calls this.
  */
 export function stepTackleScene(scene: TackleScene, elapsed: number, holdEnabled = true) {
