@@ -3,9 +3,20 @@ import { canForwardPass, highlightedReceiver, PASS_HOLD_MS, QB_SCRAMBLE_MS } fro
 import type { FootballGame, FootballInput } from './types';
 import { canDefensiveAction } from './defensive-action';
 
+export function canRunningAction(g: FootballGame): boolean {
+  if (g.tackleScene) return false;
+  if (g.special) return (g.phase === 'kickoff' || g.phase === 'live') &&
+    g.special.stage === 'return' && (g.special.returnSide ?? g.special.receiver) === 'home';
+  if (g.phase !== 'live') return false;
+  const l = g.live;
+  if (!l || g.possession !== 'home' || l.flight || l.loose) return false;
+  if (l.mode === 'return') return !l.flight && (l.interception?.age ?? 0) >= .38;
+  return l.mode === 'run' || l.mode === 'scramble' && !canForwardPass(l);
+}
+
 /** Routes a whole gesture once. Crossing the line/catching a pass never converts its release into an evade. */
 export function createFootballControls() {
-  const movement = createKickControls();
+  const movement = createKickControls({ immediateAction: true });
   const consumed = new Set<string>();
   const defensivePresses = new Set<string>();
   let owner: { id: string; since: number; scrambled?: boolean } | undefined;
@@ -20,6 +31,10 @@ export function createFootballControls() {
     if (control === 'juke' && canDefensiveAction(g)) {
       movement.release(id, now, true);
       defensivePresses.add(id);
+      kick = true; consumed.add(id); return;
+    }
+    if (control === 'juke' && (g.phase === 'live' || g.phase === 'kickoff') && g.special?.kind === 'field-goal' &&
+      g.special.stage === 'hold' && g.special.kicking === 'home') {
       kick = true; consumed.add(id); return;
     }
     if(control==='juke'&&g.phase==='live'&&g.possession==='home'&&g.live?.option?.phase==='read') {
@@ -39,7 +54,9 @@ export function createFootballControls() {
         consumed.add(id); return;
       }
       if (g.live?.mode === 'kick') { kick = true; consumed.add(id); return; }
-      if (g.live?.mode === 'scramble') { consumed.add(id); return; }
+    }
+    if (control === 'juke' && !canRunningAction(g)) {
+      consumed.add(id); return;
     }
     movement.enter(id, control, now);
   };

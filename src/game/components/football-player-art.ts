@@ -1,9 +1,11 @@
 import { UNIFORM, type FootballKit } from './football-art';
 import {
+  footballPlayerGrip,
   paintFootballPlayerFrame,
   paintFootballPlayerPossessionFrame,
   selectFootballPlayerFrame,
   PLAYER_FRAME_DIRECTIONS,
+  PLAYER_FRAME_SCALE,
 } from './football-player-frames';
 import {
   type FootballPlayerAction,
@@ -72,7 +74,11 @@ export function drawFootballPlayer(
   const view = options.view ?? 0;
   const phase = resolvePhase(action, options);
   const position = (kit as FootballKit & { position?: string }).position;
-  const frame = selectFootballPlayerFrame(action, view, phase, !!options.ball, position);
+  // Locomotion cadence is independent of the action's arm/release phase. The
+  // state layer supplies it only while genuinely moving (including QB pocket
+  // movement); legacy callers and planted poses keep their existing frames.
+  const locomotionStep = options.locomotionStep;
+  const frame = selectFootballPlayerFrame(action, view, phase, !!options.ball, position, locomotionStep);
   // A kick uses the same normalized visual phase as the legacy input while
   // keeping its visual follow-through independent of mechanics/timing.
   paintFootballPlayerFrame(ctx, frame, Math.round(x), Math.round(y), kit, options.lean ?? 0, kit.dir);
@@ -124,13 +130,11 @@ export function getFootballPlayerGrip(
   direction: 1 | -1 = 1, position?: string,
 ): Readonly<{ x: number; y: number }> | null {
   const frame = selectFootballPlayerFrame(action, view, phase, ball, position);
-  return frame.grip && direction < 0
-    ? Object.freeze({ x: 32 - frame.grip.x, y: frame.grip.y })
-    : frame.grip;
+  return footballPlayerGrip(frame, direction);
 }
 
 /** Compatibility constants retained for older renderer code. */
 export const FOOTBALL_PLAYER_ART = Object.freeze({
-  width: 32, height: 44, pixelWorldSize: 0.5, footAnchor: Object.freeze({ x: 16, y: 42 }),
+  width: 32, height: 44, pixelWorldSize: PLAYER_FRAME_SCALE, footAnchor: Object.freeze({ x: 16, y: 42 }),
   palette: Object.freeze({ pants: UNIFORM.pants, ink: UNIFORM.ink }),
 });

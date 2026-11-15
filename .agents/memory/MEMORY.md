@@ -4,3 +4,4 @@
 - [Browser touch verification](browser-touch-verification.md) — isolate saves, release the correct CDP contacts, and resume the host after visibility tests.
 - [Interactive field goals](interactive-field-goals.md) — Kick View owns aiming through verdict; projected posts, meter and real crossing must agree.
 - [Presentation lifecycle](presentation-lifecycle.md) — use stable animation owners across cloned snapshots; a stalled headless audio clock is not proof of a silent effect.
+- [Running ACTION boundaries](running-action-boundaries.md) — immediate threat-aware runner moves; preserve owned QB gestures, post-line legality, ordinary contact and CPU-only defense.

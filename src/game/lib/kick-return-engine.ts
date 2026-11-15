@@ -10,6 +10,7 @@ import { stepOpenFieldCoverage } from './kick-open-field';
 import { stepFullCoverage } from './kick-full-coverage';
 import { openFieldGain } from './football/athleticism';
 import { playerSpeed } from './player-pace';
+import { constrainEvasionStep } from './carrier-evasion';
 
 /** Original, deterministic miniature football physics. No assessment scoring. */
 export const KR = {
@@ -198,17 +199,19 @@ function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number
     const boost = (a.fullCoverage.returnSpeed ?? 1) * (a.fullCoverage.executionSpeed ?? 1);
     if (boost !== 1) {
       movement.player.x = a.player.x + (movement.player.x - a.player.x) * boost;
-      movement.player.y = clamp(a.player.y + (movement.player.y - a.player.y) * boost, bounds.minY, bounds.maxY);
+      if (!movement.spinStep) movement.player.y = clamp(a.player.y + (movement.player.y - a.player.y) * boost, bounds.minY, bounds.maxY);
     }
     const ramp = { ...a.player, openFieldAge: a.fullCoverage.openFieldAge };
-    const gain = openFieldGain(ramp, a.defenders, dt, !movement.moves?.active && !input.hesitate);
+    const runningGains = !movement.spinStep && (!movement.moves?.active || movement.evasiveStep);
+    const gain = openFieldGain(ramp, a.defenders, dt, !!runningGains && !input.hesitate);
     a.fullCoverage.openFieldAge = ramp.openFieldAge;
-    if (!movement.moves?.active && !input.hesitate) {
+    if (runningGains && !input.hesitate) {
       movement.player.x = a.player.x + (movement.player.x - a.player.x) * gain;
       movement.player.y = clamp(a.player.y + (movement.player.y - a.player.y) * gain, bounds.minY, bounds.maxY);
     }
   }
   const { player } = movement;
+  if (movement.evasiveStep) movement.player = constrainEvasionStep(a.player, movement.player, a.defenders);
   const fooled = movement.started ? readKickJuke(a, movement.moves!) : new Set<number>();
   const defenders = a.defenders.map(original => {
       const d = fooled.has(original.id) ? { ...original,

@@ -4,17 +4,21 @@ import { createFootball } from './engine';
 import { startField } from './field';
 import { KICK_TEAMS } from '../kick-return-teams';
 import { positionKit, uniformKit, UNIFORM, playerSkin } from '../../components/football-art';
-import { drawFootballPlayer, drawFootballProne } from '../../components/football-player-art';
+import {
+  drawFootballPlayer, drawFootballProne, getFootballPlayerGrip,
+} from '../../components/football-player-art';
 import { footballAthletePose } from '../../components/football-player-state';
 import { movementStep } from '../../components/football-sprites';
 import { selectFootballPlayerConceptFrame } from '../../components/football-player-concepts';
 import {
   applyEliteCPosition, ELITE_C_ARMS, ELITE_C_DIRECTIONAL_TOPS, ELITE_C_GAME_ARMS,
-  ELITE_C_RUN_LEGS, type EliteCPosition,
+  ELITE_C_RUN_LEGS, stripEliteCBakedArmOverhang, type EliteCPosition,
 } from '../../components/football-player-sheets';
 import {
   selectFootballPlayerFrame, footballPlayerPalette, PLAYER_RUN_PHASES, PLAYER_ACTIONS,
-  PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, refineFootballHelmetWidth, type FootballPlayerFrame,
+  PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, PLAYER_FRAME_SCALE, refineFootballHelmetWidth,
+  getCachedFootballPlayerFrameCount,
+  type FootballPlayerFrame,
 } from '../../components/football-player-frames';
 
 function pixels(frame: FootballPlayerFrame) {
@@ -61,22 +65,24 @@ function gameplayArmPixelMask(
   view: 0 | 1 | 2, phase: number, position: EliteCPosition,
   legacy: readonly string[], gameplay: readonly string[],
 ) {
-  const composeTopAndArms = (arms: readonly string[]) => {
+  const composeTopAndArms = (arms: readonly string[], cleanedBody: boolean) => {
     const grid = Array.from({ length: 22 }, () => Array<string>(16).fill('.'));
     const stamp = (source: readonly string[], atY = 0) => source.forEach((line, y) => {
       [...line].forEach((glyph, x) => {
         if (glyph !== '.') grid[atY + y]![x] = glyph;
       });
     });
-    stamp(ELITE_C_DIRECTIONAL_TOPS[view]);
+    stamp(cleanedBody
+      ? stripEliteCBakedArmOverhang(ELITE_C_DIRECTIONAL_TOPS[view])
+      : ELITE_C_DIRECTIONAL_TOPS[view]);
     stamp(ELITE_C_RUN_LEGS[phase]!, 13);
     stamp(arms);
     const composed = grid.map(row => row.join(''));
     applyEliteCPosition(composed, position);
     return composed.map(row => [...row]);
   };
-  const legacyGrid = composeTopAndArms(legacy);
-  const gameplayGrid = composeTopAndArms(gameplay);
+  const legacyGrid = composeTopAndArms(legacy, false);
+  const gameplayGrid = composeTopAndArms(gameplay, true);
   const armPixels = new Set<string>();
   legacyGrid.forEach((row, y) => [...row].forEach((glyph, x) => {
     if (glyph === gameplayGrid[y]![x]) return;
@@ -86,6 +92,18 @@ function gameplayArmPixelMask(
       armPixels.add(`${x * 2 + dx},${y * 2 + dy}`);
   }));
   return armPixels;
+}
+function bakedArmPixelMask(view: 0 | 1 | 2) {
+  const source = ELITE_C_DIRECTIONAL_TOPS[view];
+  const raw = [...source, ...Array.from({ length: 22 - source.length }, () => '................')];
+  const cleaned = stripEliteCBakedArmOverhang(raw);
+  const mask = new Set<string>();
+  raw.forEach((row, y) => [...row].forEach((glyph, x) => {
+    if (glyph === cleaned[y]![x]) return;
+    for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++)
+      mask.add(`${x * 2 + dx},${y * 2 + dy}`);
+  }));
+  return mask;
 }
 function outsideGameplayArmPixels(
   runs: readonly { row: number; x: number; length: number; color: string }[],
@@ -140,6 +158,124 @@ test('six distinct running phases retain substantial thigh and calf clusters in 
   }
 });
 
+test('directional run frames change both articulated legs and the opposing arm pump', () => {
+  for (const role of ['RB', 'QB']) for (const view of [0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
+    const frames = Array.from({ length: 6 }, (_, phase) =>
+      selectFootballPlayerFrame('run', view, phase, false, role));
+    const legSignatures = frames.map(frame => JSON.stringify(
+      frame.runs.filter(run => (run.color === 'W' || run.color === 'w') && run.row >= 26),
+    ));
+    const armSignature = (frame: FootballPlayerFrame) => JSON.stringify(
+      frame.runs.filter(run => run.row >= 16 && run.row < 26),
+    );
+    assert.equal(new Set(legSignatures).size, 6, `${role}/${view}: all six lower-body poses visibly step`);
+    assert.notEqual(armSignature(frames[0]!), armSignature(frames[3]!),
+      `${role}/${view}: arm pump reverses with the stride`);
+  }
+});
+
+test('moving action legs use independent cadence without changing action arms or stationary baseline', () => {
+  const movingActions = ['hold', 'throw', 'handoff', 'catch', 'block', 'break'] as const;
+  for (const action of movingActions) {
+    const planted = selectFootballPlayerFrame(action, 2, 3, true, 'QB');
+    assert.strictEqual(selectFootballPlayerFrame(action, 2, 3, true, 'QB', undefined), planted,
+      `${action}: omitted cadence preserves the stationary baseline`);
+    const moving = Array.from({ length: 6 }, (_, cadence) =>
+      selectFootballPlayerFrame(action, 2, 3, true, 'QB', cadence));
+    assert.equal(new Set(moving.map(frame => JSON.stringify(
+      frame.runs.filter(run => (run.color === 'W' || run.color === 'w') && run.row >= 26),
+    ))).size, 6, `${action}: moving cadence drives six leg frames`);
+    assert(moving.every(frame => frame.phase === 3), `${action}: upper-body action phase is unchanged`);
+    assert(moving.every(frame => frame.grip?.x === planted.grip?.x && frame.grip?.y === planted.grip?.y),
+      `${action}: cadence does not move the possession anchor`);
+    const arms = moving.map(frame => JSON.stringify(frame.runs.filter(run => run.row >= 16 && run.row < 26)));
+    assert.equal(new Set(arms).size, 1, `${action}: cadence does not alter action arms`);
+  }
+  const equivalent = selectFootballPlayerFrame('throw', 2, 3, false, 'QB', 1);
+  assert.strictEqual(selectFootballPlayerFrame('throw', 2, 3, false, 'QB', 7), equivalent,
+    'locomotion phase keys wrap to the same six canonical cache frames');
+  const beforeInvalid = getCachedFootballPlayerFrameCount();
+  assert.strictEqual(selectFootballPlayerFrame('throw', 2, 3, false, 'QB', Number.NaN),
+    selectFootballPlayerFrame('throw', 2, 3, false, 'QB'));
+  assert.equal(getCachedFootballPlayerFrameCount(), beforeInvalid + 1,
+    'non-finite cadence does not create an unbounded or invalid phase key');
+  for (const excluded of ['idle', 'stance', 'snap', 'jump', 'kick', 'fall', 'dive', 'ground'] as const) {
+    assert.strictEqual(
+      selectFootballPlayerFrame(excluded, 2, 3, false, 'QB', 2),
+      selectFootballPlayerFrame(excluded, 2, 3, false, 'QB'),
+      `${excluded}: excluded from the independent ground locomotion override`,
+    );
+  }
+});
+
+test('reach and guard arms have no distal black or colored marker across directional actions', () => {
+  const reachRow = ELITE_C_GAME_ARMS.reach[8]!;
+  assert.equal(reachRow.slice(11), '.....',
+    'every distal arm-tip cell is empty; there is no black or recolored marker');
+  assert.equal(ELITE_C_GAME_ARMS.guard[9]!.slice(11), '.....',
+    'idle/holding guards must not retain the same double-ink gun tip on the next row');
+  for (const action of ['catch', 'handoff', 'break'] as const) for (const view of [0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
+    const phase = action === 'break' ? 0 : 2;
+    const frame = selectFootballPlayerFrame(action, view, phase, false, 'QB');
+    assert(connectedShare(frame) >= .95, `${action}/${view}: removing the tip preserves the connected athlete`);
+    assert(frame.runs.some(run => run.color === 'J'), `${action}/${view}: the sleeve remains visible`);
+    assert(frame.runs.some(run => run.color === 'S'), `${action}/${view}: the hand/skin remains visible`);
+  }
+  for (const action of ['run', 'hold'] as const) for (const view of [0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
+    const frame = selectFootballPlayerFrame(action, view, 2, true, 'RB');
+    assert(connectedShare(frame) >= .95, `${action}/${view}: moving/holding poses stay coherent`);
+    assert(frame.runs.some(run => run.color === 'B'), `${action}/${view}: ball identity and grip remain intact`);
+  }
+});
+
+test('production body cleanup removes only outboard baked arms and preserves chest and shoulder rows', () => {
+  for (const view of [0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
+    const source = ELITE_C_DIRECTIONAL_TOPS[view];
+    const cleaned = stripEliteCBakedArmOverhang(source);
+    assert.equal(cleaned[8], source[8], `view ${view}: shoulder-pad row remains exact`);
+    for (let y = 9; y <= 12; y++) for (let x = 0; x < 16; x++) {
+      if (x >= 5 && x <= 10) assert.equal(cleaned[y]![x], source[y]![x], `view ${view}: chest ${x}/${y} stays exact`);
+      else assert.equal(cleaned[y]![x], '.', `view ${view}: baked arm pixel ${x}/${y} is removed`);
+    }
+  }
+});
+
+test('actual standing, hold, and moving composites contain no distal baked barrel pixels', () => {
+  for (const action of ['idle', 'stance', 'hold', 'run'] as const) for (const view of [0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
+    const frame = selectFootballPlayerFrame(action, view, 0, action === 'hold' || action === 'run', 'QB');
+    const composed = pixels(frame);
+    // These are the exact far-out native pixels in the reported row-18..21
+    // composite. The body base must not leave either dark or jersey-colored
+    // arm tips there after layering the current action arms.
+    for (let y = 18; y <= 21; y++) for (const x of [...Array(4).keys(), ...Array.from({ length: 4 }, (_, i) => 28 + i)]) {
+      assert.notEqual(composed.get(`${x},${y}`), 'K', `${action}/${view}: no distal black barrel at ${x},${y}`);
+      assert.notEqual(composed.get(`${x},${y}`), 'J', `${action}/${view}: no recolored barrel at ${x},${y}`);
+    }
+    assert(connectedShare(frame) >= .95, `${action}/${view}: cleaned composite remains connected`);
+  }
+});
+
+test('shared athlete scale reduces art by five percent while retaining the ground anchor', () => {
+  assert.equal(PLAYER_FRAME_SCALE, 0.475);
+  const kit = uniformKit(KICK_TEAMS[0]!, 1);
+  const { ctx, rects } = canvas();
+  drawFootballPlayer(ctx, 100, 100, kit, {
+    action: 'hold', ball: true, locomotionStep: 2,
+  } as Parameters<typeof drawFootballPlayer>[4] & { locomotionStep: number });
+  assert(rects.length > 0);
+  assert(rects.every(rect => [rect.x, rect.y, rect.w, rect.h].every(n => Number.isInteger(n * 2))
+    && rect.w > 0 && rect.h === .5),
+    'the smaller body, ball and possession pixels share sharp half-world-pixel edges');
+  assert.equal(Math.max(...rects.map(rect => rect.y + rect.h)), 105,
+    'symmetric edge quantization keeps the cleat anchor exactly on the existing turf baseline');
+  const grip = getFootballPlayerGrip('hold', 0, 0, true, 1, 'QB');
+  const mirroredGrip = getFootballPlayerGrip('hold', 0, 0, true, -1, 'QB');
+  assert(grip && mirroredGrip);
+  assert.equal(grip.x, 24 * PLAYER_FRAME_SCALE);
+  assert.equal(grip.y, 24 * PLAYER_FRAME_SCALE);
+  assert.equal(mirroredGrip.x, 8 * PLAYER_FRAME_SCALE, 'directional grip mirrors at the same shared scale');
+});
+
 test('all team palettes retain primary jerseys, secondary shells, white equipment and stable role skin', () => {
   for (const team of KICK_TEAMS) for (const role of ['QB', 'OL', 'RB', 'WR', 'DL', 'DB', 'K'] as const) {
     const kit = positionKit(uniformKit(team, 1), role), before = JSON.stringify(kit);
@@ -151,7 +287,9 @@ test('all team palettes retain primary jerseys, secondary shells, white equipmen
     const { ctx, target, rects } = canvas();
     drawFootballPlayer(ctx, 100, 100, kit, { action: 'run', step: 1, ball: true });
     assert(target.imageSmoothingEnabled, 'restore caller smoothing after crisp raster painting');
-    assert(rects.every(r => [r.x, r.y, r.w, r.h].every(n => Number.isInteger(n * 2))));
+    assert(rects.every(r => [r.x, r.y, r.w, r.h].every(n =>
+      Math.abs(n * 40 - Math.round(n * 40)) < 1e-7)),
+      'the shared 0.475 scale lands on the atlas 1/40-unit pixel grid');
     assert.equal(JSON.stringify(kit), before);
   }
 });
@@ -206,23 +344,31 @@ test('the selected C concept is the actual production art rather than a comparis
       JSON.stringify(selectFootballPlayerConceptFrame(concept as 'A' | 'B' | 'C', 'planted', role, view, 0).runs));
     assert.equal(new Set(alternatives).size, 3, 'three genuinely different silhouettes');
     const plantedConcept = selectFootballPlayerConceptFrame('C', 'planted', role, view, 0);
-    assert.deepEqual(selectFootballPlayerFrame('idle', view, 0, false, role).runs,
-      conceptAfterHelmetRefinement(plantedConcept),
-    'production differs from selected C only by the documented native-pixel helmet contour trim');
+    const idleArmMask = gameplayArmPixelMask(
+      view, 0, role, ELITE_C_ARMS.guard, ELITE_C_GAME_ARMS.guard,
+    );
+    const bakedMask = bakedArmPixelMask(view);
+    const idleAllowedMask = new Set([...idleArmMask, ...bakedMask]);
+    assert.deepEqual(
+      outsideGameplayArmPixels(selectFootballPlayerFrame('idle', view, 0, false, role).runs, idleAllowedMask),
+      outsideGameplayArmPixels(conceptAfterHelmetRefinement(plantedConcept), idleAllowedMask),
+      'idle differs only by the exact gameplay guard, removed baked arm overhang, and helmet trim',
+    );
     for (let phase = 0; phase < 6; phase++) {
       const runConcept = selectFootballPlayerConceptFrame('C', 'run', role, view, phase);
       const legacyArms = ELITE_C_ARMS[phase % 2 ? 'pumpB' : 'pumpA'];
       const gameplayArms = ELITE_C_GAME_ARMS[phase < 3 ? 'pumpA' : 'pumpB'];
       const armMask = gameplayArmPixelMask(view, phase, role, legacyArms, gameplayArms);
+      const allowedMask = new Set([...armMask, ...bakedMask]);
       const maskedCoreTorso = [...armMask].filter(point => {
         const [x, y] = point.split(',').map(Number);
         return x! >= 8 && x! < 24 && y! >= 16 && y! < 28;
       }).length;
       assert(maskedCoreTorso < 112, 'changed arm/pad pixels leave more than 80 center-torso pixels exact');
       assert.deepEqual(
-        outsideGameplayArmPixels(selectFootballPlayerFrame('run', view, phase, false, role).runs, armMask),
-        outsideGameplayArmPixels(conceptAfterHelmetRefinement(runConcept), armMask),
-      `${role}/${view}/${phase}: production retains the exact C pose apart from helmet contour trim`);
+        outsideGameplayArmPixels(selectFootballPlayerFrame('run', view, phase, false, role).runs, allowedMask),
+        outsideGameplayArmPixels(conceptAfterHelmetRefinement(runConcept), allowedMask),
+      `${role}/${view}/${phase}: production only differs by gameplay arms, exact baked-arm removal, and helmet trim`);
     }
   }
 });

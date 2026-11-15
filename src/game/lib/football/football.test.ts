@@ -6,6 +6,7 @@ import { startField } from './field';
 import { KR, createKickAttempt, stepKickAttempt, kickWitnessDirection } from '../kick-return-engine';
 import { playerSpeed } from '../player-pace';
 import { isFootballGame, loadFootball, saveFootball } from './storage';
+import { FOOTBALL_SIDELINES } from './sidelines';
 
 const teams = { player: 'Big Blue', opponent: 'Redbirds' } as const;
 function atSnap(seed = 42, spot = 35, down = 1, target = spot + 10) {
@@ -31,7 +32,7 @@ test('random coin-toss winner always defers; halftime kickoff goes to that same 
   }
   assert.equal(winners.size, 2);
 });
-test('full receiving kickoff visibly fields the kick then preserves original return movement for identical input', () => {
+test('full receiving kickoff fields the kick and shares the intelligent Classic return actions', () => {
   const g = createFootball(100, teams); g.phase = 'kickoff-choice'; g.kickReceiver = 'home'; chooseKick(g, 'full');
   for (let i = 0; i < 600 && g.special!.stage !== 'return'; i++) stepFootball(g);
   assert.equal(g.special!.stage, 'return');
@@ -39,9 +40,9 @@ test('full receiving kickoff visibly fields the kick then preserves original ret
   for (let i = 0; i < 800 && g.phase === 'kickoff'; i++) {
     const direction = i % 100 < 50 ? -1 : 1;
     const juke = i % 100 === 20;
-    original = stepKickAttempt(original, direction, KR.dt, { juke });
+    original = stepKickAttempt(original, direction, KR.dt, { juke, evasion: true }, FOOTBALL_SIDELINES);
     stepFootball(g, { direction, juke });
-    // Full-game receiving teammates may block; runner mechanics stay original.
+    // Compare shared modern actions with the same actual Full Game sidelines.
     assert(Math.abs(g.returnAttempt!.player.x - original.player.x) < 1e-7);
     assert(Math.abs(g.returnAttempt!.player.y - original.player.y) < 1e-7);
     if (g.returnAttempt!.phase !== 'returning') break;

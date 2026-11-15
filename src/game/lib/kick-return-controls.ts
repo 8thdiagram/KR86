@@ -13,7 +13,7 @@ type Press = { control: KickControl | null; since: number; order: number; usedHo
 
 /** One press has one outcome. A slide changes ownership without releasing capture.
  * Wall-clock input duration is separate from paused/fixed-step simulation time. */
-export function createKickControls() {
+export function createKickControls(options: { immediateAction?: boolean } = {}) {
   const presses = new Map<string, Press>();
   let order = 0, queued = false, tap: KickDirection = 0, tapUntil = 0;
   const enter = (id: string, control: KickControl | null, now: number) => {
@@ -21,6 +21,9 @@ export function createKickControls() {
     if (old?.control === control) return;
     presses.set(id, { control, since: now, order: ++order,
       usedHold: !!old && (old.usedHold || old.control === 'juke' && now - old.since >= JUKE.holdMs) });
+    if (options.immediateAction && control === 'juke' && !old?.usedHold) {
+      queued = true; presses.get(id)!.usedHold = true;
+    }
     if (control === 'up' || control === 'down') {
       tap = control === 'up' ? -1 : 1;
       tapUntil = now + 160;
@@ -34,7 +37,7 @@ export function createKickControls() {
       // Normal pointerup is followed by lostpointercapture. That second event
       // must not erase a short steering tap or affect a different finger.
       if (!p) return;
-      if (p?.control === 'juke' && !canceled && !p.usedHold && now - p.since < JUKE.holdMs) queued = true;
+      if (!options.immediateAction && p?.control === 'juke' && !canceled && !p.usedHold && now - p.since < JUKE.holdMs) queued = true;
       presses.delete(id);
       if (canceled) tapUntil = 0;
     },
@@ -47,12 +50,12 @@ export function createKickControls() {
         .sort((a, b) => b.order - a.order)[0];
       const direction: KickDirection = vertical ? vertical.control === 'up' ? -1 : 1
         : now < tapUntil ? tap : 0;
-      const backward = all.some(p => p.control === 'juke' && now - p.since >= JUKE.holdMs);
+      const backward = !options.immediateAction && all.some(p => p.control === 'juke' && now - p.since >= JUKE.holdMs);
       for (const p of all)
         if (p.control === 'juke' && now - p.since >= JUKE.holdMs) p.usedHold = true;
       const juke = queued;
       if (consume) queued = false;
-      return { direction, backward, hesitate: backward, juke,
+      return { direction, backward, hesitate: backward, juke, evasion: !!options.immediateAction,
         pressed: { up: direction === -1, down: direction === 1,
           juke: all.some(p => p.control === 'juke') } };
     },

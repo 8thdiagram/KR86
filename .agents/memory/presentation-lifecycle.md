@@ -15,6 +15,12 @@ Validate continuous gameplay flow with time-series render measurements, not only
 
 **How to apply:** Exercise kickoff, pass release, catch/contact and scrolling transitions in the real frame loop at phone sizes. Track visible ball positions, camera transforms and frame costs together; keep physical-device limitations explicit. Draw duration is not delivered FPS: report the paint benchmark as such, not as proof of a physical device's frame rate.
 
+Judge visible-artifact fixes on the fully composed live sprite, not only the corrected foreground sheet.
+
+**Why:** Removing an arm-tip artifact from an overlay passed source-level tests while obsolete arm pixels remained visible underneath it in the body artwork. Transparent foreground cells did not erase that underlying shape.
+
+**How to apply:** Inspect default, moving and action poses at real gameplay size and test the final composite pixels. Preserve the central body, shoulders and frozen concept art while removing obsolete underlayers.
+
 Verify sound-event timing separately from sound waveforms and physical-device playback.
 
 **Why:** This workspace's headless Chromium can report a running audio context while its live audio clock stays frozen. A zero live analyser reading alone does not establish that the game's sound has become silent. Offline Web Audio rendering can still verify the original waveforms.

@@ -3,7 +3,7 @@ name: Retro presentation direction
 description: User's standing visual direction and audio boundaries for Kick Return ’86.
 ---
 
-Kick Return ’86 uses exceptional late-1980s NES character art: deliberately authored raster poses, strong outlines, substantial adult anatomy, thick articulated thighs and calves, recognizable cleats, readable shoulder pads, and restrained discrete shading. This complete character-art reset supersedes the earlier skinny, smoother, less-pixelated and long-stick-leg directions. Keep the existing field geometry, camera perspective, interface, intro and audio.
+Kick Return ’86 uses exceptional late-1980s NES character art: deliberately authored raster poses, strong outlines, substantial adult anatomy, thick articulated thighs and calves, recognizable cleats, readable shoulder pads, and restrained discrete shading. This complete character-art reset supersedes the earlier skinny, smoother, less-pixelated and long-stick-leg directions. Keep the existing field geometry, camera-follow behavior, interface, intro and audio.
 
 **Why:** The user explicitly requested a complete NES football character redesign, not incremental modification of the previous sprites, and supplied a fighting-game screenshot as the physical-anatomy reference.
 
@@ -27,6 +27,12 @@ Further flow refinements must preserve the existing speed and difficulty balance
 
 **How to apply:** Improve presentation and rendering performance rather than using faster physics or simplified animation as a shortcut. Keep the television texture barely perceptible and retain crisp native pixels.
 
+Moving players must visibly step in every direction, including strafing, pocket movement and scrambling. Holding or charging a pass must not freeze the quarterback's legs. Remove the forward black “gun”/arrow-like projection entirely; do not recolor it or replace it with another marker.
+
+**Why:** The user likes the current style but reported gliding, improperly rendered QB movement and the persistent black projection. They prioritize athletic action and accurate movement over visual gimmicks.
+
+**How to apply:** Preserve the approved bodies and game systems. Let actual movement animate the lower body independently of holding/throwing arms. Check default guards as well as action reaches and all directions. Keep players modestly smaller and the airborne football shorter and more compact, with readable white lace spiral motion, without changing flight physics or adding another speed increase.
+
 Prioritize clear individual sprites: white pants, primary-team-color jerseys, secondary-team-color helmets, and white facemasks. Discrete highlight/shadow and cuff pixels are allowed by the complete redesign, but team identity must remain obvious. Use dark definition for silhouettes and limb separation, not black face panels. Do not add decorative lines around downed players.
 
 **Why:** The user specified “make the jerseys one color which is the primary team color separated from the helmet, which is the secondary team color.” Earlier they found detailed sprites and lines around grounded players messy.
@@ -39,9 +45,9 @@ Limit exposed face pixels and use white facemask bars, regardless of helmet colo
 
 **How to apply:** Derive cosmetic tone from roster role or special-teams duty at render time, not from animation frame or a changing uniform. Keep masks legible through stepped helmet corners, a small skin opening and white rails, rather than reintroducing a dark recess. Keep this separate from gameplay, physics, and saved player state.
 
-Normal gameplay should resemble the supplied 16-bit football reference: near-overhead, left-to-right, with modest broadcast depth, horizontal sidelines and far-side compression. The user approved the far sideline and asked to stretch only the near sideline further. Preserve that far-side view in future refinements unless explicitly asked to change it. Match the reference, not a rigid ten-degree preset. Never make it an isometric or dramatic low sideline camera.
+Normal gameplay should resemble the supplied 16-bit football reference: near-overhead, left-to-right, with modest broadcast depth and horizontal sidelines. The user most recently requested a five-degree more overhead view with slightly smaller players. This supersedes the earlier instruction to keep the far sideline exactly unchanged. Keep some perspective; never make it isometric or a dramatic low sideline camera.
 
-**Why:** The user rejected earlier steep perspectives and explicitly prioritized readable overhead play with modest television-style depth, then said “The far sideline looks good.”
+**Why:** The user rejected earlier steep perspectives and now explicitly wants slightly less perspective to improve gameplay readability while retaining the current art style.
 
 **How to apply:** Keep projection render-only and consistent for field paint, artwork, athlete anchors, balls and shadows. Keep actual team colors, HUD, controls, camera-follow behavior and all football coordinates intact; never skew the entire screen. Preserve the separate behind-the-kicker Kick View. Use disciplined textured greens, readable bitmap numbers, restrained contact shadows and team-colored pixel people within available stadium space, without shrinking the field merely for decoration.
 

@@ -106,7 +106,7 @@ test('TEST 10 — crossing during an unresolved hold cancels eligibility and can
   c.release('pointer:1', 1020); stepFootball(g, c.sample(1020));
   c.enter('pointer:2', 'juke', 1030, g); stepFootball(g, c.sample(1030));
   assert.equal(l.lockedReceiver, undefined); assert.equal(g.stats.home.attempts, 0);
-  assert(!l.movement.moves?.active);
+  assert(l.movement.moves?.active?.evasive, 'fresh post-LOS press is an eligible running action, never a throw');
 });
 test('TEST 11 — every held frame shows the locked receiver despite advancing progression', () => {
   const g = fixture(), c = createFootballControls(), l = g.live!;

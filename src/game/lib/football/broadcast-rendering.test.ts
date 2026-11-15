@@ -30,24 +30,28 @@ function canvas() {
   return { ctx, fills, images, translations };
 }
 
-test('reference refinement keeps the far sideline fixed and adds only modest near-side depth', () => {
+test('five-degree overhead refinement reduces depth while preserving sideline heights and field space', () => {
   const view = { centerX: 600 };
+  const strength = Math.tan(25 * Math.PI / 180) / Math.tan(30 * Math.PI / 180);
+  assert.equal(BROADCAST.farScale, 1 - .12 * strength);
+  assert.equal(BROADCAST.nearScale, 1 + .10 * strength);
   for (const y of [0, 16, 18, 174, 176, 192]) {
     const a = projectBroadcastPoint(100, y, view), b = projectBroadcastPoint(1100, y, view);
     assert.equal(a.y, y); assert.equal(b.y, y);
-    assert(Math.abs((b.x - a.x) / 1000 - (y <= 18 ? .88 : 1.10)) < 1e-10);
+    assert(Math.abs((b.x - a.x) / 1000 - (y <= 18 ? BROADCAST.farScale : BROADCAST.nearScale)) < 1e-10);
   }
   const spacing = (y: number) => projectBroadcastPoint(600, y + 10, view).y - projectBroadcastPoint(600, y, view).y;
   assert(spacing(20) < spacing(150), 'far field has modestly compressed depth spacing');
   assert(spacing(20) > 8 && spacing(150) < 12.5, 'angle remains near overhead, not dramatic');
   assert.equal(BROADCAST.bottom - BROADCAST.top, 156, 'playing surface height is preserved');
-  assert.equal(BROADCAST.nearScale / BROADCAST.farScale, 1.25, 'subtle far/near depth, not a steep camera');
+  assert(BROADCAST.nearScale / BROADCAST.farScale > 1 &&
+    BROADCAST.nearScale / BROADCAST.farScale < 1.25, 'slightly less perspective, not completely flat');
   assert(BROADCAST.nearScale / 1.08 < 1.02, 'less than two percent change from the existing near-side view');
   for (const centerX of [90, 600, 1110]) for (const x of [0, 300, 600, 1200]) {
     const far = projectBroadcastPoint(x, BROADCAST.top, { centerX });
     const near = projectBroadcastPoint(x, BROADCAST.bottom, { centerX });
-    assert.equal(far.x, centerX + (x - centerX) * .88, 'same far-sideline position as before');
-    assert(Math.abs(near.x - centerX - (x - centerX) * 1.10) < 1e-10);
+    assert.equal(far.x, centerX + (x - centerX) * BROADCAST.farScale, 'far edge follows the adjusted projection');
+    assert(Math.abs(near.x - centerX - (x - centerX) * BROADCAST.nearScale) < 1e-10);
   }
 });
 

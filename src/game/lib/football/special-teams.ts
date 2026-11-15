@@ -311,7 +311,7 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
     }
     const returnSide = s.returnSide ?? s.receiver;
     const direction = returnSide === 'home' ? input.direction ?? 0 : kickWitnessDirection(a);
-    const next = stepKickAttempt(a, direction, dt, returnSide === 'home' ? { juke: !!input.action || !!input.juke, hesitate: input.hesitate } : {}, FOOTBALL_SIDELINES);
+    const next = stepKickAttempt(a, direction, dt, returnSide === 'home' ? { juke: !!input.action || !!input.juke, evasion: true, hesitate: !input.action && !input.juke && input.hesitate } : {}, FOOTBALL_SIDELINES);
     g.returnAttempt = next;
     for (const d of next.defenders) { const actor = s.athletes[d.id]!, x = physicalX(d.x);
       actor.vx = (x - actor.x) / dt; actor.vy = (d.y - actor.y) / dt; actor.x = x; actor.y = d.y; }

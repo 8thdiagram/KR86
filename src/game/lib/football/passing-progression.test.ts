@@ -106,7 +106,7 @@ test('scenario 9: holding across LOS then releasing has no passing or special-mo
   assert(l.crossedLos); c.release('hold', 4000); stepFootball(g, c.sample(4000));
   assert.equal(g.stats.home.attempts, 0); assert.equal(l.mode, 'scramble'); assert(!l.movement.moves?.active);
 });
-test('scenario 10: repeated fresh ACTION presses after crossing cannot pass or activate abilities', () => {
+test('scenario 10: fresh ACTION presses after crossing evade without permitting another pass', () => {
   const { g, l, c } = activateScramble();
   l.athletes[5]!.x = 501; l.movement.player.x = 501;
   stepFootball(g, c.sample(1020)); c.release('hold', 1030); stepFootball(g, c.sample(1030));
@@ -115,7 +115,7 @@ test('scenario 10: repeated fresh ACTION presses after crossing cannot pass or a
     c.enter('again', 'juke', 1040 + i * 20, g); stepFootball(g, c.sample(1040 + i * 20));
     c.release('again', 1050 + i * 20); stepFootball(g, c.sample(1050 + i * 20));
   }
-  assert(l.crossedLos); assert.equal(g.stats.home.attempts, 0); assert(!l.movement.moves?.active);
+  assert(l.crossedLos); assert.equal(g.stats.home.attempts, 0); assert(l.movement.moves?.active?.evasive);
   assert(l.athletes[5]!.x > x);
   l.athletes[5]!.x = 480; assert(!canForwardPass(l), 'crossing remains latched');
 });

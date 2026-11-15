@@ -3,7 +3,7 @@
  *
  * Every frame is authored as overlapping, hard-edged pixel clusters on a
  * 16x22 design grid. Each design cell expands to 2x2 atlas pixels: frames are
- * exactly 32x44 pixels, with each atlas pixel rendered at 0.5 world units.
+ * exactly 32x44 pixels, with each atlas pixel rendered at 0.475 world units.
  * The 16x22 design grid expands 2x; the foot anchor is native atlas pixel
  * (16,42), so cleat pixels 40-41 meet the shared turf line at y+5. Each
  * directional sheet changes the anatomy/silhouette; none is a rotated
@@ -12,9 +12,9 @@
  */
 import { BALL_ART, UNIFORM, playerSkin, type FootballKit } from './football-art';
 import type { FootballPlayerAction, FootballPlayerView } from './football-player-actions';
+import { PLAYER_RASTER_SCALE } from '../lib/player-dimensions';
 import {
   applyEliteCPosition,
-  ELITE_C_ARMS,
   ELITE_C_DIRECTIONAL_TOPS,
   ELITE_C_GAME_ARMS,
   ELITE_C_KICK_LEGS,
@@ -22,11 +22,15 @@ import {
   ELITE_C_PLANTED_LEGS,
   ELITE_C_RUN_LEGS,
   ELITE_C_STANCE_LEGS,
+  stripEliteCBakedArmOverhang,
 } from './football-player-sheets';
 
 export const PLAYER_FRAME_WIDTH = 32;
 export const PLAYER_FRAME_HEIGHT = 44;
-export const PLAYER_FRAME_SCALE = 0.5;
+// Shared art reduction keeps the approved silhouette intact while giving
+// athletes slightly more breathing room on the field. Possession redraws use
+// this same painter/scale so hands and held balls remain registered.
+export const PLAYER_FRAME_SCALE = PLAYER_RASTER_SCALE;
 export const PLAYER_FRAME_ANCHOR = Object.freeze({ x: 16, y: 42 });
 export const PLAYER_FRAME_DIRECTIONS = Object.freeze([0, 1, 2, 3, 4, 5, 6, 7, 8] as const);
 export const PLAYER_RUN_PHASES = Object.freeze([
@@ -47,6 +51,7 @@ export type FootballPlayerFrame = Readonly<{
   view: FootballPlayerView;
   action: FootballPlayerAction;
   phase: number;
+  locomotionPhase?: number;
   ball: boolean;
   build: string;
   grip: Readonly<{ x: number; y: number }> | null;
@@ -79,16 +84,18 @@ function validateSheet(name: string, rows: Grid, width = 16, height = 22) {
 // Production consumes the reviewed Elite-1988 raster sheets directly.
 // Every directional body keeps the selected adult helmet/shoulder/leg language.
 const top22 = (top: Grid): Grid => [...top, ...blank(22 - top.length)];
+const productionTop = (view: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8): Grid =>
+  top22(stripEliteCBakedArmOverhang(ELITE_C_DIRECTIONAL_TOPS[view]));
 const UPRIGHT: Record<string, Grid> = {
-  front: top22(ELITE_C_DIRECTIONAL_TOPS[0]),
-  quarter: top22(ELITE_C_DIRECTIONAL_TOPS[1]),
-  side: top22(ELITE_C_DIRECTIONAL_TOPS[2]),
-  farQuarter: top22(ELITE_C_DIRECTIONAL_TOPS[3]),
-  back: top22(ELITE_C_DIRECTIONAL_TOPS[4]),
-  backQuarter: top22(ELITE_C_DIRECTIONAL_TOPS[5]),
-  backSide: top22(ELITE_C_DIRECTIONAL_TOPS[6]),
-  rearQuarter: top22(ELITE_C_DIRECTIONAL_TOPS[7]),
-  frontDiagonal: top22(ELITE_C_DIRECTIONAL_TOPS[8]),
+  front: productionTop(0),
+  quarter: productionTop(1),
+  side: productionTop(2),
+  farQuarter: productionTop(3),
+  back: productionTop(4),
+  backQuarter: productionTop(5),
+  backSide: productionTop(6),
+  rearQuarter: productionTop(7),
+  frontDiagonal: productionTop(8),
 };
 
 // The reviewed C leg atlas is the production run cycle, not a reskin/overlay
@@ -110,13 +117,16 @@ const ACTION_LEGS: Partial<Record<FootballPlayerAction, Grid>> = {
   kneel: KNEEL_LEGS, fall: GROUNDED_RUN_LEGS[4], dive: GROUNDED_RUN_LEGS[5], ground: KNEEL_LEGS,
 };
 const ACTION_ARMS: Partial<Record<FootballPlayerAction, Grid>> = {
-  idle: ELITE_C_ARMS.guard, stance: ELITE_C_ARMS.guard, hold: ARMS.carryA, snap: ARMS.reach,
+  idle: ARMS.guard, stance: ARMS.guard, hold: ARMS.carryA, snap: ARMS.reach,
   handoff: ARMS.reach, throw: ARMS.drawBack, catch: ARMS.reach, block: ARMS.block,
   break: ARMS.pumpB, backpedal: ARMS.pumpB, jump: ARMS.reach, kick: ARMS.pumpA,
-  kneel: ELITE_C_ARMS.guard, fall: ARMS.reach, dive: ARMS.reach, ground: ELITE_C_ARMS.guard,
+  kneel: ARMS.guard, fall: ARMS.reach, dive: ARMS.reach, ground: ARMS.guard,
 };
 
 const ACTION_ORDER = PLAYER_ACTIONS as readonly FootballPlayerAction[];
+const LOCOMOTION_LEG_ACTIONS: ReadonlySet<FootballPlayerAction> = new Set([
+  'hold', 'throw', 'handoff', 'catch', 'block', 'break',
+]);
 const VIEW_BASE: Readonly<Record<FootballPlayerView, keyof typeof UPRIGHT>> = Object.freeze({
   0: 'front', 1: 'quarter', 2: 'side', 3: 'farQuarter', 4: 'back',
   5: 'backQuarter', 6: 'backSide', 7: 'rearQuarter', 8: 'frontDiagonal',
@@ -193,21 +203,29 @@ function applyBuild(grid: string[], build: Build) {
   applyEliteCPosition(grid, role);
 }
 
-function buildGlyphGrid(view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean, build: Build): Grid {
+function buildGlyphGrid(
+  view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean,
+  build: Build, locomotionPhase?: number,
+): Grid {
   const out = blank(22);
   const baseName = VIEW_BASE[view];
   const mirror = VIEW_MIRROR[view];
   const pose = actionPose(action, phase, ball);
   const bodyShift = pose.bodyShift ?? 0;
   overlay(out, UPRIGHT[baseName]!, VIEW_OFFSETS[view], bodyShift, mirror);
-  overlay(out, pose.legs, 0, 0, mirror);
-  overlay(out, pose.arms, 0, bodyShift, mirror);
+  const legs = locomotionPhase !== undefined && LOCOMOTION_LEG_ACTIONS.has(action)
+    ? GROUNDED_RUN_LEGS[locomotionPhase]!
+    : pose.legs;
+  overlay(out, legs, 0, 0, mirror);
   for (const y of [15, 16]) {
     const row = [...out[y]!];
     if (row[10] === '.') row[10] = 'W';
     if (y === 15 && row[9] === '.') row[9] = 'W';
     out[y] = row.join('');
   }
+  // The cleaned body base is followed by current authored action arms; no
+  // legacy arm pixels survive underneath them.
+  overlay(out, pose.arms, 0, bodyShift, mirror);
   applyBuild(out, build);
   if (action === 'jump') {
     // Raise the entire authored pose by a row, leaving anchor conversion to
@@ -299,8 +317,11 @@ function addBall(grid: string[], view: FootballPlayerView, action: FootballPlaye
   }
 }
 
-function flatten(view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean, build: Build): FootballPlayerFrame {
-  const grid = buildGlyphGrid(view, action, phase, ball, build);
+function flatten(
+  view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean,
+  build: Build, locomotionPhase?: number,
+): FootballPlayerFrame {
+  const grid = buildGlyphGrid(view, action, phase, ball, build, locomotionPhase);
   validateSheet('complete-player-frame', grid);
   if (grid[21] !== '................')
     throw new Error('Player sheet paints below native foot anchor row 42.');
@@ -331,7 +352,9 @@ function flatten(view: FootballPlayerView, action: FootballPlayerAction, phase: 
     y: isProne ? 32 : 24,
   }) : null;
   return Object.freeze({
-    width: 32, height: 44, view, action, phase, ball, build, grip,
+    width: 32, height: 44, view, action, phase,
+    ...(locomotionPhase === undefined ? {} : { locomotionPhase }),
+    ball, build, grip,
     runs: Object.freeze(runs),
   });
 }
@@ -365,13 +388,18 @@ export function refineFootballHelmetWidth(pixels: string[][]) {
 }
 
 const frameCache = new Map<string, FootballPlayerFrame>();
-const frameKey = (view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean, build: Build) =>
-  `${view}:${action}:${phase}:${Number(ball)}:${build}`;
-function cachedFrame(view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean, build: Build) {
-  const key = frameKey(view, action, phase, ball, build);
+const frameKey = (
+  view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean,
+  build: Build, locomotionPhase?: number,
+) => `${view}:${action}:${phase}:${Number(ball)}:${build}:${locomotionPhase ?? '-'}`;
+function cachedFrame(
+  view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean,
+  build: Build, locomotionPhase?: number,
+) {
+  const key = frameKey(view, action, phase, ball, build, locomotionPhase);
   let frame = frameCache.get(key);
   if (!frame) {
-    frame = flatten(view, action, phase, ball, build);
+    frame = flatten(view, action, phase, ball, build, locomotionPhase);
     frameCache.set(key, frame);
   }
   return frame;
@@ -395,10 +423,18 @@ export const getCachedFootballPlayerFrameCount = () => frameCache.size;
 /** Stable pure selector; run phase is an explicit authored six-frame index. */
 export function selectFootballPlayerFrame(
   action: FootballPlayerAction, view: FootballPlayerView, phase = 0, ball = false, position?: string,
+  locomotionStep?: number,
 ): FootballPlayerFrame {
-  const selected = ((Math.floor(phase) % 6) + 6) % 6;
+  const normalizePhase = (value: number) => Number.isFinite(value)
+    ? ((Math.floor(value) % 6) + 6) % 6
+    : 0;
+  const selected = normalizePhase(phase);
+  const selectedLocomotion = locomotionStep === undefined || !Number.isFinite(locomotionStep)
+    || !LOCOMOTION_LEG_ACTIONS.has(action)
+    ? undefined
+    : normalizePhase(locomotionStep);
   const build = buildForPosition(position);
-  return cachedFrame(view, action, selected, ball, build);
+  return cachedFrame(view, action, selected, ball, build, selectedLocomotion);
 }
 
 function teamShade(color: string, amount: number): string {
@@ -438,20 +474,22 @@ export function paintFootballPlayerFrame(
   kit: FootballKit, lean = 0, direction: 1 | -1 = 1, possessionOnly = false,
 ) {
   const palette = footballPlayerPalette(kit);
-  const left = Math.round(x + lean - PLAYER_FRAME_ANCHOR.x * PLAYER_FRAME_SCALE);
-  const top = Math.round(y + 5 - PLAYER_FRAME_ANCHOR.y * PLAYER_FRAME_SCALE);
+  const anchorX = Math.round(x + lean), anchorY = Math.round(y) + 5;
+  // Quantize shared edges, not individual rectangle widths. Symmetric rounding
+  // around the foot anchor keeps the modest reduction sharp and makes left/
+  // right poses exact mirrors, including negative quarter-grid tie points.
+  const edge = (n: number) => Math.sign(n) * Math.round(Math.abs(n) * 2) / 2;
   const previousSmoothing = ctx.imageSmoothingEnabled;
   ctx.imageSmoothingEnabled = false;
   for (const run of frame.runs) {
     if (possessionOnly && !POSSESSION_GLYPHS.has(run.color)) continue;
     ctx.fillStyle = palette[run.color];
     const runX = direction < 0 ? PLAYER_FRAME_WIDTH - run.x - run.length : run.x;
-    ctx.fillRect(
-      left + runX * PLAYER_FRAME_SCALE,
-      top + run.row * PLAYER_FRAME_SCALE,
-      run.length * PLAYER_FRAME_SCALE,
-      PLAYER_FRAME_SCALE,
-    );
+    const left = anchorX + edge((runX - PLAYER_FRAME_ANCHOR.x) * PLAYER_FRAME_SCALE);
+    const right = anchorX + edge((runX + run.length - PLAYER_FRAME_ANCHOR.x) * PLAYER_FRAME_SCALE);
+    const top = anchorY + edge((run.row - PLAYER_FRAME_ANCHOR.y) * PLAYER_FRAME_SCALE);
+    const bottom = anchorY + edge((run.row + 1 - PLAYER_FRAME_ANCHOR.y) * PLAYER_FRAME_SCALE);
+    if (right > left && bottom > top) ctx.fillRect(left, top, right - left, bottom - top);
   }
   ctx.imageSmoothingEnabled = previousSmoothing;
 }
@@ -464,9 +502,9 @@ export function paintFootballPlayerPossessionFrame(
   paintFootballPlayerFrame(ctx, frame, x, y, kit, 0, direction, true);
 }
 
-/** Grip in native-atlas pixels relative to the fixed top-left frame origin. */
+/** Grip in world-scaled atlas units relative to the fixed top-left frame origin. */
 export function footballPlayerGrip(frame: FootballPlayerFrame, direction: 1 | -1 = 1) {
-  return frame.grip && direction < 0
-    ? Object.freeze({ x: PLAYER_FRAME_WIDTH - frame.grip.x, y: frame.grip.y })
-    : frame.grip;
+  if (!frame.grip) return null;
+  const x = direction < 0 ? PLAYER_FRAME_WIDTH - frame.grip.x : frame.grip.x;
+  return Object.freeze({ x: x * PLAYER_FRAME_SCALE, y: frame.grip.y * PLAYER_FRAME_SCALE });
 }

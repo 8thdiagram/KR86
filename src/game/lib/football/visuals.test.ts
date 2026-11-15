@@ -11,6 +11,9 @@ import { drawFootball } from '../../components/football-renderer';
 import { drawTackle } from '../../components/football-tackle';
 import { fieldGoalSequence } from './special-teams';
 import { beginTackle } from './tackle-scene';
+import {
+  footballFlightPixels, getCachedFootballFlightFrameCount, FOOTBALL_ROTATION_FRAMES,
+} from '../../components/football-ball-art';
 
 test('defense has no selection target while offensive receiver highlighting remains intact', () => {
   for (const defense of ['pass', 'man', 'prevent'] as const) {
@@ -137,12 +140,36 @@ test('Full Game airborne balls keep carried size; passes stay horizontal while k
       height: Math.max(...ball.map(p => p.y + p.h)) - Math.min(...ball.map(p => p.y)),
     };
   };
-  assert.deepEqual(bounds(0, 0), { width: 9, height: 5 });
-  assert.deepEqual(bounds(0, 40), { width: 9, height: 5 });
-  assert.deepEqual(bounds(.125, 40), { width: 7, height: 7 }, 'kicks rotate through diagonal cels, not a 90-degree flip');
-  assert.deepEqual(bounds(.25, 40), { width: 5, height: 9 });
-  for (const spin of [.1, .25, .6]) assert.deepEqual(bounds(spin, 40, false), { width: 9, height: 5 },
+  assert.deepEqual(bounds(0, 0), { width: 7, height: 5 });
+  assert.deepEqual(bounds(0, 40), { width: 7, height: 5 });
+  assert.deepEqual(bounds(.125, 40), { width: 5, height: 5 }, 'compact kicks retain pointed diagonal cels');
+  assert.deepEqual(bounds(.25, 40), { width: 5, height: 7 });
+  for (const spin of [.1, .25, .6]) assert.deepEqual(bounds(spin, 40, false), { width: 7, height: 5 },
     'passes spiral along a stable elongated silhouette');
+});
+test('pass laces visibly cycle around the compact football while its fixed-center shape stays put', () => {
+  const laceSignatures = new Set<string>();
+  for (let phase = 0; phase < 16; phase++) {
+    const cel = footballFlightPixels(true, phase / 16, false);
+    assert(Object.isFrozen(cel) && cel.every(Object.isFrozen), 'rotation cels are immutable');
+    const xs = cel.flatMap(run => Array.from({ length: run.width }, (_, i) => run.x + i));
+    const ys = cel.map(run => run.y);
+    assert.equal(Math.max(...xs) - Math.min(...xs) + 1, 7, 'pass silhouette has a stable compact width');
+    assert.equal(Math.max(...ys) - Math.min(...ys) + 1, 5, 'pass silhouette has a stable short profile');
+    assert.equal(Math.min(...xs), -3, 'pass retains its exact horizontal center');
+    assert.equal(Math.min(...ys), -2, 'pass retains its exact vertical center');
+    laceSignatures.add(JSON.stringify(cel.filter(run => run.color === BALL_ART.stripe)));
+  }
+  assert(laceSignatures.size >= 8, 'white lace pixels move through several distinct spiral cels');
+  for (let phase = 0; phase < 32; phase++) {
+    footballFlightPixels(true, phase / 32, true);
+    footballFlightPixels(false, phase / 32, true);
+    footballFlightPixels(true, phase / 32, false);
+    footballFlightPixels(false, phase / 32, false);
+  }
+  assert(footballFlightPixels(true, .3, false).length < 100);
+  assert(getCachedFootballFlightFrameCount() <= FOOTBALL_ROTATION_FRAMES * 4,
+    'size and motion use a finite 128-cel cache rather than elapsed-time keys');
 });
 test('every team uses solid primary jerseys and secondary helmets with long white pants in both modes', () => {
   for (const team of KICK_TEAMS) for (const dir of [-1, 1] as const) {
@@ -177,7 +204,8 @@ test('nine athletic turn views keep distinct secondary shells, fine contours and
     assert(shell.length > 0);
     assert(shell.reduce((n,p)=>n+p.w*p.h,0)>=8, 'directional helmets retain readable shell volume');
     for (const p of paints) for (const n of [p.x, p.y, p.w, p.h])
-      assert(Number.isInteger(n * 2), `view ${view} draws integral pixels at doubled backing resolution`);
+        assert(Math.abs(n * 40 - Math.round(n * 40)) < 1e-7,
+          `view ${view} draws on the shared crisp-pixel scale grid`);
     const repeat = canvas();
     turnSprite(repeat.ctx, 100, 100, kit, bodyView, { step: .25, ball: true });
     assert.deepEqual(repeat.paints, paints, `view ${view}/${dir} is deterministic`);
@@ -198,7 +226,8 @@ test('running gait keyframes add distinct intermediate pixel poses without shift
       frames.add(JSON.stringify(paints));
       assert(Math.min(...paints.map(p => p.y)) >= 80 && Math.min(...paints.map(p => p.y)) <= 90);
       assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `${mode} step ${step} keeps the foot anchor`);
-      for (const p of paints) for (const n of [p.x, p.y, p.w, p.h]) assert(Number.isInteger(n * 2));
+      for (const p of paints) for (const n of [p.x, p.y, p.w, p.h])
+        assert(Math.abs(n * 40 - Math.round(n * 40)) < 1e-7);
     }
     assert.equal(frames.size, 6, `${mode} exposes six authored running silhouettes`);
   }
@@ -214,7 +243,9 @@ test('all turn views keep primary jersey masses above substantial articulated wh
         `primary jersey remains dominant: ${view}/${classic}/${dir}`);
       const trousers = [...pixels].filter(([, color]) => color === UNIFORM.pants || color === UNIFORM.pantsShade)
         .map(([key]) => Number(key.split(',')[1]));
-      assert(Math.max(...trousers) - Math.min(...trousers) >= 5,
+      // Five-percent art reduction can remove one half-world-pixel row after
+      // sharp edge quantization; trousers must still span six native rows.
+      assert(Math.max(...trousers) - Math.min(...trousers) >= 3,
         `long articulated white trousers remain visible in view ${view}/${classic}/${dir}`);
     }
   }

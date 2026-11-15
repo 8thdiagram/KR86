@@ -2,9 +2,16 @@
  * A homography keeps yard lines straight and both sidelines horizontal. */
 import { fieldViewportFrame, type KickViewport } from '../lib/kick-return-viewport';
 import { KR } from '../lib/kick-return-engine';
-// Retain the approved far side; a small near-side refinement gives a 1.25:1
-// width ratio without lowering the camera or sacrificing playable field height.
-export const BROADCAST = { farScale: .88, nearScale: 1.10, top: 18, bottom: 174 } as const;
+export const BROADCAST_OVERHEAD_ADJUSTMENT_DEGREES = 5;
+// Calibrate the existing projective fit as an elevated 60-degree broadcast
+// view. Raising it five degrees reduces perspective by cot(65)/cot(60), not
+// by skewing the screen or changing football coordinates. Preserve both
+// sideline heights, viewport space and the separate behind-the-kicker view.
+const perspective = Math.tan((30 - BROADCAST_OVERHEAD_ADJUSTMENT_DEGREES) * Math.PI / 180)
+  / Math.tan(30 * Math.PI / 180);
+export const BROADCAST = {
+  farScale: 1 - .12 * perspective, nearScale: 1 + .10 * perspective, top: 18, bottom: 174,
+} as const;
 export type BroadcastView = { centerX: number };
 const active = new WeakMap<CanvasRenderingContext2D, BroadcastView>();
 

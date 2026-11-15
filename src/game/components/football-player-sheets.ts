@@ -94,6 +94,24 @@ export const ELITE_C_DIRECTIONAL_TOPS: Readonly<Record<EliteCView, PlayerDesignG
   8: RETURN_DIAGONAL,
 });
 
+/**
+ * The reviewed directional top cells include obsolete horizontal arm strokes.
+ * Production layers the current action arms separately, so erase only the
+ * outboard baked strokes on rows 9–12; keep the row-8 shoulder pads and the
+ * central chest (columns 5–10) untouched. The source concept sheets remain
+ * immutable comparison art.
+ */
+export function stripEliteCBakedArmOverhang(top: PlayerDesignGrid): PlayerDesignGrid {
+  return Object.freeze(top.map((line, y) => {
+    if (y < 9 || y > 12) return line;
+    const row = [...line];
+    for (let x = 0; x < row.length; x++) {
+      if ((x < 5 || x > 10) && row[x] !== '.') row[x] = '.';
+    }
+    return row.join('');
+  }));
+}
+
 // Selected C's planted body plus six independently articulated stride poses.
 const C_PLANTED_AND_RUN: readonly (readonly PlayerDesignGrid[])[] = [
   [
@@ -155,11 +173,13 @@ export const ELITE_C_GAME_ARMS = Object.freeze({
   ]),
   guard: arms22([
     armRow('..KJ', 'KJ..'),
-    armRow('.KJJ', 'JJKK'),
+    armRow('.KJJ', 'JJ..'),
     armRow('..SS', 'SS..'),
   ]),
   reach: arms22([
-    armRow('.KKJ', 'KJKK'),
+    // The distal double-ink K cells made the profile arm read as a barrel.
+    // End the sleeve at the existing colored forearm instead of adding a tip.
+    armRow('.KKJ', 'KJ..'),
     armRow('KJJJ', 'KKJJ'),
     armRow('..SS', 'SS..'),
   ]),

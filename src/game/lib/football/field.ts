@@ -21,6 +21,7 @@ import { FOOTBALL_SIDELINES, outsideFootballSideline } from './sidelines';
 import { resolveReception } from './receiving';
 import { routePoint } from './route-geometry';
 import { playerSpeed } from '../player-pace';
+import { constrainEvasionStep } from '../carrier-evasion';
 export { routePoint } from './route-geometry';
 export { releasePass } from './passing';
 import { clamp, isBlitz, other, random, type Athlete, type Defense, type FootballGame, type FootballInput, type LivePlay, type PlayId } from './types';
@@ -358,17 +359,20 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
       direction = l.play === 'sweep' ? 1 : l.play === 'counter' && l.time < p.develop + .14 ? -1 : 0;
     l.movement.returnTime += dt;
     // Also sanitize an older resumed scramble: no saved evasion may interrupt the QB run.
-    if (l.mode === 'scramble' && l.movement.moves?.active) l.movement.moves = { ...l.movement.moves, active: undefined };
+    if (l.mode === 'scramble' && l.movement.moves?.active &&
+      (canForwardPass(l) || !l.movement.moves.active.evasive)) l.movement.moves = { ...l.movement.moves, active: undefined };
     // Exactly the original running/juke/spin/hesitation movement; no new receiving controls.
     l.movement.defenders = defenders.map(d => ({ ...d, homeX: d.startX, minY: 24, maxY: 168, speed: 56, lateralSpeed: 56, active: true }));
     const previousMovement = { ...l.movement };
-    const movement = stepKickMoves(l.movement, direction, dt, l.mode === 'scramble' ? { juke: false, hesitate: false }
+    const movement = stepKickMoves(l.movement, direction, dt, l.mode === 'scramble' && (g.possession !== 'home' || canForwardPass(l)) ? { juke: false, hesitate: false }
       : g.possession === 'home'
-       ? { juke: !optionInput&&(!!input.juke || !!input.action), hesitate: input.hesitate }
+       ? { juke: !optionInput&&(!!input.juke || !!input.action), evasion: true, hesitate: !input.juke && !input.action && input.hesitate,
+           obstacles: l.athletes.filter(a => a.side === runner.side && a.id !== runner.id && !a.dive).map(a => ({ x: a.x, y: a.y, vx: a.vx, vy: a.vy })) }
        : { juke: !optionInput&&!!defenders.find(d => Math.hypot(d.x - runner.x, d.y - runner.y) < 25) && l.time % 1 < dt }, FOOTBALL_SIDELINES);
     // Brief assignment execution gain, not a global speed increase. Never alter
     // evasion/hesitation, scramble restrictions, or return physics.
-    if (l.mode === 'run' && !movement.moves?.active && !input.hesitate && l.time < p.develop + .65) {
+    const runningGains = !movement.spinStep && (!movement.moves?.active || movement.evasiveStep);
+    if (l.mode === 'run' && runningGains && !input.hesitate && l.time < p.develop + .65) {
       const gain = skillExecution(l, runner);
       movement.player = {
         x: previousMovement.player.x + (movement.player.x - previousMovement.player.x) * gain,
@@ -377,15 +381,20 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
     }
     l.movement.player = movement.player; l.movement.moves = movement.moves;
     const openGain = openFieldGain(runner, defenders, dt, l.mode === 'run' &&
-      (runner.role === 'WR' || runner.role === 'RB') && !movement.moves?.active && !input.hesitate);
-    if (!movement.moves?.active && !input.hesitate && openGain > 1) {
+      (runner.role === 'WR' || runner.role === 'RB') && !!runningGains && !input.hesitate);
+    if (runningGains && !input.hesitate && openGain > 1) {
       movement.player.x = previousMovement.player.x + (movement.player.x - previousMovement.player.x) * openGain;
       movement.player.y = clamp(previousMovement.player.y + (movement.player.y - previousMovement.player.y) * openGain, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
     }
     const upgrade = l.mode === 'run' ? franchiseAthleteFactor(g, runner) * carrierMoment(g, runner) : 1;
     if (upgrade !== 1) {
       movement.player.x = previousMovement.player.x + (movement.player.x - previousMovement.player.x) * upgrade;
-      movement.player.y = clamp(previousMovement.player.y + (movement.player.y - previousMovement.player.y) * upgrade, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
+      if (!movement.spinStep) movement.player.y = clamp(previousMovement.player.y + (movement.player.y - previousMovement.player.y) * upgrade, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
+    }
+    if (movement.evasiveStep) {
+      movement.player = constrainEvasionStep(previousMovement.player, movement.player, l.movement.defenders,
+        movement.spinStep ? l.athletes.filter(a => a.side === runner.side && a.id !== runner.id && !a.dive) : []);
+      l.movement.player = movement.player;
     }
     runner.vx = (movement.player.x - previousMovement.player.x) / dt;
     runner.vy = (movement.player.y - previousMovement.player.y) / dt;
@@ -408,7 +417,7 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
     if (runner.x <= 100 && l.time > 1.5 && l.snapSpot < 5) return { reason: 'safety', spot: 0 };
     if (outsideFootballSideline(runner.y)) return { reason: 'out-of-bounds', spot: fieldSpot(runner.x) };
     for (const d of defenders) if (canTackle(d) && d.engaged <= l.time && isKickContact(runner, d) && l.contact <= 0) {
-      const evade = !!l.movement.moves?.active;
+      const evade = !!l.movement.moves?.active && !l.movement.moves.active.evasive;
       if (random(g) < contactEscapeOpportunity(g, runner, d, clamp(.05 + profile.back * .08 + (profile.back - defenseProfile.rush) * .025 +
           (evade ? .15 : 0) + Math.max(0, l.advantage) * .1, .06, .31)) && l.broken < 2) {
         d.engaged = l.time + .65; l.broken++; l.contact = .22; continue;

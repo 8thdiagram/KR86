@@ -147,6 +147,13 @@ export function updateFootballAnimation(
     const distance = Math.hypot(dx, dy);
     const plausible = distance <= Math.max(12, dt * MAX_OBSERVED_SPEED);
     const observedSpeed = plausible ? Math.min(MAX_OBSERVED_SPEED, distance / dt) : 0;
+    // Some render callers (including Classic's carrier) intentionally supply
+    // positions without velocities. Infer orientation from the same actual
+    // displacement that advances their feet, rather than treating a strafe as
+    // a motionless forward-facing pose. Never write the inference into physics.
+    const hasVelocity = Math.hypot(vx, vy) >= START_SPEED;
+    const directionVx = hasVelocity ? vx : plausible ? dx / dt : 0;
+    const directionVy = hasVelocity ? vy : plausible ? dy / dt : 0;
 
     // Ignore one-frame coordinate spikes; the low-pass cadence still responds
     // smoothly to real acceleration and sprinting.
@@ -161,15 +168,15 @@ export function updateFootballAnimation(
     } else {
       clock.stoppedFor = 0;
     }
-    if (!clock.shuffling && Math.abs(vy) > Math.abs(vx) * 1.2) clock.shuffling = true;
-    else if (clock.shuffling && Math.abs(vy) < Math.abs(vx) * .8) clock.shuffling = false;
+    if (!clock.shuffling && Math.abs(directionVy) > Math.abs(directionVx) * 1.2) clock.shuffling = true;
+    else if (clock.shuffling && Math.abs(directionVy) < Math.abs(directionVx) * .8) clock.shuffling = false;
 
     const cadenceDt = Math.min(dt, .25);
     if (clock.moving && observedSpeed > STOP_SPEED) {
       clock.phase = (clock.phase + cadenceDt / footballStridePeriod(clock.filteredSpeed)) % 1;
     }
 
-    const requestedFacing: 1 | -1 = Math.abs(vx) > 8 ? vx < 0 ? -1 : 1 : sample.facing;
+    const requestedFacing: 1 | -1 = Math.abs(directionVx) > 8 ? directionVx < 0 ? -1 : 1 : sample.facing;
     if (requestedFacing === clock.facing) {
       clock.facingCandidate = undefined;
       clock.facingCandidateAt = now;
@@ -181,7 +188,7 @@ export function updateFootballAnimation(
       clock.facingCandidate = undefined;
     }
 
-    const desiredView = clock.moving ? movementBodyView(vx, vy, clock.facing) : undefined;
+    const desiredView = clock.moving ? movementBodyView(directionVx, directionVy, clock.facing) : undefined;
     if (desiredView === undefined) {
       clock.viewCandidate = undefined;
       if (clock.view !== undefined) {

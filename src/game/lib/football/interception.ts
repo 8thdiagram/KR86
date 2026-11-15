@@ -12,6 +12,7 @@ import { pursuitPoint } from '../open-field-pursuit';
 import { franchiseAthleteFactor } from './franchise-upgrades';
 import { carrierMoment } from './execution-moments';
 import { playerSpeed } from '../player-pace';
+import { constrainEvasionStep } from '../carrier-evasion';
 
 /** Old saved returns without returnKind were interceptions; recovery returns
  * explicitly identify themselves. Never show a return banner over a loose ball. */
@@ -81,22 +82,30 @@ export function stepInterception(g: FootballGame, input: FootballInput, dt: numb
   l.movement.returnTime += dt;
   l.movement.player = { x: 1200 - runner.x, y: runner.y };
   const before = l.movement.player;
-  const movement = stepKickMoves(l.movement, direction, dt, human ? { juke: !!input.juke || !!input.action, hesitate: input.hesitate } : {}, FOOTBALL_SIDELINES);
+  l.movement.defenders = pursuing.map(d => ({ ...d, x: 1200 - d.x, vx: -d.vx,
+    homeX: 1200 - d.startX, minY: FOOTBALL_SIDELINES.minY, maxY: FOOTBALL_SIDELINES.maxY,
+    speed: Math.abs(d.vx), lateralSpeed: Math.abs(d.vy), active: true,
+    dive: d.dive ? { ...d.dive, vx: -d.dive.vx } : undefined }));
+  const movement = stepKickMoves(l.movement, direction, dt, human ? { juke: !!input.juke || !!input.action, evasion: true,
+    obstacles: blockers.map(d => ({ x: 1200 - d.x, y: d.y, vx: -d.vx, vy: d.vy })) } : {}, FOOTBALL_SIDELINES);
   const secondary = l.athletes.filter(a => a.side === 'defense' && a.role === 'DB');
   const elite = eliteSlots(g, other(l.offense ?? other(g.possession))).includes(secondary.indexOf(runner));
-  if (elite && !movement.moves?.active && !input.hesitate) {
+  const runningGains = !movement.spinStep && (!movement.moves?.active || movement.evasiveStep);
+  if (elite && runningGains && !input.hesitate) {
     const gain = ELITE.forward / KR.forwardSpeed;
     movement.player = { x: before.x + (movement.player.x - before.x) * gain,
       y: clamp(before.y + (movement.player.y - before.y) * gain, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY) };
   }
-  const openGain = openFieldGain(runner, pursuing, dt, runner.role === 'DB' && !movement.moves?.active && !input.hesitate);
-  if (!movement.moves?.active && !input.hesitate && openGain > 1) {
+  const openGain = openFieldGain(runner, pursuing, dt, runner.role === 'DB' && !!runningGains && !input.hesitate);
+  if (runningGains && !input.hesitate && openGain > 1) {
     movement.player = { x: before.x + (movement.player.x - before.x) * openGain,
       y: clamp(before.y + (movement.player.y - before.y) * openGain, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY) };
   }
   const upgrade = franchiseAthleteFactor(g, runner) * carrierMoment(g, runner);
   movement.player = { x: before.x + (movement.player.x - before.x) * upgrade,
-    y: clamp(before.y + (movement.player.y - before.y) * upgrade, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY) };
+    y: movement.spinStep ? movement.player.y : clamp(before.y + (movement.player.y - before.y) * upgrade, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY) };
+  if (movement.evasiveStep) movement.player = constrainEvasionStep(before, movement.player, l.movement.defenders,
+    movement.spinStep ? blockers.map(d => ({ x: 1200 - d.x, y: d.y })) : []);
   l.movement.player = movement.player; l.movement.moves = movement.moves;
   runner.vx = -(movement.player.x - before.x) / dt; runner.vy = (movement.player.y - before.y) / dt;
   runner.x = 1200 - movement.player.x; runner.y = movement.player.y;

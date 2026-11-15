@@ -55,7 +55,7 @@ test('one-second hold starts running; release does not throw; a fresh pre-LOS pr
   c.release('again', 1030); stepFootball(g, c.sample(1030));
   assert.equal(g.stats.home.attempts, 1);
 });
-test('crossing LOS commits the QB: release, new press and special-move inputs have no effect', () => {
+test('crossing LOS commits the QB: release cannot pass, and a fresh press evades as an eligible runner', () => {
   const g = fixture(), l = g.live!, c = createFootballControls();
   c.enter('finger', 'juke', 0, g); stepFootball(g, c.sample(0));
   stepFootball(g, c.sample(1000));
@@ -66,7 +66,7 @@ test('crossing LOS commits the QB: release, new press and special-move inputs ha
   stepFootball(g, c.sample(4500));
   stepFootball(g, { action: true, juke: true, hesitate: true });
   assert.equal(l.mode, 'scramble'); assert.equal(g.stats.home.attempts, 0);
-  assert(!l.movement.moves?.active);
+  assert(l.movement.moves?.active?.evasive);
 });
 test('route expiry, pressure and elapsed time never initiate a human pass or scramble', () => {
   const g = fixture(), l = g.live!;

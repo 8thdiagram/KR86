@@ -15,6 +15,7 @@ import { updateFootballAnimation } from './football-animation-clock';
 import { drawPixelEnlarged } from './football-pixel-scale';
 import { refereeRenderY, REFEREE_WORLD_Y } from './football-referee-layout';
 import { drawFootballPlayer, drawFootballProne } from './football-player-art';
+import { EVADE } from '../lib/carrier-evasion';
 
 const G: Record<string, string> = {
   A: '010101111101101', C: '111100100100111', T: '111010010010010', H: '101101111101101',
@@ -190,11 +191,13 @@ function moveSprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Ki
   return withBroadcastAnchor(ctx, x, y, () => moveSpriteAtAnchor(ctx, x, y, kit, t, a));
 }
 function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, t: number, a: KickAttempt): boolean {
-  if (a.phase !== 'returning') return false;
   const m = a.moves;
   if (!m) return false;
   const v2 = m.version === 2;
-  const act = m.active;
+  const act = m.active as { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: number; evasive?: boolean } | undefined;
+  // Full Game reuses the carrier move record during eligible runs/scrambles;
+  // only the explicitly tagged new moves may render outside Classic returns.
+  if (a.phase !== 'returning' && !act?.evasive) return false;
   const runProgress = (((t % 4) + 4) % 4) / 4;
   const px = Math.round(x) - 4, py = Math.round(y) - 8;
   if (act && act.kind === 'dive') {
@@ -220,17 +223,34 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
     return true;
   }
   if (act && act.kind === 'spin') {
-    const dur = v2 ? .3 : .34, rot = act.side || 1;
+    const dur = act.evasive ? EVADE.spin : v2 ? .3 : .34, rot = act.side || 1;
     const p = clamp(act.elapsed / dur, 0, 1);
-    // Hand-authored in-betweens soften turns without resizing or rotating pixels.
-    const frames: BodyView[] = rot > 0
+    // A full directional orbit through authored silhouettes, then back to the
+    // exact starting view. No canvas rotation or pixel scaling is involved.
+    const orbit: BodyView[] = rot > 0
+      ? [0, 1, 2, 3, 4, 7, 6, 5, 0]
+      : [0, 5, 6, 7, 4, 3, 2, 1, 0];
+    // Older saves retain their original quick-turn presentation and duration.
+    const legacy: BodyView[] = rot > 0
       ? [0, 5, 1, 6, 2, 7, 3, 8, 4, 8, 3, 7, 2, 6, 1, 5, 0]
       : [0, 6, 3, 7, 2, 5, 1, 8, 4, 8, 1, 5, 2, 7, 3, 6, 0];
-    const frame = Math.min(frames.length - 1, Math.floor(p * frames.length));
+    const frames = act.evasive ? orbit : legacy;
+    const frame = Math.min(frames.length - 1, Math.floor(p * (act.evasive ? frames.length - 1 : frames.length)));
     const view = frames[frame]!;
-    const d: 1 | -1 = frame >= 8 && frame < frames.length - 1 ? (kit.dir === 1 ? -1 : 1) : kit.dir;
+    const halfTurn = act.evasive ? frame > 3 && frame < frames.length - 1
+      : frame >= 8 && frame < frames.length - 1;
+    const d: 1 | -1 = halfTurn ? (kit.dir === 1 ? -1 : 1) : kit.dir;
+    const planting = act.evasive ? p < .16 || p > .84 : false;
     sprite(ctx, x, y, { ...kit, dir: d }, t, true, 0, 0, view,
-      { action: 'run', progress: runProgress });
+      { action: planting ? 'stance' : 'run', progress: planting ? undefined : runProgress });
+    return true;
+  }
+  if (act && act.kind === 'boost' && act.evasive) {
+    const p = clamp(act.elapsed / EVADE.boost, 0, 1);
+    // A restrained forward lean and slightly quicker, coordinated running
+    // cycle; the approved ball-carry silhouette and anchor remain unchanged.
+    sprite(ctx, x, y, kit, t * EVADE.boostRatio, true, 0, kit.dir * 1.6, undefined,
+      { action: 'run', progress: (runProgress * EVADE.boostRatio + p * .12) % 1 });
     return true;
   }
   if (act && act.kind === 'stutter') {
