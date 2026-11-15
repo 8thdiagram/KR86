@@ -2,7 +2,7 @@ import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
 import { withBroadcastAnchor } from './football-broadcast';
 import { sharpPixelRect } from './football-pixel-scale';
 /** Shared kit policy: body is the solid primary jersey; trim is the secondary helmet. */
-export type FootballKit = { body: string; trim: string; dir: 1 | -1; edge?: string; skin?: string };
+export type FootballKit = { body: string; trim: string; dir: 1 | -1; edge?: string; skin?: string; position?: SkinPosition };
 /** Rendering-only helmet identity; never swap the team palette used by field art. */
 export const helmetColor = (kit: Pick<FootballKit, 'trim'>): string => kit.trim;
 export const UNIFORM = { pants: '#ffffff', pantsShade: '#f1f3f5', facemask: '#ffffff', ink: '#10213a' } as const;
@@ -13,8 +13,8 @@ const POSITION_TONE = { QB: 1, OL: 3, RB: 4, WR: 0, TE: 2, DL: 0, LB: 2, DB: 3,
 export type SkinPosition = keyof typeof POSITION_TONE;
 export const positionSkin = (position: SkinPosition): string => SKIN_TONES[POSITION_TONE[position]];
 export const playerSkin = (kit: Pick<FootballKit, 'skin'>): string => kit.skin ?? positionSkin('RB');
-export function positionKit<T extends Pick<FootballKit, 'body' | 'trim'>>(kit: T, position: SkinPosition): T & { skin: string } {
-  return { ...kit, skin: positionSkin(position) };
+export function positionKit<T extends Pick<FootballKit, 'body' | 'trim'>>(kit: T, position: SkinPosition): T & { skin: string; position: SkinPosition } {
+  return { ...kit, skin: positionSkin(position), position };
 }
 /** Special-team duty remains fixed while that player runs, turns or is tackled. */
 export function specialSkinPosition(

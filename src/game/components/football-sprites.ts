@@ -2,7 +2,7 @@
 import { drawFootballBall, type FootballKit } from './football-art';
 import { drawPixelEnlarged } from './football-pixel-scale';
 import { withBroadcastAnchor } from './football-broadcast';
-import { drawFootballPlayer } from './football-player-art';
+import { drawFootballPlayer, type FootballPlayerOptions } from './football-player-art';
 export type Kit = FootballKit;
 const INK = '#10213a', GOLD = '#f4d23c';
 export const R = (ctx: CanvasRenderingContext2D, c: string, x: number, y: number, w: number, h: number) => {
@@ -22,8 +22,14 @@ export function heldBall(ctx: CanvasRenderingContext2D, bx: number, by: number) 
   drawFootballBall(ctx, bx + 2, by + 1, { held: true });
 }
 
-export type Pose = { step?: number; ball?: boolean; engaged?: boolean; lean?: number; kick?: number; hold?: boolean; crouch?: boolean; view?: BodyView };
+export type Pose = FootballPlayerOptions;
 export type BodyView = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+/** Render-only cadence: stationary athletes plant; walking and sprinting use
+ * the same authored cycle at a rate proportional to observed movement. */
+export function movementStep(vx: number, vy: number, seconds: number, offset = 0): number {
+  const speed = Math.hypot(vx, vy);
+  return speed <= 3 ? 0 : seconds * Math.min(12, speed / 6) + offset + .00001;
+}
 /** Shared visual facing bands; velocity is read, never changed or delayed. */
 export function movementBodyView(vx: number, vy: number, facing: 1 | -1): BodyView | undefined {
   if (Math.hypot(vx, vy) < 3 || Math.abs(vy) < Math.abs(vx) * .55) return undefined;
@@ -35,27 +41,21 @@ export function movementBodyView(vx: number, vy: number, facing: 1 | -1): BodyVi
 }
 /** Nine hand-authored 16-bit silhouettes; view changes anatomy, never a flat rotation. */
 function turnSpriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit,
-  view: BodyView, options: { step?: number; ball?: boolean; crouch?: boolean; hold?: boolean } = {}) {
+  view: BodyView, options: Pose = {}) {
   const cx = Math.round(x), ground = Math.round(y);
   contactShadow(ctx, cx, ground + 5, view === 2 ? 8 : 10);
-  const rear = view === 3 || view === 4 || view === 7 || view === 8;
-  const d = rear ? (kit.dir > 0 ? -1 : 1) : kit.dir;
-  const top = ground - (options.crouch ? 7 : 8);
-  if (options.ball && rear) heldBall(ctx, d > 0 ? cx + 1 : cx - 5, top + 7);
   drawFootballPlayer(ctx, cx, ground, kit, { ...options, view });
-  if (options.ball && !rear) heldBall(ctx, d > 0 ? cx + 1 : cx - 5, top + 7);
 }
 export function turnSprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit,
-  view: BodyView, options: { step?: number; ball?: boolean; crouch?: boolean; hold?: boolean } = {}) {
+  view: BodyView, options: Pose = {}) {
   turnSpriteNative(ctx, x, y, kit, view, options);
 }
 /** Slim standing sprite, anchor = torso centre. Tapered shoulder caps, 3px torso, split legs, compact helmet shell. */
 function slimNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, p: Pose = {}) {
   if (p.view !== undefined) { turnSprite(ctx, x, y, kit, p.view, p); return; }
-  const cx = Math.round(x), ground = Math.round(y), d = kit.dir;
+  const cx = Math.round(x), ground = Math.round(y);
   contactShadow(ctx, cx, ground + 5, 9);
   drawFootballPlayer(ctx, cx, ground, kit, p);
-  if (p.ball) heldBall(ctx, d > 0 ? cx + 1 + (p.lean ?? 0) : cx - 5 + (p.lean ?? 0), ground - 1);
 }
 export function slim(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, p: Pose = {}) {
   drawPixelEnlarged(ctx, x, y, (target, px, py) => slimNative(target, px, py, kit, p), 6);
@@ -63,7 +63,7 @@ export function slim(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
 /** Gold chevron + under-foot bar that marks the ball carrier. */
 export function carrierMark(ctx: CanvasRenderingContext2D, x: number, y: number, seconds: number) {
   withBroadcastAnchor(ctx, x, y, () => {
-  const bob = Math.floor(seconds * 4) % 2, cx = Math.round(x), cy = Math.round(y) - 15 - bob;
+  const bob = Math.floor(seconds * 4) % 2, cx = Math.round(x), cy = Math.round(y) - 19 - bob;
   R(ctx, INK, cx - 3, cy - 1, 7, 4);
   R(ctx, GOLD, cx - 2, cy, 5, 1); R(ctx, GOLD, cx - 1, cy + 1, 3, 1); R(ctx, GOLD, cx, cy + 2, 1, 1);
   R(ctx, GOLD, cx - 4, Math.round(y) + 7, 9, 1);

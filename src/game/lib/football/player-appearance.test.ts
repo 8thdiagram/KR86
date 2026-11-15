@@ -46,21 +46,24 @@ test('cosmetic skin palette varies by position without randomness, team, or faci
   }
 });
 
-test('front and quarter helmets expose only a small one-row face slot above a white mask', () => {
+test('front and quarter helmets expose a small stable skin window with a white raster cage', () => {
   for (const dir of [-1, 1] as const) for (const position of positions)
     for (const view of [undefined, 0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
       const kit = positionKit(uniformKit(KICK_TEAMS[0]!, dir), position);
       const { ctx, paints, pixels } = canvas();
       slim(ctx, 100, 100, kit, { view });
-      const faces = paints.filter(p => p.color === kit.skin && p.y < 91);
+      const shell = paints.filter(p => p.color === helmetColor(kit) && p.y < 96);
+      const top = Math.min(...shell.map(p => p.y)), bottom = Math.max(...shell.map(p => p.y + p.h));
+      const faces = paints.filter(p => p.color === kit.skin && p.y >= top && p.y < bottom + .5);
       if (view === 4 || view === 8) assert.equal(faces.length, 0, 'rear helmets never grow a face');
       else {
-        assert.equal(faces.length, 1);
+        assert(faces.length > 0 && faces.reduce((area, p) => area + p.w * p.h, 0) <= 6,
+          'only a small raster face opening appears within the helmet');
         const face = faces[0]!;
-        assert(face.w <= 2 && face.h <= 2, 'one native pixel, sharply enlarged with the existing artwork');
+        assert(face.w <= 3 && face.h <= 1, 'the face uses discrete square-pixel clusters');
         assert.equal(pixels.get(`${face.x},${face.y}`), kit.skin, 'face slot is not accidentally painted over');
-        assert(paints.some(p => p.color === UNIFORM.facemask && p.y === face.y + face.h && p.h <= 2 && p.w >= 3),
-          'visible white cage rail sits immediately below the face');
+        assert(paints.some(p => p.color === UNIFORM.facemask && p.y >= face.y - 2 && p.y <= face.y + 2 && p.w >= 1),
+          'visible white cage pixels border the face opening');
       }
       const wrong = SKIN_TONES.filter(color => color !== kit.skin);
       assert(!paints.some(p => wrong.includes(p.color as typeof SKIN_TONES[number])), 'face and hands share one tone');
@@ -91,13 +94,15 @@ test('visible face slots and white facemasks never contain a black face panel', 
       const { ctx, paints, pixels } = canvas();
       if (classic) kickFootballArt.sprite(ctx, 100, 100, kit, 0, false, 0, 0, view);
       else slim(ctx, 100, 100, kit, { view });
-      const face = paints.find(p => p.color === kit.skin && p.y < 91)!;
+      const shell = paints.filter(p => p.color === helmetColor(kit) && p.y < 96);
+      const bottom = Math.max(...shell.map(p => p.y + p.h));
+      const face = paints.find(p => p.color === kit.skin && p.y < bottom + .5)!;
       assert(face, 'face remains a small, visible position-specific skin slot');
-      for (let x = face.x - .5; x < face.x + face.w + .5; x += .5)
-        for (let y = face.y; y < face.y + face.h + .5; y += .5)
-          assert.notEqual(pixels.get(`${x},${y}`), '#10213a', `no black visor or cage at view ${view}/${dir}/${classic}`);
-      assert(paints.some(p => p.color === UNIFORM.facemask && p.y === face.y + face.h && p.w >= 3),
-        'the facemask rail stays white regardless of helmet color');
+      for (let x = face.x; x < face.x + face.w; x += .5)
+        for (let y = face.y; y < face.y + face.h; y += .5)
+          assert.equal(pixels.get(`${x},${y}`), kit.skin, `no dark panel painted over the visible face: ${view}/${dir}/${classic}`);
+      assert(paints.some(p => p.color === UNIFORM.facemask && p.y >= face.y - 2 && p.y <= face.y + 2 && p.w >= 1),
+        'the facemask pixels stay white regardless of helmet color');
     }
   }
 });

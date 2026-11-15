@@ -49,10 +49,10 @@ test('all five body views use distinct pixel anatomy and keep team identity', ()
       signatures.add(JSON.stringify([...pixels]));
       for (const color of [team.body, team.trim])
         assert([...pixels.values()].includes(color), `view ${view} retains ${color}`);
-      assert(calls.length < 160, 'pose cost remains bounded for mobile rendering');
+      assert(calls.length < 400, 'cached raster row runs keep the more substantial artwork bounded for mobile');
       const points = [...pixels.keys()].map(k => k.split(',').map(Number));
-      assert(Math.max(...points.map(p => p[0]!)) - Math.min(...points.map(p => p[0]!)) < 15);
-      assert(Math.max(...points.map(p => p[1]!)) - Math.min(...points.map(p => p[1]!)) < 20);
+      assert(Math.max(...points.map(p => p[0]!)) - Math.min(...points.map(p => p[0]!)) <= 18);
+      assert(Math.max(...points.map(p => p[1]!)) - Math.min(...points.map(p => p[1]!)) <= 25);
     }
     assert.equal(signatures.size, 5, 'front, quarter, side, rear-quarter and back are distinct');
   }

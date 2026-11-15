@@ -300,36 +300,12 @@ function drawKickViewPlayers(
   const drawHolder = () => {
     if (!holder) return;
     holderPoint = screenPoint(holder.x, holder.y);
-    // A planted knee, bent white trouser leg and reaching hands distinguish
-    // the holder from the standing kicker. Leave the placed ball unobscured.
+    // The holder uses the same authored athlete sheets as every other player.
+    // The ball remains the existing engine-projected placed ball, not a prop.
     const x = Math.round(holderPoint.x + 9), y = Math.round(holderPoint.y);
-    R(ctx, '#173e27', x - 7, y, 15, 2);
-    R(ctx, '#10213a', x - 5.5, y - 19.5, 11, 8.5);
-    const shell = helmetColor(holderKit);
-    R(ctx, shell, x - 4.5, y - 19, 9, 7);
-    R(ctx, shell, x - 4, y - 19.5, 8, .5);
-    R(ctx, tone(shell, 1.16), x - 3.5, y - 18, 4, .5);
-    R(ctx, tone(shell, .86), x + 3, y - 16, .5, 3);
-    R(ctx, shell, x - 3, y - 19, 5.5, .5);
-    R(ctx, UNIFORM.facemask, x, y - 17, 2, 4);
-    R(ctx, shell, x - 5, y - 16, 5.5, 3);
-    R(ctx, playerSkin(holderKit), x - 3, y - 16, 1, 1);
-    R(ctx, UNIFORM.facemask, x - 5, y - 15, 5.5, .5);
-    R(ctx, UNIFORM.facemask, x - 5, y - 13.5, 5.5, .5);
-    R(ctx, '#10213a', x - 5, y - 12, 12, 7);
-    R(ctx, kickingKit.body, x - 4, y - 11, 10, 5);
-    R(ctx, kickingKit.body, x - 3, y - 11, 4, .5);
-    R(ctx, kickingKit.body, x + 4.5, y - 10, .5, 3);
-    R(ctx, kickingKit.body, x + 2, y - 11, 3, 2);
-    R(ctx, kickingKit.body, x - 4, y - 10, 2, 2);
-    R(ctx, kickingKit.body, x - 6, y - 8, 3, 4);
-    R(ctx, playerSkin(holderKit), x - 8, y - 4, 3, 2);
-    R(ctx, UNIFORM.pantsShade, x + 2, y - 6, 4, 5);
-    R(ctx, UNIFORM.pants, x - 2, y - 5, 7, 3);
-    R(ctx, UNIFORM.pants, x - 4, y - 4, 3, 4);
-    R(ctx, '#10213a', x - 5, y - 1, 4, 2);
-    R(ctx, '#10213a', x + 3, y, 5, 1);
-    R(ctx, '#c9d8e3', x + 4, y, 2, .5);
+    ctx.save(); ctx.translate(x, y - 10); ctx.scale(2, 2);
+    slim(ctx, 0, 0, { ...holderKit, dir: -1 }, { action: 'kneel', view: 1 });
+    ctx.restore();
   };
   const drawKicker = () => {
     if (!kicker) return;

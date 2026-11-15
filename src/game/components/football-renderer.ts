@@ -8,7 +8,8 @@ import { fieldGoalHeight } from '../lib/football/field-goal-geometry';
 import { highlightedReceiver } from '../lib/football/passing';
 import { primaryPlayer } from '../lib/football/execution';
 import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
-import { slim, carrierMark, airBall, landingMark, goalPosts, heldBall, R, movementBodyView as motionView, type Kit } from './football-sprites';
+import { slim, carrierMark, airBall, landingMark, goalPosts, R, movementStep, movementBodyView as motionView, type Kit } from './football-sprites';
+import { footballAthletePose } from './football-player-state';
 import { uniformKit, positionKit, specialSkinPosition, classicSkinPosition } from './football-art';
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
 import { isTackleActor } from '../lib/football/tackle-scene';
@@ -237,8 +238,9 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
   for (const a of sorted) {
     if (isTackleActor(g, a, 'scrimmage')) continue;
     const kit = positionKit(a.side === 'offense' ? offenseKit : defenseKit, a.role);
-    const moving = !snap && Math.hypot(a.vx, a.vy) > 3;
-    const facing: 1 | -1 = a.vx < -6 ? -1 : a.vx > 6 ? 1 : kit.dir;
+    const backpedaling = a.side === 'defense' && a.role === 'DB' &&
+      (live.mode === 'dropback' || live.mode === 'flight') && a.vx * dir > 3;
+    const facing: 1 | -1 = backpedaling ? kit.dir : a.vx < -6 ? -1 : a.vx > 6 ? 1 : kit.dir;
     const hasBall = !snap && a.id === live.carrier && !live.flight && !live.loose && !live.option?.ball && !(live.mode === 'kick' && live.kickAccuracy !== undefined);
     const engaged = a.engaged > live.time;
     ctx.save();
@@ -256,16 +258,15 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
       else prone(ctx, a.x, a.y, kit, d.angle, d.phase === 'airborne' ? Math.sin(Math.PI * d.elapsed / .28) * 4 : 0);
     } else if (hasBall && holding && ic && a.id === ic.catcher) {
       withBroadcastAnchor(ctx, ic.catchX, ic.catchY, () => {
-      slim(ctx, ic.catchX, ic.catchY, { ...kit, dir: dir === 1 ? -1 : 1 }, { hold: true, crouch: ic.age < .24 });
-      heldBall(ctx, Math.round(ic.catchX) - 4 * dir, Math.round(ic.catchY) - 2);
+      slim(ctx, ic.catchX, ic.catchY, { ...kit, dir: dir === 1 ? -1 : 1 },
+        { action: 'catch', progress: clamp(ic.age / CATCH_HOLD, 0, 1), ball: true });
       });
     } else if (hasBall && (live.mode === 'run' || live.mode === 'scramble') && moveSprite(ctx, a.x, a.y, kit, t, { ...live.movement, player: { x: a.x, y: a.y } })) { /* original move pose */ }
-    else if (snap && a.role === 'OL' && a === centerOf(live)) slim(ctx, a.x, a.y, kit, { crouch: true, hold: live.time <= 0 });
-    else if (snap && a.role === 'QB') slim(ctx, a.x, a.y, kit, { hold: true });
-    else slim(ctx, a.x, a.y, { ...kit, dir: facing }, {
-      step: moving ? t + a.id : 0, ball: hasBall, engaged, lean: engaged ? facing : 0, crouch: snap,
-      view: moving ? motionView(a.vx, a.vy, facing) : undefined,
-    });
+    else if (snap && a.role === 'OL' && a === centerOf(live))
+      slim(ctx, a.x, a.y, kit, { action: 'snap', progress: clamp((live.snapAge ?? 0) / SNAP, 0, 1) });
+    else if (snap && a.role === 'QB') slim(ctx, a.x, a.y, kit, { action: 'hold' });
+    else slim(ctx, a.x, a.y, { ...kit, dir: facing },
+      footballAthletePose(live, a, { snapping: snap, ball: hasBall, engaged, facing, direction: dir }));
     if (g.phase === 'live' && a.id === read && g.possession === 'home' && !ic) {
       playerTarget(ctx, a.x, a.y, live.holdingPass ? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE);
     }
@@ -308,7 +309,8 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       ctx.save(); ctx.translate(a.x - Math.round(a.x), a.y - Math.round(a.y));
       const ra = g.returnAttempt;
       if (!(ra && ra.phase === 'returning' && moveSprite(ctx, a.x, a.y, { ...kit, dir: (sp.mirrored ? -dir : dir) as 1 | -1 }, t, { ...ra, player: { x: a.x, y: a.y } })))
-        slim(ctx, a.x, a.y, { ...kit, dir: a.vx < -6 ? -1 : 1 }, { step: Math.hypot(a.vx, a.vy) > 3 ? t : 0, ball: true });
+        slim(ctx, a.x, a.y, { ...kit, dir: a.vx < -6 ? -1 : 1 },
+          { step: movementStep(a.vx, a.vy, sp.age), ball: true });
       ctx.restore(); carrierMark(ctx, a.x, a.y, seconds); continue;
     }
     const moving = Math.hypot(a.vx, a.vy) > 3;
@@ -324,30 +326,35 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       if (age < .09) slim(ctx, a.x, a.y, kit, { crouch: true, lean: kit.dir });
       else prone(ctx, a.x, a.y, kit, 0, Math.max(0, 1 - (age - .09) / .27) * 4);
     } else if (st === 'loose' && a.id === sp.loose?.lostBy && age < .3 && sp.loose.kind === 'muff') {
-      slim(ctx, a.x, a.y, kit, { hold: true, crouch: age > .15 });
+      slim(ctx, a.x, a.y, kit, { action: 'catch', progress: clamp(age / .3, 0, 1) });
     } else if (a.id === sp.kicker && (st === 'approach' || st === 'flight' && age < .22 ||
         st === 'loose' && sp.blockAttempt?.contacted && age < .22)) {
       const contact = st === 'flight' || st === 'loose' ? clamp(.5 + age / .44, 0, 1) : st === 'approach' && age > .24 ? .35 : -1;
       if (contact >= 0) slim(ctx, a.x, a.y, { ...kit, dir: kit.dir }, { kick: contact, hold: sp.kind === 'punt' && contact < .5 });
-      else slim(ctx, a.x, a.y, { ...kit, dir: kit.dir }, { step: t, lean: kit.dir, hold: sp.kind === 'punt' });
+      else slim(ctx, a.x, a.y, { ...kit, dir: kit.dir },
+        { action: 'run', step: movementStep(a.vx, a.vy, sp.age), lean: kit.dir });
     } else if (fg && a.id === sp.returner && (st === 'hold' || st === 'approach')) {
-      slim(ctx, a.x, a.y, kit, { hold: true, crouch: true });
+      slim(ctx, a.x, a.y, kit, { action: 'kneel' });
     } else if (a.id === sp.kicker && (st === 'snap' || st === 'hold' || st === 'lineup') && (sp.kind === 'punt' || fg)) {
-      slim(ctx, a.x, a.y, kit, { hold: true, crouch: st === 'snap' && fg });
+      slim(ctx, a.x, a.y, kit, { action: st === 'snap' ? 'snap' : 'hold', progress: clamp(age / .2, 0, 1) });
     } else if (a.id === sp.recovery && sp.kind !== 'onside' && (st === 'recovery' || st === 'resolved')) {
       const secured = st === 'resolved' || age >= .32;
-      slim(ctx, a.x, a.y, { ...kit, dir: sp.ball.x < a.x ? -1 : 1 }, { step: secured ? 0 : t, ball: secured, hold: !secured });
+      slim(ctx, a.x, a.y, { ...kit, dir: sp.ball.x < a.x ? -1 : 1 },
+        { action: 'catch', progress: secured ? 1 : clamp(age / .32, 0, 1), ball: secured });
     } else if (a.id === sp.recovery && (st === 'recovery' || st === 'resolved')) {
       const from = sp.recoveryFrom ?? a, ang = Math.atan2(sp.ball.y - from.y, sp.ball.x - from.x);
       withBroadcastAnchor(ctx, a.x, a.y, () => {
-      prone(ctx, a.x, a.y, kit, ang, st === 'recovery' ? Math.sin(clamp(age / .42, 0, 1) * Math.PI) * 4 : 0);
-      if (st !== 'recovery' || age >= .32) heldBall(ctx, Math.round(a.x + Math.cos(ang) * 6) - 2, Math.round(a.y + Math.sin(ang) * 6) - 2);
+      prone(ctx, a.x, a.y, kit, ang, st === 'recovery' ? Math.sin(clamp(age / .42, 0, 1) * Math.PI) * 4 : 0,
+        0, st !== 'recovery' || age >= .32);
       });
     } else {
       const fielding = a.id === sp.returner && (st === 'flight' || st === 'bounce') && Math.hypot(a.x - sp.ball.x, a.y - sp.ball.y) < 26;
       const actualFacing = fielding ? (sp.ball.x < a.x ? -1 : 1) : facing;
       slim(ctx, a.x, a.y, { ...kit, dir: actualFacing }, {
-        step: moving ? t + a.id : 0, hold: fielding, engaged: a.engaged > sp.age, lean: a.engaged > sp.age ? facing : 0,
+        step: movementStep(a.vx, a.vy, sp.age, a.id / 7), hold: fielding,
+        action: fielding ? 'catch' : a.engaged > sp.age ? 'block' : moving ? 'run' : 'stance',
+        progress: fielding ? clamp(1 - Math.hypot(a.x - sp.ball.x, a.y - sp.ball.y) / 26, 0, .55) : undefined,
+        engaged: a.engaged > sp.age, lean: a.engaged > sp.age ? facing : 0,
         view: moving ? motionView(a.vx, a.vy, actualFacing) : undefined,
       });
     }

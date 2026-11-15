@@ -1,6 +1,7 @@
 import type { FootballGame, TackleActor } from '../lib/football/types';
 import { tackleFrame } from '../lib/football/tackle-scene';
-import { slim, heldBall, R, type Kit } from './football-sprites';
+import { slim, type Kit } from './football-sprites';
+import { drawFootballPronePossession } from './football-player-art';
 import { kickFootballArt } from './kick-return-renderer';
 import { drawPixelEnlarged } from './football-pixel-scale';
 import { positionKit, specialSkinPosition, classicSkinPosition, type SkinPosition } from './football-art';
@@ -38,6 +39,7 @@ export function drawTackle(ctx: CanvasRenderingContext2D, g: FootballGame,
       dir: carrier ? dir : s.carrier.x < s.defender.x ? -1 : 1 }, tackleSkinPosition(g, a));
     if (frame <= 1) {
       slim(ctx, x, y, kit, { ball: carrier && !carrierFumbled, crouch: frame === 1,
+        action: carrier ? 'fall' : 'block', progress: frame === 0 ? 0 : .2,
         lean: frame === 0 ? (carrier ? -dir : kit.dir) : 0, hold: !carrier,
         view: frame === 1 ? (carrier ? 5 : 6) : undefined });
       return;
@@ -60,10 +62,9 @@ export function drawTackle(ctx: CanvasRenderingContext2D, g: FootballGame,
     // Keep the secured football and outside forearm in the foreground when
     // the slightly larger tackler overlaps the carrier's prone silhouette.
     drawPixelEnlarged(ctx, Math.round(cx), Math.round(cy) + 1, (pixels, x, y) => {
-      heldBall(pixels, dir > 0 ? x - 1 : x - 7, y - 1);
-      const arm = x + (dir > 0 ? 3 : -5);
-      R(pixels, s.carrier.team === 'home' ? home.body : away.body, arm, y - 1, 2, 1);
-      R(pixels, '#10213a', arm, y, 2, 1);
+      const kit = positionKit({ ...(s.carrier.team === 'home' ? home : away), dir }, tackleSkinPosition(g, s.carrier));
+      drawFootballPronePossession(pixels, x, y, kit,
+        { angle: dir > 0 ? 0 : Math.PI, lift: 0, ball: true });
     });
   }
 }

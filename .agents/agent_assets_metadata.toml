@@ -246,3 +246,31 @@ mtime_ms = 1794698677748
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/15c331cc-b8e5-4a73-8047-e56fede945b2/be2c0079-c399-4825-a1bd-3831f2924782"
 storage_version_token = "1794698784926124"
 content_type = "image/png"
+
+[[outputs]]
+id = "WZ7_briyE2AEfW0qGUU2T"
+uri = "file://generated-artifacts/nes-player-comparison.png"
+type = "image"
+title = "Current vs. three NES character concepts"
+description = "Phone-scale planted and running comparisons on identical turf. Concept C was selected for the game."
+logical_id = "54c47a23-5c60-4daa-b027-99cad1b86664"
+content_hash = "sha256:fc0dbb413f2606296f5c6b70f746174349dcfbcd81a797834dc81f6fa6b8da36"
+size = 54019
+mtime_ms = 1794769186747
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/54c47a23-5c60-4daa-b027-99cad1b86664/1968053b-6070-45d7-b542-2ce6d6c877ba"
+storage_version_token = "1794769417062277"
+content_type = "image/png"
+
+[[outputs]]
+id = "Ki41no6XbsI-gmvui8SXM"
+uri = "file://generated-artifacts/nes-player-comparison.html"
+type = "html"
+title = "Full NES character comparison"
+description = "Self-contained comparison of all three concepts across QB, RB, OL, LB and DB builds, with planted and running poses."
+logical_id = "16d156c2-6299-489d-8eba-026cf65b840d"
+content_hash = "sha256:910603278c1bc68c8faf8b38bc36606b620b10f7e2a61fd741b6b159b0962bcb"
+size = 657293
+mtime_ms = 1794769182443
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/16d156c2-6299-489d-8eba-026cf65b840d/1d6e3ada-0f79-44f9-ba30-e6b070cfe56c"
+storage_version_token = "1794769417587936"
+content_type = "text/html"

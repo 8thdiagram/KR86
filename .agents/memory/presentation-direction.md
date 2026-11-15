@@ -3,19 +3,19 @@ name: Retro presentation direction
 description: User's standing visual direction and audio boundaries for Kick Return ’86.
 ---
 
-Kick Return ’86 should look as close as possible to the supplied football screenshot, adapted for mobile rather than a modern mobile app or SaaS dashboard. The latest player-art direction favors less pixelated, smoother and more readable athletes. Keep crisp separated colors, square interface frames, a stadium setting, chrome/white/blue lettering, and red accents inspired by the supplied icon artwork.
+Kick Return ’86 uses exceptional late-1980s NES character art: deliberately authored raster poses, strong outlines, substantial adult anatomy, thick articulated thighs and calves, recognizable cleats, readable shoulder pads, and restrained discrete shading. This complete character-art reset supersedes the earlier skinny, smoother, less-pixelated and long-stick-leg directions. Keep the existing field, camera, interface, intro and audio.
 
-**Why:** The user superseded the earlier deliberately pixelated NES-only brief with “Make the players less pixelated and smoother” and “Overall, they need to be easier to see like in the reference picture here.”
+**Why:** The user explicitly requested a complete NES football character redesign, not incremental modification of the previous sprites, and supplied a fighting-game screenshot as the physical-anatomy reference.
 
-**How to apply:** Use finer authored contours and coherent readable shapes rather than extra coarse pixel noise. Do not blur the entire game to smooth athletes. Preserve animation timing, gameplay and saves. Keep title, Franchise management and supporting interfaces visually consistent; follow the separate intro/menu/audio boundaries below.
+**How to apply:** Judge independent character concepts at actual phone gameplay size on the same field before selecting a direction. Do not claim original Double Ninjas source or ring-girl art was inspected when only the supplied screenshot was available. Preserve physics, timing, AI, probabilities, controls, Franchise saves, camera and audio; art must follow existing state without delaying actions.
 
-Keep player sprites smaller overall, lean and athletic, with proportionally longer white legs, more obvious natural alternating strides and finer, smoother silhouettes. Keep helmets readable and separated from the jersey.
+Use six or more clearly distinct running poses with knee drive, plant, push-off, recovery and opposite arm pump. Stationary players must stay planted. Author directional anatomy and the full football action family, including grounded and special-team poses; never rotate a flat standing character. Different positions need cohesive bulky, balanced, compact and lean builds.
 
-**Why:** The user specified “Make the sprites smaller. Make their pants white. Make their legs longer and make the strides more obvious and natural and realistic.”
+**Why:** The user rejected thin procedural limbs and requested complete readable characters and natural action-specific animation.
 
-**How to apply:** Apply the athletic anatomy across standing, turning, spinning, diving, falling and kicking artwork. Raise the visual waist rather than enlarging the whole player; alternate fore/aft strides, knee bend and recovery-foot lift. Preserve ground anchors, collision geometry, speeds and action timing.
+**How to apply:** Let movement speed drive visual cadence, not the reverse. Keep common ground anchors, actual release/catch/contact timing, and stable position-based skin tones. A held football belongs to its authored hand; there must not be a second independently positioned carried ball.
 
-Prioritize clear individual sprites: white pants, solid primary-team-color jerseys and sleeves, secondary-team-color helmets, and white facemasks. No secondary stripes or blocks on the jerseys. Use dark definition to separate limbs and external silhouettes, not to create black face panels or cages. Do not add decorative lines around downed players.
+Prioritize clear individual sprites: white pants, primary-team-color jerseys, secondary-team-color helmets, and white facemasks. Discrete highlight/shadow and cuff pixels are allowed by the complete redesign, but team identity must remain obvious. Use dark definition for silhouettes and limb separation, not black face panels. Do not add decorative lines around downed players.
 
 **Why:** The user specified “make the jerseys one color which is the primary team color separated from the helmet, which is the secondary team color.” Earlier they found detailed sprites and lines around grounded players messy.
 

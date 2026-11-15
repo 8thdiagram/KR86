@@ -2,17 +2,17 @@ import { KR, kickBallPosition, isKickContact, type KickAttempt } from '../lib/ki
 import { kickMatchupTeams } from '../lib/kick-return-teams';
 import { drawTouchdownMarquee } from './football-touchdown-art';
 import { kickDivePose } from '../lib/kick-return-dive';
-import { kickDiveBallReach, kickDiveRules } from '../lib/kick-return-burst';
+import { kickDiveRules } from '../lib/kick-return-burst';
 import type { KickViewport } from '../lib/kick-return-viewport';
-import { drawFootballBall, footballPixels, helmetColor, playerSkin, positionKit, classicSkinPosition, uniformKit, UNIFORM, type FootballKit } from './football-art';
+import { drawFootballBall, positionKit, classicSkinPosition, uniformKit, type FootballKit } from './football-art';
 import { FOOTBALL_ART_STAGES as ART, drawDeluxeTurf, drawEndZoneLettering, drawFieldFixtures, drawYardNumber, tone } from './football-deluxe-art';
 import { drawBroadcastStadium } from './football-stadium-art';
 import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
 import { drawBroadcastGoalPosts } from './football-broadcast-posts';
-import { heldBall, turnSprite, movementBodyView as motionView, type BodyView } from './football-sprites';
+import { turnSprite, movementStep, movementBodyView as motionView, type BodyView, type Pose } from './football-sprites';
 import { drawPixelEnlarged } from './football-pixel-scale';
 import { refereeRenderY, REFEREE_WORLD_Y } from './football-referee-layout';
-import { drawFootballPlayer } from './football-player-art';
+import { drawFootballPlayer, drawFootballProne } from './football-player-art';
 
 const G: Record<string, string> = {
   A: '010101111101101', C: '111100100100111', T: '111010010010010', H: '101101111101101',
@@ -122,98 +122,33 @@ function field(ctx: CanvasRenderingContext2D, x0: number, x1: number, matchup?: 
 type Kit = FootballKit;
 // Shared anatomy (all poses): stepped shell, matching-color cage, tapered jersey,
 // articulated white trousers and compact cleats.
-type Put = (c: string, u: number, v: number, w: number, h: number) => void;
-function ballShape(put: Put, bx: number, by: number, d: 1 | -1, kit: Kit) {
-  footballPixels(put, bx - 1, by - 1, true);
-  put(playerSkin(kit), d > 0 ? bx : bx + 6, by + 3, 1, 1);
-}
 // Standing sprite: 8 wide x ~16 tall. Anchor: (x, y) = torso centre.
-function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, step: number, ball = false, shuffle = 0, lean = 0, view?: BodyView) {
+function spriteNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, step: number, ball = false, shuffle = 0, lean = 0, view?: BodyView, pose: Pose = {}) {
   if (view !== undefined) {
-    turnSprite(ctx, x, y, kit, view, { step, ball, hold: !ball && shuffle > 0, crouch: shuffle > 0 });
+    turnSprite(ctx, x, y, kit, view, { step, ball, hold: !ball && shuffle > 0, crouch: shuffle > 0, ...pose });
     return;
   }
-  const cx = Math.round(x), ground = Math.round(y), d = kit.dir;
+  const cx = Math.round(x), ground = Math.round(y);
   contactShadow(ctx, cx, ground + 5, 10);
   drawFootballPlayer(ctx, cx, ground, kit, {
-    step, lean, crouch: shuffle > 0, engaged: shuffle > 0, hold: shuffle > 0,
+    step, lean, ball, crouch: shuffle > 0, engaged: shuffle > 0, hold: shuffle > 0, ...pose,
   });
-  if (ball) {
-    const put: Put = (c, u, v, w, h) => R(ctx, c, u, v, w, h);
-    ballShape(put, d > 0 ? cx + 1 : cx - 7, ground - 1, d, kit);
-  }
 }
-function sprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, step: number, ball = false, shuffle = 0, lean = 0, view?: BodyView) {
-  drawPixelEnlarged(ctx, x, y, (target, px, py) => spriteNative(target, px, py, kit, step, ball, shuffle, lean, view), 6);
+function sprite(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, step: number, ball = false, shuffle = 0, lean = 0, view?: BodyView, pose: Pose = {}) {
+  drawPixelEnlarged(ctx, x, y, (target, px, py) => spriteNative(target, px, py, kit, step, ball, shuffle, lean, view, pose), 6);
 }
 // Hand-authored turf silhouette; no upright sprite is rotated into a cutout.
 function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, angle: number, lift: number, crouch = 0, ball = false) {
-  const cx = Math.round(x), cy = Math.round(y - lift), horizontal = Math.abs(Math.cos(angle)) >= Math.abs(Math.sin(angle));
-  const forward: 1 | -1 = Math.cos(angle) >= 0 ? 1 : -1;
-  const shell = helmetColor(kit);
-  const shadowW = (horizontal ? 18 : 10) - Math.min(4, Math.max(0, Math.round(lift)));
-  if (lift > 0) contactShadow(ctx, cx, Math.round(y) + (horizontal ? 2 : 7), shadowW);
-  if (horizontal) {
-    const by = cy - 2 + Math.round(crouch * .4);
-    const hr = (c: string, u: number, v: number, w: number, h: number) =>
-      R(ctx, c, cx + (forward > 0 ? u : -u - w), by + v, w, h);
-    // A single connected turf-contact cluster, not an outline or impact rays.
-    if (lift <= 0) hr('#173923', -3, 3, 8, 1);
-    hr(UNIFORM.pants, -10, 1, 7, 3);
-    hr(UNIFORM.pantsShade, -9, 3, 5, 1);
-    hr(C.ink, -10, 3.5, 2.5, .5);
-    hr(kit.body, -3, -1, 6, 4);
-    hr(kit.body, -3, -1, 3, 1);
-    hr(C.ink, -2.5, -1.5, 5, .5);
-    // Separated trouser/jersey masses preserve the athlete's long prone profile.
-    hr(kit.body, -1, -3, ball ? 5 : 9, 2);
-    hr(kit.body, 0, 2, ball ? 5 : 9, 2);
-    hr(playerSkin(kit), ball ? 4 : 10, 2, 2, 1);
-    // Crown overlaps the shoulder, avoiding a detached helmet at either facing.
-    // Shell expands a half-unit toward the crown; its lower edge remains at
-    // the same neck/shoulder overlap so the prone silhouette stays grounded.
-    hr(shell, 2.5, -4.5, 5.5, 4.5);
-    hr(shell, 3.5, -4.5, 3.5, .5);
-    hr(C.ink, 3, -5, 4.5, .5); // restrained exterior crown contour only
-    hr(playerSkin(kit), 7.5, -2, 1, 1);
-    // Same-color cage around the tiny visible face slot; never a dark recess.
-    hr(UNIFORM.facemask, 6.5, -1, .5, 2);
-    hr(UNIFORM.facemask, 9, -1, .5, 2);
-    hr(UNIFORM.facemask, 6.5, 0, 3, .5);
-    hr(UNIFORM.facemask, 6.5, 1, 3, .5);
-    if (ball) {
-      heldBall(ctx, forward > 0 ? cx - 1 : cx - 7, by + 1);
-      hr(kit.body, 3, 1, 2, 1); hr(C.ink, 3, 2, 2, 1);
-    }
-  } else {
-    const down: 1 | -1 = Math.sin(angle) >= 0 ? 1 : -1;
-    const vr = (c: string, u: number, v: number, w: number, h: number) =>
-      R(ctx, c, cx + u, cy + (down > 0 ? v : -v - h), w, h);
-    if (lift <= 0) vr('#173923', -2, 7, 5, 1);
-    vr(UNIFORM.pantsShade, -2, -9, 3, 7);
-    vr(UNIFORM.pants, 1, -9, 3, 7);
-    vr(kit.body, -3, -3, 7, 7);
-    vr(C.ink, -2.5, -3.5, 6, .5);
-    vr(kit.body, -6, -2, 2, 5); vr(kit.body, 4, -2, 2, 4); vr(playerSkin(kit), 5, 2, 1, 1);
-    vr(shell, -3.5, 3, 9, 5.5);
-    vr(C.ink, -2, 2.5, 6, .5);
-    const faceX = kit.dir > 0 ? 1.5 : -1;
-    vr(playerSkin(kit), faceX, 5, 1.5, 1);
-    vr(UNIFORM.facemask, faceX - .5, 4.5, .5, 2);
-    vr(UNIFORM.facemask, faceX + 1.5, 4.5, .5, 2);
-    vr(UNIFORM.facemask, faceX - .5, 6.5, 3, .5);
-    if (ball) {
-      heldBall(ctx, kit.dir > 0 ? cx + 1 : cx - 7, cy + down);
-      vr(kit.body, kit.dir > 0 ? 4 : -6, 0, 2, 2);
-      vr(playerSkin(kit), kit.dir > 0 ? 5 : -6, 2, 1, 1);
-    }
-  }
+  const horizontal = Math.abs(Math.cos(angle)) >= Math.abs(Math.sin(angle));
+  contactShadow(ctx, Math.round(x), Math.round(y) + (horizontal ? 3 : 7),
+    (horizontal ? 16 : 10) - Math.min(4, Math.max(0, Math.round(lift))));
+  drawFootballProne(ctx, x, y, kit, { angle, lift, crouch, ball });
 }
 function prone(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, angle: number, lift: number, crouch = 0, ball = false) {
   drawPixelEnlarged(ctx, x, y, (target, px, py) => proneNative(target, px, py, kit, angle, lift, crouch, ball));
 }
-function lying(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit) {
-  prone(ctx, Math.round(x) - (kit.dir > 0 ? 1 : -1), Math.round(y), kit, kit.dir > 0 ? 0 : Math.PI, 0);
+function lying(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit, ball = false) {
+  prone(ctx, Math.round(x) - (kit.dir > 0 ? 1 : -1), Math.round(y), kit, kit.dir > 0 ? 0 : Math.PI, 0, 0, ball);
 }
 function diving(ctx: CanvasRenderingContext2D, x: number, y: number, kit: Kit,
   pose: NonNullable<ReturnType<typeof kickDivePose>>) {
@@ -247,38 +182,30 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
   if (a.phase !== 'returning') return false;
   const m = a.moves;
   if (!m) return false;
-  const put: Put = (c, u, v, w, h) => R(ctx, c, u, v, w, h);
   const v2 = m.version === 2;
   const act = m.active;
   const px = Math.round(x) - 4, py = Math.round(y) - 8;
   if (act && act.kind === 'dive') {
-    const e = act.elapsed * .34 / kickDiveRules(a).duration, reach = kickDiveBallReach(act.elapsed, a), tilt = act.side * 1;
+    const e = act.elapsed * .34 / kickDiveRules(a).duration, tilt = act.side * 1;
     if (e < .08) {
-      sprite(ctx, x, y + 1, kit, 1, false, 1, 1);
-      ballShape(put, Math.round(x + reach - 6), Math.round(y) - 1, 1, kit);
-      R(ctx, C.ink, px + 6, py + 13, 3, 1);
+      sprite(ctx, x, y + 1, kit, 0, true, 0, 0, undefined, { action: 'dive', progress: e / .34 });
     }
     else if (e < .14) {
       // A compact three-quarter brace bridges the upright wind-up and turf pose.
-      sprite(ctx, x, y + 1, kit, 1, false, 1, tilt, act.side > 0 ? 5 : 6);
-      ballShape(put, Math.round(x + reach - 6), Math.round(y) - 1 + tilt, 1, kit);
-      R(ctx, C.ink, px + 6, py + 13, 3, 1);
+      sprite(ctx, x, y + 1, kit, 0, true, 0, 0, act.side > 0 ? 5 : 6,
+        { action: 'dive', progress: e / .34 });
     }
     else if (e < .26) {
       const lift = e < .2 ? 1 : 3;
-      prone(ctx, Math.round(x), Math.round(y) + 1, kit, -.35 + tilt * .08, lift, 1);
-      if (a.returnUpgrade === 1) R(ctx, playerSkin(kit), Math.round(x) + 6, Math.round(y) - 1 + tilt, Math.max(1, reach - 7), 2);
-      ballShape(put, Math.round(x + reach - 6), Math.round(y) - 1 + tilt, 1, kit);
+      prone(ctx, Math.round(x), Math.round(y) + 1, kit, -.35 + tilt * .08, lift, 1, true);
     } else {
-      prone(ctx, Math.round(x), Math.round(y) + 2, kit, tilt * .06, 0);
-      ballShape(put, Math.round(x + reach - 6), Math.round(y) + 1, 1, kit);
+      prone(ctx, Math.round(x), Math.round(y) + 2, kit, tilt * .06, 0, 0, true);
     }
     return true;
   }
   if (v2 && !act && m.hesitating) {
     const st = a.returnTime * 5, sh = Math.round(Math.sin(a.returnTime * 9));
     sprite(ctx, x, y + (Math.floor(st) % 2), kit, st, true, 1, sh);
-    R(ctx, C.ink, px + 6, py + 13, 3, 1);
     return true;
   }
   if (act && act.kind === 'spin') {
@@ -301,14 +228,12 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
     const f = hold ? 1 : Math.floor((act.elapsed - .1) * 28);
     const cutView: BodyView = hold ? (fake > 0 ? 5 : 6) : (fake > 0 ? 6 : 5);
     sprite(ctx, x, y + hold, kit, f, true, hold, fake * 3, cutView);
-    R(ctx, C.ink, px + (fake < 0 ? -2 : 7), py + 11, 3, 2); // planted outside boot
     R(ctx, C.lace, px + (fake < 0 ? 9 : -3), py + 14, 2, 1);
     return true;
   }
   if (m.backward) {
     const f = Math.floor(t) % 4, bx = Math.round(x) - 1;
     sprite(ctx, bx, y, kit, (4 - f) % 4, true);
-    R(ctx, C.ink, bx - 4, Math.round(y) - 3, 2, 1); // heels digging in
     return true;
   }
   return false;
@@ -372,7 +297,7 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refer
     const y = stagedY + (d.y - stagedY) * coverage;
     actors.push({ x, y, draw: () => {
       if (kick) {
-        sprite(ctx, x, y, defenderKit, a.time > .1 ? t + d.id : 0);
+        sprite(ctx, x, y, defenderKit, a.time > .1 ? movementStep(d.speed, 0, a.time, d.id / 7) : 0);
       }
       else if (kickDivePose(a, d, cel)) {
         diving(ctx, d.x, d.y, defenderKit, kickDivePose(a, d, cel)!);
@@ -392,7 +317,7 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refer
       if (tackling) {
          sprite(ctx, d.x + lunge(d.x), d.y + 1, defenderKit, 0);
       }
-       else sprite(ctx, d.x, d.y, defenderKit, d.active ? t + d.id : 0);
+       else sprite(ctx, d.x, d.y, defenderKit, d.active ? movementStep(d.speed, 0, a.returnTime, d.id / 7) : 0);
     } });
   }
   const hasBall = !kick || a.time >= 1.4;
@@ -403,7 +328,7 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refer
         // Short crouched quarter-turn bridge before the existing grounded pose.
         sprite(ctx, p.x, p.y + 1, home, 0, true, 1, home.dir, 5);
       }
-      else { lying(ctx, p.x, p.y + 2, home); football(ctx, p.x + 9 + Math.round((1 - imp) * 3), p.y + 5 - Math.round(Math.sin(imp * Math.PI) * 3), imp > .8); }
+      else lying(ctx, p.x, p.y + 2, home, true);
     }
     else if (a.phase === 'touchdown') {
       const active = a.moves?.active;
@@ -414,9 +339,8 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refer
         return;
       }
       const hop = Math.floor(cel * 5) % 2 ? 2 : 0;
-      sprite(ctx, p.x, p.y - hop, home, 0, true);
-      R(ctx, home.trim, Math.round(p.x) - 6, Math.round(p.y) - 13 - hop, 2, 4);
-      R(ctx, home.trim, Math.round(p.x) + 4, Math.round(p.y) - 13 - hop, 2, 4);
+      sprite(ctx, p.x, p.y - hop, home, 0, true, 0, 0, undefined,
+        { action: 'jump', progress: (cel % .5) / .5 });
     } else if (!kick && hasBall && moveSprite(ctx, p.x, p.y, home, t, a)) { /* retro move pose drawn */ }
     else sprite(ctx, p.x, p.y, home, kick ? (a.time > .25 && a.time < 1.4 ? t : 0) : p.x / 8, hasBall);
   } });

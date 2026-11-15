@@ -29,7 +29,8 @@ test('uniforms use bright white pants and clean secondary helmet shells in every
       const a = canvas();
       slim(a.ctx, 100, 100, kit, { view, step: 0 });
       const shell = a.paints.filter(p => p.y < 96 && p.color === helmetColor(kit));
-      assert(shell.some(p => p.w >= 4 && p.h >= 3), `${team.name}/${dir}/${view}: clear secondary shell`);
+      assert(shell.reduce((area, p) => area + p.w * p.h, 0) >= 8,
+        `${team.name}/${dir}/${view}: a substantial secondary helmet built from crisp raster rows`);
       assert(a.paints.some(p => p.color === UNIFORM.pants), 'white pants remain visible');
     }
   }
@@ -40,7 +41,8 @@ test('downed sprites have no surrounding shadow bars or detached tackle accents'
   for (const angle of [0, Math.PI, Math.PI / 2, -Math.PI / 2]) {
     const { ctx, paints } = canvas();
     kickFootballArt.prone(ctx, 100, 100, kit, angle, 0);
-    assert(!paints.some(p => p.color.startsWith('rgba(')), 'no dark underlining around grounded anatomy');
+    assert(paints.filter(p => p.color.startsWith('rgba(')).every(p =>
+      p.y >= 100 && p.h <= 1 && p.w <= 16), 'only compact turf-contact pixels, never surrounding lines or impact rays');
     assert(paints.some(p => p.color === UNIFORM.pants));
   }
   const g = createFootball(86);
