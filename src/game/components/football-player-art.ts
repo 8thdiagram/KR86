@@ -50,28 +50,39 @@ export function drawFootballPlayer(ctx: CanvasRenderingContext2D, x: number, y: 
     }
   };
 
-  // Long, separated legs: white thigh masses, visible offset knees, and calves
-  // that reach the same cleat/ground line in every upright and turn view.
-  const legY = ground - 0.5;
-  const legSpread = side ? 1.1 : diagonal ? 1.65 : 2;
-  const swing = braced ? 0 : stride * 1.1;
+  // Hips stay under the jersey while the feet travel fore/aft in opposition.
+  // The raised waist gives the legs more visible length without moving the
+  // crown or the planted-foot/shadow anchor.
+  const waistY = ground - 1.25;
+  const hipY = waistY;
+  const hipSpread = side ? 0.35 : diagonal ? 0.55 : 0.7;
+  const strideTravel = braced ? 0 : stride * 2.1 * kit.dir;
   const kick = options.kick === undefined ? undefined : Math.max(0, Math.min(1, options.kick));
   const kickTravel = kick === undefined ? 0 : (kick * 2 - 1) * 3.5 * kit.dir;
   const kickLift = kick === undefined ? 0 : Math.sin(kick * Math.PI) * 1.5 + Math.max(0, kick - 0.5) * 2;
   const legs = [
-    { x: cx - legSpread - swing, bend: -0.5 + swing * 0.5, swingLeg: false },
-    { x: cx + legSpread + swing, bend: 0.5 - swing * 0.5, swingLeg: true },
+    { x: cx - hipSpread, swingSign: -1, swingLeg: false },
+    { x: cx + hipSpread, swingSign: 1, swingLeg: true },
   ];
   for (const leg of legs) {
-    const tx = leg.x;
-    const legOffsetY = leg.swingLeg ? kickLift : 0;
-    const travel = leg.swingLeg ? kickTravel : 0;
-    const kneeX = tx + leg.bend + travel * .55, kneeY = legY + 2 - legOffsetY * .5;
-    const ankleX = tx + leg.bend + travel, ankleY = ground + 4 - legOffsetY;
+    const travel = leg.swingSign * strideTravel;
+    // A foot lifts only while returning forward, then plants for the backward
+    // power stroke. Opposite phases keep one foot supporting the runner.
+    const runningLift = braced || kick !== undefined ? 0
+      : Math.max(0, leg.swingSign * Math.cos(phase * Math.PI / 2))
+        * 1.5 * Math.min(1, Math.abs(phase) * 4);
+    const legOffsetY = (leg.swingLeg ? kickLift : 0) + runningLift;
+    const kickOffset = leg.swingLeg ? kickTravel : 0;
+    const hipX = leg.x;
+    const kneeX = hipX + travel * 0.48 + kickOffset * 0.55;
+    const kneeBend = braced ? 0 : Math.abs(stride) * 0.35;
+    const kneeY = ground + 1.35 - legOffsetY * 0.45 + kneeBend;
+    const ankleX = hipX + travel + kickOffset;
+    const ankleY = ground + 4 - legOffsetY;
     const pants = leg.swingLeg ? UNIFORM.pants : UNIFORM.pantsShade;
-    segment(INK, tx + .5, legY, kneeX + .5, kneeY, 2.5);
+    segment(INK, hipX + .5, hipY, kneeX + .5, kneeY, 2.5);
     segment(INK, kneeX + .5, kneeY, ankleX + .5, ankleY, 2);
-    segment(pants, tx + .5, legY, kneeX + .5, kneeY, 1.5);
+    segment(pants, hipX + .5, hipY, kneeX + .5, kneeY, 1.5);
     segment(pants, kneeX + .5, kneeY, ankleX + .5, ankleY, 1);
     const toe = ankleX + (kit.dir > 0 ? 0.25 : -1);
     const footY = ground + 4.5 - legOffsetY;
@@ -84,7 +95,7 @@ export function drawFootballPlayer(ctx: CanvasRenderingContext2D, x: number, y: 
   put(skin, cx - 0.5 + lean, ground - 6.5, 1.5, 0.5);
 
   // Arm silhouettes sit behind the single-color jersey, with elbow breaks.
-  const armPhase = options.hold ? -1.5 : options.engaged ? -0.75 : braced ? 0 : stride * 0.7;
+  const armPhase = options.hold ? -1.5 : options.engaged ? -0.75 : braced ? 0 : stride * 1.1;
   const arms = [
     { x: left - 1, y: ground - 5 + armPhase, hand: left - 1.5 },
     { x: left + width - 1, y: ground - 5 - armPhase, hand: left + width + 0.5 },
@@ -106,11 +117,11 @@ export function drawFootballPlayer(ctx: CanvasRenderingContext2D, x: number, y: 
   put(jersey, left + 1.5, top - 0.5, width - 3, 0.5);
   put(jersey, left + 1, top, width - 2, 0.5);
   put(jersey, left + 0.75, top + 0.5, width - 1.5, 1);
-  put(INK, left + 0.75, top + 1.5, width - 1.5, 5.5);
-  put(jersey, left + 1, top + 1.5, width - 2, 5);
+  put(INK, left + 0.75, top + 1.5, width - 1.5, 4.25);
+  put(jersey, left + 1, top + 1.5, width - 2, 3.75);
   // Waist is intentionally high; it exposes the length and knee articulation.
-  put(INK, cx - (side ? 1 : 2) + lean, ground, side ? 2 : 4, 0.75);
-  put(UNIFORM.pants, cx - (side ? 0.5 : 1.5) + lean, ground, side ? 1 : 3, 0.5);
+  put(INK, cx - (side ? 1 : 2) + lean, waistY, side ? 2 : 4, 0.75);
+  put(UNIFORM.pants, cx - (side ? 0.5 : 1.5) + lean, waistY, side ? 1 : 3, 0.5);
 
   // Re-open the small skin neckline after the shoulders overlap the torso.
   put(INK, cx - 1.5 + lean, ground - 7, 3, 0.5);
@@ -130,10 +141,8 @@ export function drawFootballPlayer(ctx: CanvasRenderingContext2D, x: number, y: 
   if (!back) {
     const faceX = kit.dir > 0 ? headX + headW - 2 : headX + 0.5;
     put(skin, faceX, headY + 2, 1.5, 1);
-    put(shell, faceX - 0.5, headY + 1.5, 0.5, 2);
-    put(shell, faceX + 1.5, headY + 1.5, 0.5, 2);
-    put(shell, faceX - 0.5, headY + 3, 3, 0.5);
-  } else {
-    put(shell, cx - 1, headY + 2, 2, 0.5);
+    put(UNIFORM.facemask, faceX - 0.5, headY + 1.5, 0.5, 2);
+    put(UNIFORM.facemask, faceX + 1.5, headY + 1.5, 0.5, 2);
+    put(UNIFORM.facemask, faceX - 0.5, headY + 3, 3, 0.5);
   }
 }

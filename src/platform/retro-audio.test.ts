@@ -83,12 +83,12 @@ test('startup stays effects-only; title fanfare plays once, ends naturally and r
     assert(tones.slice(0, 3).every(tone => tone.stopped));
     assert.equal(tones[3]!.stopped, false, 'intro cleanup leaves selection effects alone');
     startMenuMusic(); startMenuMusic(); stopMenuMusic(); await settle();
-    resolveDecode({ duration: 9 }); await settle();
+    resolveDecode({ duration: 4.5 }); await settle();
     assert.equal(tracks.length, 0, 'leaving menu during decoding cancels late music');
     startMenuMusic(); startMenuMusic(); await settle();
     assert.equal(tracks.length, 1);
     assert.equal(tracks[0]!.loop, false);
-    assert.equal(tracks[0]!.duration, 9);
+    assert.equal(tracks[0]!.duration, 4.5);
     startMenuMusic(); await settle();
     assert.equal(tracks.length, 1, 'repeated ready events never stack tracks');
     stopIntroSound();

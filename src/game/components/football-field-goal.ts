@@ -311,11 +311,11 @@ function drawKickViewPlayers(
     R(ctx, tone(shell, 1.16), x - 3.5, y - 18, 4, .5);
     R(ctx, tone(shell, .86), x + 3, y - 16, .5, 3);
     R(ctx, shell, x - 3, y - 19, 5.5, .5);
-    R(ctx, shell, x, y - 17, 2, 4);
+    R(ctx, UNIFORM.facemask, x, y - 17, 2, 4);
     R(ctx, shell, x - 5, y - 16, 5.5, 3);
     R(ctx, playerSkin(holderKit), x - 3, y - 16, 1, 1);
-    R(ctx, shell, x - 5, y - 15, 5.5, .5);
-    R(ctx, shell, x - 5, y - 13.5, 5.5, .5);
+    R(ctx, UNIFORM.facemask, x - 5, y - 15, 5.5, .5);
+    R(ctx, UNIFORM.facemask, x - 5, y - 13.5, 5.5, .5);
     R(ctx, '#10213a', x - 5, y - 12, 12, 7);
     R(ctx, kickingKit.body, x - 4, y - 11, 10, 5);
     R(ctx, kickingKit.body, x - 3, y - 11, 4, .5);

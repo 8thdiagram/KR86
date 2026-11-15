@@ -1,7 +1,7 @@
-/** Original upbeat, celebratory 1988 football victory theme. Two pulse voices,
- * a defining triangle bass and restrained noise/DPCM-style drums. No samples. */
+/** Original 4.5-second, 16-bit-console football menu fanfare. Rounded FM brass,
+ * pulse harmony, triangle bass and short sampled-style drums. No reused music. */
 import fs from 'node:fs';
-const rate = 16000, bpm = 120, beat = 60 / bpm, duration = 18 * beat;
+const rate = 16000, bpm = 120, beat = 60 / bpm, duration = 9 * beat;
 const samples = new Float32Array(Math.round(rate * duration));
 function add(start: number, seconds: number, wave: (t: number) => number, level: number) {
   for (let i = 0; i < seconds * rate; i++) {
@@ -10,12 +10,20 @@ function add(start: number, seconds: number, wave: (t: number) => number, level:
       samples[index]! += wave(t) * level * Math.max(0, Math.min(1, t / .003, (seconds - t) / .016));
   }
 }
-function note(midi: number, start: number, length: number, level: number, voice: 'pulse' | 'triangle', duty = .25) {
+function note(midi: number, start: number, length: number, level: number, voice: 'pulse' | 'triangle' | 'brass', duty = .25) {
   const hz = 440 * 2 ** ((midi - 69) / 12);
   add(start, length, t => {
     const phase = (t * hz) % 1;
     // Sixteen staircase levels for the NES-like triangle; no lush modern pads.
     if (voice === 'triangle') return Math.round((1 - 4 * Math.abs(phase - .5)) * 7) / 7;
+    // A restrained two-operator FM patch gives the early-16-bit brass attack
+    // and mellow sustain without a modern orchestral sample or shrill buzzer.
+    if (voice === 'brass') {
+      const modulation = .32 + .85 * Math.exp(-18 * t);
+      const brass = .76 * Math.sin(2 * Math.PI * phase + modulation * Math.sin(4 * Math.PI * phase))
+        + .24 * Math.sin(2 * Math.PI * phase);
+      return Math.round(brass * 31) / 31;
+    }
     // A pulse with restrained upper harmonics, not an aliased/shrill buzzer.
     let pulse = 0;
     for (let harmonic = 1; harmonic <= 7; harmonic++)
@@ -39,21 +47,18 @@ function drum(kind: 'kick' | 'snare' | 'hat' | 'tom', start: number, accent = 1,
     return Math.round(Math.sin(phase) * 15) / 15 * Math.exp(-(kind === 'kick' ? 29 : 22) * t);
   }, accent * (kind === 'hat' ? .006 : kind === 'snare' ? .045 : .09));
 }
-// Four paced C-major phrases: rising call, playful answer, lift, victory response.
-// Each voice stays monophonic, with a held tonic coda instead of a loop turnaround.
+// Two short, original call-and-answer bars, then a resolved one-beat tonic.
+// The entire menu cue is 4.5 seconds, not a shortened loop of the old song.
 const melody: [number, number, number][] = [
-  [60, 0, .65], [64, .75, .65], [67, 1.5, 1], [64, 2.75, .4], [62, 3.25, .55],
-  [65, 4, .65], [64, 4.75, .65], [62, 5.5, .65], [60, 6.25, .65], [57, 7, .75],
-  [59, 8, .65], [62, 8.75, .65], [67, 9.5, 1], [65, 10.75, .4], [64, 11.25, .55],
-  [60, 12, .65], [64, 12.75, .65], [67, 13.5, .65], [64, 14.25, .65], [62, 15, .65],
-  [60, 16, 2],
+  [60, 0, .4], [64, .5, .4], [67, 1, .8], [72, 2, .75], [67, 3, .35], [69, 3.5, .35],
+  [65, 4, .65], [64, 4.75, .45], [62, 5.5, .45], [67, 6.25, .5], [72, 7, .5], [60, 8, 1],
 ];
 for (const [midi, at, length] of melody)
-  note(midi, at * beat, length * beat, .115, 'pulse', .5);
-const roots = [36, 41, 43, 36];
+  note(midi, at * beat, length * beat, .115, 'brass', .5);
+const roots = [36, 43];
 for (let bar = 0; bar < roots.length; bar++) {
   const root = roots[bar]!, start = bar * 4;
-  for (const [at, interval, length] of [[0, 0, .8], [1, 7, .8], [2, 12, .8], [3, 7, .4], [3.5, bar === 3 ? 11 : 7, .35]])
+  for (const [at, interval, length] of [[0, 0, .8], [1, 7, .8], [2, 12, .8], [3, 7, .4], [3.5, 7, .35]])
     note(root + interval!, (start + at!) * beat, length! * beat, .28, 'triangle');
   note(root + 24, start * beat, 1.6 * beat, .045, 'pulse', .25);
   note(root + 19, (start + 2) * beat, 1.6 * beat, .045, 'pulse', .25);
@@ -62,11 +67,11 @@ for (let bar = 0; bar < roots.length; bar++) {
   for (const at of [.5, 2.5]) drum('hat', (start + at) * beat, .5);
 }
 // A small closing fill, then a sustained C-major resolution and natural release.
-drum('tom', 15.5 * beat, .45, 100);
-drum('tom', 15.75 * beat, .35, 75);
-drum('kick', 16 * beat, .8);
-note(36, 16 * beat, 2 * beat, .28, 'triangle');
-note(52, 16 * beat, 2 * beat, .045, 'pulse', .25);
+drum('tom', 7.5 * beat, .4, 100);
+drum('tom', 7.75 * beat, .3, 75);
+drum('kick', 8 * beat, .8);
+note(36, 8 * beat, beat, .28, 'triangle');
+note(52, 8 * beat, beat, .045, 'pulse', .25);
 // Quiet playback and a natural release of the final chord; never a loop seam.
 const peak = samples.reduce((max, x) => Math.max(max, Math.abs(x)), 0);
 const master = .38 / peak;
@@ -77,7 +82,7 @@ wav.writeUInt32LE(rate, 24); wav.writeUInt32LE(rate * 2, 28); wav.writeUInt16LE(
 wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(samples.length * 2, 40);
 samples.forEach((value, i) => {
   // Release the final chord naturally rather than truncating its waveform.
-  const edge = Math.min(1, i / (rate * .003), (samples.length - 1 - i) / (rate * .7));
+  const edge = Math.min(1, i / (rate * .003), (samples.length - 1 - i) / (rate * .35));
   wav.writeInt16LE(Math.round(value * master * edge * 32767), 44 + i * 2);
 });
 fs.writeFileSync('src/platform/assets/menu-sports.wav', wav);

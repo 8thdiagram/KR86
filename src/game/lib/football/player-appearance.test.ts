@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { helmetColor, playerSkin, positionKit, positionSkin, specialSkinPosition, SKIN_TONES, uniformKit, type SkinPosition } from '../../components/football-art';
+import { helmetColor, UNIFORM, playerSkin, positionKit, positionSkin, specialSkinPosition, SKIN_TONES, uniformKit, type SkinPosition } from '../../components/football-art';
 import { slim } from '../../components/football-sprites';
 import { kickFootballArt } from '../../components/kick-return-renderer';
 import { drawTackle, tackleSkinPosition } from '../../components/football-tackle';
@@ -46,7 +46,7 @@ test('cosmetic skin palette varies by position without randomness, team, or faci
   }
 });
 
-test('front and quarter helmets expose only a small one-row face slot above a shell-color mask', () => {
+test('front and quarter helmets expose only a small one-row face slot above a white mask', () => {
   for (const dir of [-1, 1] as const) for (const position of positions)
     for (const view of [undefined, 0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
       const kit = positionKit(uniformKit(KICK_TEAMS[0]!, dir), position);
@@ -59,8 +59,8 @@ test('front and quarter helmets expose only a small one-row face slot above a sh
         const face = faces[0]!;
         assert(face.w <= 2 && face.h <= 2, 'one native pixel, sharply enlarged with the existing artwork');
         assert.equal(pixels.get(`${face.x},${face.y}`), kit.skin, 'face slot is not accidentally painted over');
-        assert(paints.some(p => p.color === helmetColor(kit) && p.y === face.y + face.h && p.h <= 2 && p.w >= 3),
-          'visible helmet-colored cage rail sits immediately below the face');
+        assert(paints.some(p => p.color === UNIFORM.facemask && p.y === face.y + face.h && p.h <= 2 && p.w >= 3),
+          'visible white cage rail sits immediately below the face');
       }
       const wrong = SKIN_TONES.filter(color => color !== kit.skin);
       assert(!paints.some(p => wrong.includes(p.color as typeof SKIN_TONES[number])), 'face and hands share one tone');
@@ -83,7 +83,7 @@ test('Classic, move and prone artwork use the same position tone without changin
   }
 });
 
-test('visible face slots and helmet-colored facemasks never contain a black face panel', () => {
+test('visible face slots and white facemasks never contain a black face panel', () => {
   const team = { body: '#cb353d', trim: '#f3eee3' };
   for (const dir of [-1, 1] as const) for (const view of [undefined, 0, 1, 2, 3, 5, 6, 7] as const) {
     const kit = positionKit(uniformKit(team, dir), 'WR');
@@ -96,8 +96,8 @@ test('visible face slots and helmet-colored facemasks never contain a black face
       for (let x = face.x - .5; x < face.x + face.w + .5; x += .5)
         for (let y = face.y; y < face.y + face.h + .5; y += .5)
           assert.notEqual(pixels.get(`${x},${y}`), '#10213a', `no black visor or cage at view ${view}/${dir}/${classic}`);
-      assert(paints.some(p => p.color === helmetColor(kit) && p.y === face.y + face.h && p.w >= 3),
-        'the facemask rail uses the exact helmet color');
+      assert(paints.some(p => p.color === UNIFORM.facemask && p.y === face.y + face.h && p.w >= 3),
+        'the facemask rail stays white regardless of helmet color');
     }
   }
 });

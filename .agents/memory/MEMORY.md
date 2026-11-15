@@ -1,5 +1,5 @@
 - [Temporary preview servers](temporary-preview-servers.md) — asset-check servers can replace the app's forwarded preview port; use file-based rendering where possible.
-- [Retro presentation direction](presentation-direction.md) — smoother long-legged athletes, solid primary jerseys, secondary helmets; retain shallow camera, menus/audio, worn paint, gameplay and saves.
+- [Retro presentation direction](presentation-direction.md) — smaller athletes, long white legs, white masks; primary jerseys/secondary helmets, short menu theme, unchanged intro/camera/gameplay/saves.
 - [Defensive control boundaries](defensive-control-boundaries.md) — fully CPU-controlled defense; no selected defenders or manual movement; retain original ACTION and three-second pressure checks.
 - [Browser touch verification](browser-touch-verification.md) — isolate saves, release the correct CDP contacts, and resume the host after visibility tests.
 - [Interactive field goals](interactive-field-goals.md) — Kick View owns aiming through verdict; projected posts, meter and real crossing must agree.

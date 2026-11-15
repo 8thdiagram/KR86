@@ -177,10 +177,10 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     hr(C.ink, 3, -5, 4.5, .5); // restrained exterior crown contour only
     hr(playerSkin(kit), 7.5, -2, 1, 1);
     // Same-color cage around the tiny visible face slot; never a dark recess.
-    hr(shell, 6.5, -1, .5, 2);
-    hr(shell, 9, -1, .5, 2);
-    hr(shell, 6.5, 0, 3, .5);
-    hr(shell, 6.5, 1, 3, .5);
+    hr(UNIFORM.facemask, 6.5, -1, .5, 2);
+    hr(UNIFORM.facemask, 9, -1, .5, 2);
+    hr(UNIFORM.facemask, 6.5, 0, 3, .5);
+    hr(UNIFORM.facemask, 6.5, 1, 3, .5);
     if (ball) {
       heldBall(ctx, forward > 0 ? cx - 1 : cx - 7, by + 1);
       hr(kit.body, 3, 1, 2, 1); hr(C.ink, 3, 2, 2, 1);
@@ -199,9 +199,9 @@ function proneNative(ctx: CanvasRenderingContext2D, x: number, y: number, kit: K
     vr(C.ink, -2, 2.5, 6, .5);
     const faceX = kit.dir > 0 ? 1.5 : -1;
     vr(playerSkin(kit), faceX, 5, 1.5, 1);
-    vr(shell, faceX - .5, 4.5, .5, 2);
-    vr(shell, faceX + 1.5, 4.5, .5, 2);
-    vr(shell, faceX - .5, 6.5, 3, .5);
+    vr(UNIFORM.facemask, faceX - .5, 4.5, .5, 2);
+    vr(UNIFORM.facemask, faceX + 1.5, 4.5, .5, 2);
+    vr(UNIFORM.facemask, faceX - .5, 6.5, 3, .5);
     if (ball) {
       heldBall(ctx, kit.dir > 0 ? cx + 1 : cx - 7, cy + down);
       vr(kit.body, kit.dir > 0 ? 4 : -6, 0, 2, 2);

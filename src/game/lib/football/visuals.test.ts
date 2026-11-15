@@ -147,14 +147,15 @@ test('every team uses solid primary jerseys and secondary helmets with long whit
       const { ctx, paints, pixels } = canvas();
       if (mode === 'classic') kickFootballArt.sprite(ctx, 100, 100, kit, 0);
       else slim(ctx, 100, 100, kit);
-      assert.equal(Math.min(...paints.map(p => p.y)), 85, `${team.name} ${mode} has the longer athletic silhouette`);
+      assert.equal(Math.min(...paints.map(p => p.y)), 87.5, `${team.name} ${mode} has the smaller athletic silhouette`);
       assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `${team.name} ${mode} keeps the foot/shadow anchor`);
       assert(paints.some(p => p.c === team.trim && p.y < 91 &&
         p.w >= 4 && p.h >= 3), `${team.name} separate secondary-color helmet shell`);
       assert(!paints.some(p => p.c === team.trim && p.y >= 95), `${team.name} has no secondary-color jersey panels`);
-      assert(paints.some(p => p.c === team.body && p.h >= (mode === 'classic' ? 5 : 4)), `${team.name} primary jersey`);
-      assert([UNIFORM.pants, UNIFORM.pantsShade].includes(pixels.get('98,103') as typeof UNIFORM.pants),
-        `${team.name} white pants or their far-leg shade, ${mode}`);
+      assert(paints.some(p => p.c === team.body && p.h >= 3.5), `${team.name} primary jersey above the raised waist`);
+      assert([98, 99, 100, 101, 102, 103].some(x =>
+        [UNIFORM.pants, UNIFORM.pantsShade].includes(pixels.get(`${x},103`) as typeof UNIFORM.pants)),
+        `${team.name} bright white calves remain visible under the fixed hips, ${mode}`);
       assert([...pixels.values()].includes(UNIFORM.pants), `${team.name} retains white near-leg pixels, ${mode}`);
     }
   }
@@ -183,7 +184,7 @@ test('nine athletic turn views keep distinct secondary shells, fine contours and
     assert.deepEqual(repeat.paints, paints, `view ${view}/${dir} is deterministic`);
     const enlarged = canvas();
     slim(enlarged.ctx, 100, 100, kit, { step: .25, ball: true, view: bodyView });
-    assert.equal(Math.min(...enlarged.paints.map(p => p.y)), 85, `view ${view}/${dir} keeps the longer silhouette`);
+    assert.equal(Math.min(...enlarged.paints.map(p => p.y)), 87.5, `view ${view}/${dir} keeps the smaller silhouette`);
     assert.equal(Math.max(...enlarged.paints.map(p => p.y + p.h)), 107, `view ${view}/${dir} keeps scaled foot anchor`);
   }
 });
@@ -196,7 +197,7 @@ test('running gait keyframes add distinct intermediate pixel poses without shift
       if (mode === 'classic') kickFootballArt.sprite(ctx, 100, 100, kit, step, true);
       else slim(ctx, 100, 100, kit, { step, ball: true });
       frames.add(JSON.stringify(paints));
-      assert.equal(Math.min(...paints.map(p => p.y)), 85, `${mode} step ${step} keeps the longer silhouette`);
+      assert.equal(Math.min(...paints.map(p => p.y)), 87.5, `${mode} step ${step} keeps the smaller silhouette`);
       assert.equal(Math.max(...paints.map(p => p.y + p.h)), 107, `${mode} step ${step} keeps the foot anchor`);
       for (const p of paints) for (const n of [p.x, p.y, p.w, p.h]) assert(Number.isInteger(n * 2));
     }
@@ -230,6 +231,29 @@ test('cocked, contact and follow-through legs remain distinct without changing a
       assert.equal(JSON.stringify(kit), before);
     }
     assert.equal(frames.size, 3, 'the sprite redraw never collapses a kick into a running or static pose');
+  }
+});
+test('running strides alternate lifted recovery feet and a planted stance without spreading the hips', () => {
+  for (const classic of [false, true]) for (const dir of [-1, 1] as const) {
+    const kit = uniformKit({ body: '#aa2538', trim: '#e5ba39' }, dir);
+    const feet: { x: number; y: number }[][] = [];
+    for (const step of [.5, 1.5, 2.5, 3.5]) {
+      const { ctx, paints } = canvas();
+      if (classic) kickFootballArt.sprite(ctx, 100, 100, kit, step);
+      else slim(ctx, 100, 100, kit, { step });
+      const soles = paints.filter(p => p.c === UNIFORM.ink && p.y >= 102 && p.w === 2.5 && p.h === .5);
+      assert.equal(soles.length, 2, 'both feet remain distinct in the run cycle');
+      assert.equal(Math.max(...soles.map(p => p.y)), 104.5, 'one stance foot stays planted');
+      assert(Math.min(...soles.map(p => p.y)) < 104.5, 'the other foot clears the turf during recovery');
+      feet.push(soles);
+    }
+    assert(feet[0]![0]!.y > feet[1]![0]!.y, 'recovery swaps to the opposite leg');
+    assert(feet[2]![0]!.y < feet[3]![0]!.y, 'the second half completes the alternating cycle');
+    const braced = [0, 1, 2].map(step => {
+      const { ctx, paints } = canvas(); slim(ctx, 100, 100, kit, { step, engaged: true });
+      return JSON.stringify(paints);
+    });
+    assert.equal(new Set(braced).size, 1, 'blocked players do not run in place');
   }
 });
 test('spin, cut and dive pose samples are deterministic drawings and never mutate attempts', () => {

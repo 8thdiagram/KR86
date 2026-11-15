@@ -1,6 +1,6 @@
 import { withBroadcastAnchor } from './football-broadcast';
-/** Player-art magnification only; never changes world positions or hitboxes. */
-export const PLAYER_ART_SCALE = 1.125;
+/** Native-sized player art; never changes world positions or hitboxes. */
+export const PLAYER_ART_SCALE = 1;
 type PixelDraw = (ctx: CanvasRenderingContext2D, x: number, y: number) => void;
 
 /** Snap projected axis-aligned edges to real canvas pixels, including camera

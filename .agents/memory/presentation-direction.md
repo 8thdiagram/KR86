@@ -9,23 +9,23 @@ Kick Return ’86 should look as close as possible to the supplied football scre
 
 **How to apply:** Use finer authored contours and coherent readable shapes rather than extra coarse pixel noise. Do not blur the entire game to smooth athletes. Preserve animation timing, gameplay and saves. Keep title, Franchise management and supporting interfaces visually consistent; follow the separate intro/menu/audio boundaries below.
 
-Keep players lean and athletic, with longer articulated legs and finer, smoother silhouettes. Keep helmets readable and clearly separated from the jersey; do not make whole sprites wider simply to add detail.
+Keep player sprites smaller overall, lean and athletic, with proportionally longer white legs, more obvious natural alternating strides and finer, smoother silhouettes. Keep helmets readable and separated from the jersey.
 
-**Why:** The user explicitly asked to “make their legs longer” and make players easier to see in the reference, superseding the earlier fixed-proportions rule.
+**Why:** The user specified “Make the sprites smaller. Make their pants white. Make their legs longer and make the strides more obvious and natural and realistic.”
 
-**How to apply:** Apply the athletic anatomy across standing, turning, spinning, diving, falling and kicking artwork. Lengthen the visual legs while preserving ground anchors, collision geometry, speeds and action timing. Use finer authored shapes, not a scaled-up low-detail bitmap.
+**How to apply:** Apply the athletic anatomy across standing, turning, spinning, diving, falling and kicking artwork. Raise the visual waist rather than enlarging the whole player; alternate fore/aft strides, knee bend and recovery-foot lift. Preserve ground anchors, collision geometry, speeds and action timing.
 
-Prioritize clear individual sprites: white pants, solid primary-team-color jerseys and sleeves, secondary-team-color helmets, and readable helmet-colored facemasks. No secondary stripes or blocks on the jerseys. Use dark definition to separate limbs and external silhouettes, not to create black face panels or cages. Do not add decorative lines around downed players.
+Prioritize clear individual sprites: white pants, solid primary-team-color jerseys and sleeves, secondary-team-color helmets, and white facemasks. No secondary stripes or blocks on the jerseys. Use dark definition to separate limbs and external silhouettes, not to create black face panels or cages. Do not add decorative lines around downed players.
 
 **Why:** The user specified “make the jerseys one color which is the primary team color separated from the helmet, which is the secondary team color.” Earlier they found detailed sprites and lines around grounded players messy.
 
 **How to apply:** Use broad uninterrupted jersey color, contrasting helmet identity and clean grounded poses consistently across Classic, Full Game and special teams. Keep gameplay and animation timing unchanged; preserve team palettes used elsewhere.
 
-Limit exposed face pixels and make facemask bars visible in the helmet's base team color. Remove black/navy recessed face panels and dark mask bars from athlete faces, including moving, turned and grounded poses. Use varied skin tones assigned consistently by player position, including hands and tackled poses.
+Limit exposed face pixels and use white facemask bars, regardless of helmet color. Remove black/navy recessed face panels and dark mask bars from athlete faces, including moving, turned and grounded poses. Use varied skin tones assigned consistently by player position, including hands and tackled poses.
 
-**Why:** The user explicitly asked for less visible flesh, clearer helmet-colored facemasks and different stable skin tones per position, then reiterated “Remove the black from their faces. Make facemasks the same color as the helmets.”
+**Why:** The user superseded the helmet-colored-mask direction with “Make the facemasks white.” The earlier reduced face exposure, no black face panels and stable skin-tone instructions still apply.
 
-**How to apply:** Derive cosmetic tone from roster role or special-teams duty at render time, not from animation frame or a changing uniform. Keep masks legible through stepped helmet corners, a small skin opening and separated matching-color rails, rather than reintroducing a dark recess. Keep this separate from gameplay, physics, and saved player state.
+**How to apply:** Derive cosmetic tone from roster role or special-teams duty at render time, not from animation frame or a changing uniform. Keep masks legible through stepped helmet corners, a small skin opening and white rails, rather than reintroducing a dark recess. Keep this separate from gameplay, physics, and saved player state.
 
 Normal gameplay should resemble the supplied 16-bit football reference: near-overhead, left-to-right, with modest broadcast depth, horizontal sidelines and far-side compression. The user approved the far sideline and asked to stretch only the near sideline further. Preserve that far-side view in future refinements unless explicitly asked to change it. Match the reference, not a rigid ten-degree preset. Never make it an isometric or dramatic low sideline camera.
 
@@ -63,9 +63,9 @@ The title mode choices and device update/backup/install options belong to one co
 
 **How to apply:** Keep shared scrolling limited to the title menu, not gameplay. Preserve update actions, backup controls and destructive-import confirmation.
 
-The supplied intro video is for visuals only: no original sound and no “hut” anywhere in the opening/title/menu presentation. Preserve other intro effects. As the main title/menu appears, play an upbeat, celebratory, slightly longer NES football theme with better pacing, prominent triangle bass, pulse melody/harmony, restrained percussion and a resolved ending. Then remain silent except for ordinary selection effects; never loop it.
+The supplied intro video is for visuals only: no original sound and no “hut” anywhere in the opening/title/menu presentation. Keep the intro and its existing effects unchanged. As the main title/menu appears, play a short 4–5 second retro 16-bit-era football theme with a resolved ending. Then remain silent except for ordinary selection effects; never loop it.
 
-**Why:** After removing the title cadence and continuous loop, the user requested a more upbeat, celebratory song with better pacing and a little more length, retaining eight-bit technology. They also requested sound-on automatic startup without a separate prompt.
+**Why:** The user superseded the longer eight-bit theme with “Redo the music in 16 bit NES era sounds do a short 4 to 5 second theme song when the menu screen displays. Keep the intro unchanged.” Sound-on automatic startup without a separate prompt still applies.
 
 **How to apply:** Keep source video audio out of playback. Prevent ready/visibility events from replaying a completed theme or stacking music. Start automatically with sound enabled; never display a “Start with sound” option or block the intro waiting for audio. Where browsers require a gesture, use the first ordinary tap/key to unlock sound without a separate prompt or restarting the intro. Respect browser restrictions and preserve gameplay cadence. Stop title music for replay, gameplay or a hidden page. Do not display skip-intro or mute-sound options.
 
