@@ -7,8 +7,9 @@ export const EVADE = Object.freeze({
   spin: .26,
   boost: .42,
   cooldown: .45,
-  boostRatio: 1.18,
+  boostRatio: 1.24,
   bodyWidth: CARRIER_BODY_WIDTH,
+  spinDistance: CARRIER_BODY_WIDTH * 1.45,
   threatRadius: 42,
 } as const);
 /** Untagged timing belongs to pre-correction saves; finish those moves at
@@ -33,6 +34,51 @@ function velocity(a: KickAttempt, d: KickDefender) {
 }
 const gap = (x: number, y: number) => Math.max(Math.abs(x) / 9, Math.abs(y) / 10);
 
+/** Minimum clearance along a diagonal, including the defender's committed
+ * approach. Reused by lane selection and CPU decisions; no tackle immunity. */
+function corridorClearance(a: KickAttempt, bounds: CarrierBounds, obstacles: readonly EvasionObstacle[],
+  direction: -1 | 0 | 1, side: -1 | 0 | 1) {
+  const travel = runningVector(a, direction);
+  const endY = a.player.y + travel.y * EVADE.spin + side * EVADE.spinDistance * travel.normalY;
+  if (endY <= bounds.minY || endY >= bounds.maxY) return { nearest: 0, danger: Infinity, endY };
+  let nearest = 100, danger = 0;
+  for (let i = 1; i <= 16; i++) {
+    const p = i / 16, t = p * EVADE.spin;
+    const x = a.player.x + travel.x * t + side * EVADE.spinDistance * travel.normalX * p;
+    const y = a.player.y + travel.y * t + side * EVADE.spinDistance * travel.normalY * p;
+    for (const d of [...a.defenders.filter(eligible), ...obstacles]) {
+      const v = 'id' in d ? velocity(a, d as KickDefender) : { vx: d.vx ?? 0, vy: d.vy ?? 0 };
+      const clearance = gap(x - d.x - v.vx * t, y - d.y - v.vy * t);
+      nearest = Math.min(nearest, clearance);
+      danger += Math.max(0, 2 - clearance);
+    }
+  }
+  return { nearest, danger, endY };
+}
+
+/** CPU runners share human physics/cooldowns, but only commit when the
+ * forecast improves clearance. Extra decision spacing prevents move spam. */
+export function cpuCarrierAction(a: KickAttempt, direction: -1 | 0 | 1, bounds: CarrierBounds,
+  obstacles: readonly EvasionObstacle[] = []): KickMoveInput {
+  const idle: KickMoveInput = { evasion: true, obstacles };
+  if (a.moves?.active || a.returnTime < .35 ||
+    a.returnTime < (a.moves?.readyAt ?? 0) + (a.moves?.sequence ? 1.1 : 0)) return idle;
+  const move = chooseCarrierEvasion(a, bounds, obstacles, direction);
+  if (move.kind === 'spin') {
+    const exit = corridorClearance(a, bounds, obstacles, direction, move.side);
+    const straight = corridorClearance(a, bounds, obstacles, direction, 0);
+    return { ...idle, juke: exit.nearest > 1.05 && exit.nearest > straight.nearest + .25 };
+  }
+  // Accelerate through a genuinely clear forward corridor, not merely because
+  // an unsafe spin has no legal lane. CPU never boosts into nearby contact.
+  const travel = runningVector(a, direction);
+  const open = [...a.defenders.filter(eligible), ...obstacles].every(d => {
+    const dx = d.x - a.player.x, dy = d.y - a.player.y;
+    return dx * travel.x + dy * travel.y < 0 || Math.hypot(dx, dy) > 70;
+  });
+  return { ...idle, juke: open && direction === 0 };
+}
+
 /** Forecast actual approach and both escape corridors, never a random move. */
 export function chooseCarrierEvasion(a: KickAttempt, bounds: CarrierBounds, obstacles: readonly EvasionObstacle[] = [],
   direction: -1 | 0 | 1 = 0) {
@@ -51,20 +97,8 @@ export function chooseCarrierEvasion(a: KickAttempt, bounds: CarrierBounds, obst
     + (threat.y - a.player.y + threatVelocity.vy * .12) * travel.normalY;
   let best: -1 | 1 | undefined, bestScore = -Infinity;
   for (const side of [-1, 1] as const) {
-    const endY = a.player.y + travel.y * EVADE.spin + side * EVADE.bodyWidth * travel.normalY;
+    const { endY, nearest, danger } = corridorClearance(a, bounds, obstacles, direction, side);
     if (endY <= bounds.minY || endY >= bounds.maxY) continue;
-    let nearest = 100, danger = 0;
-    for (let i = 1; i <= 16; i++) {
-      const p = i / 16, t = p * EVADE.spin;
-      const x = a.player.x + travel.x * t + side * EVADE.bodyWidth * travel.normalX * p;
-      const y = a.player.y + travel.y * t + side * EVADE.bodyWidth * travel.normalY * p;
-      for (const d of [...coverage, ...obstacles]) {
-        const v = 'id' in d ? velocity(a, d as KickDefender) : { vx: d.vx ?? 0, vy: d.vy ?? 0 };
-        const clearance = gap(x - d.x - v.vx * t, y - d.y - v.vy * t);
-        nearest = Math.min(nearest, clearance);
-        danger += Math.max(0, 2 - clearance);
-      }
-    }
     const preferred = Math.abs(approach) > 1 && side * approach < 0 ? 8 : 0;
     const score = Math.min(nearest, 4) * 20 - danger * 10 + preferred
       + Math.min(endY - bounds.minY, bounds.maxY - endY) * .01;
@@ -113,7 +147,7 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
   if (input.juke && !moves.active && a.returnTime + 1e-9 >= moves.readyAt) {
     const move = chooseCarrierEvasion(a, bounds, input.obstacles, direction);
     moves.active = { ...move, elapsed: 0, evasive: true,
-      ...(move.kind === 'spin' ? { duration: EVADE.spin, spinDirection: direction } : {}) };
+      ...(move.kind === 'spin' ? { duration: EVADE.spin, spinDirection: direction, lateralDistance: EVADE.spinDistance } : {}) };
     moves.sequence++; moves.readyAt = a.returnTime + EVADE[move.kind] + EVADE.cooldown; started = true;
   }
   const active = moves.active;
@@ -130,7 +164,7 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
       // Older saves without heading metadata retain their existing world-Y move.
       const travel = runningVector(a, active.spinDirection ?? 0);
       const progress = (p: number) => active.spinDirection === undefined ? p * p * (3 - 2 * p) : p;
-      const shift = active.side * EVADE.bodyWidth * (progress(p1) - progress(p0));
+      const shift = active.side * (active.lateralDistance ?? EVADE.bodyWidth) * (progress(p1) - progress(p0));
       dx = forward * dt + travel.normalX * shift;
       dy = travel.y * used + travel.normalY * shift + direction * lateral * rest;
     } else {

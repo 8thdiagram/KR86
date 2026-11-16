@@ -8,6 +8,94 @@ import { isFootballGame } from './storage';
 import { isKickMoves, stepKickMoves } from '../kick-return-moves';
 import { createKickAttempt } from '../kick-return-engine';
 import { playerSpeed } from '../player-pace';
+import { cpuCarrierAction, chooseCarrierEvasion } from '../carrier-evasion';
+import { stepKickAttempt } from '../kick-return-engine';
+
+test('an open-lane diagonal spin evades the actual tackle path in Full Game', () => {
+  const { g, l, runner, threat } = field(-1);
+  threat.x = runner.x + 28; threat.y = runner.y - 16;
+  threat.startX = threat.x; threat.startY = threat.y; threat.engaged = 0;
+  const baseline = JSON.parse(JSON.stringify(g)) as typeof g;
+  let normalTackle = false, spunTackle = false, tackleAt = '';
+  for (let frame = 0; frame < 16; frame++) {
+    const normal = stepField(baseline, {}, 1 / 60);
+    const spun = stepField(g, frame === 0 ? { action: true } : {}, 1 / 60);
+    normalTackle ||= normal?.reason === 'tackle';
+    spunTackle ||= spun?.reason === 'tackle';
+    if (spun) tackleAt = `${frame} ${runner.x.toFixed(2)},${runner.y.toFixed(2)} defender ${threat.x.toFixed(2)},${threat.y.toFixed(2)} (${spun.reason})`;
+    if (spun) break;
+  }
+  assert(normalTackle, 'a straight runner is tackled by this defender');
+  assert(!spunTackle, `the diagonal cut beats this tackle without immunity: ${tackleAt}`);
+  assert(runner.y > 96 + EVADE.bodyWidth, 'the runner enters a genuinely different lane');
+  assert.equal(l.movement.player.y, runner.y);
+});
+
+test('CPU decision waits for a credible threat and uses the same move physics', () => {
+  const a = createKickAttempt(1986, 1);
+  a.phase = 'returning'; a.player = { x: 500, y: 96 }; a.returnTime = 1;
+  a.moves = { version: 2, sequence: 0, readyAt: 0, backward: false, vx: 60, furthestX: 500 };
+  a.defenders = [];
+  const open = cpuCarrierAction(a, 0, { minY: 24, maxY: 168 });
+  assert.equal(open.juke, true);
+  let m = stepKickMoves(a, 0, 1 / 60, open);
+  assert.equal(m.moves?.active?.kind, 'boost');
+  a.defenders = [{ id: 0, x: 525, y: 77, vx: -30, vy: 0,
+    homeX: 525, minY: 24, maxY: 168, speed: 30, lateralSpeed: 30, active: true }];
+  a.moves = { ...a.moves, readyAt: 0, sequence: 0 };
+  const decision = cpuCarrierAction(a, 0, { minY: 24, maxY: 168 });
+  assert.equal(decision.juke, true);
+  assert.equal(chooseCarrierEvasion(a, { minY: 24, maxY: 168 }).kind, 'spin');
+  m = stepKickMoves(a, 0, 1 / 60, decision);
+  assert.equal(m.moves?.active?.kind, 'spin');
+  assert.equal(m.moves?.active?.lateralDistance, EVADE.spinDistance);
+  assert(m.player.y > 96);
+  a.moves = m.moves; a.player = m.player; a.returnTime += 1 / 60;
+  assert.equal(cpuCarrierAction(a, 0, { minY: 24, maxY: 168 }).juke, undefined);
+});
+
+test('CPU Full Game ball carrier commits a real juke through the live running path', () => {
+  const { g, l, runner, threat } = field(-1);
+  g.possession = 'away'; l.movement.returnTime = 1;
+  threat.x = runner.x + 30; threat.y = runner.y - 22;
+  threat.startX = threat.x; threat.startY = threat.y;
+  const before = { x: runner.x, y: runner.y };
+  stepField(g, {}, 1 / 60);
+  assert.equal(l.movement.moves?.active?.kind, 'spin',
+    `CPU action ${JSON.stringify(l.movement.moves)} defender ${threat.x},${threat.y} carrier ${runner.x},${runner.y} decision ${JSON.stringify(cpuCarrierAction(l.movement, 1, { minY: 24, maxY: 168 }))} choice ${JSON.stringify(chooseCarrierEvasion(l.movement, { minY: 24, maxY: 168 }, [], 1))}`);
+  assert.equal(l.movement.moves?.active?.side, 1);
+  assert(runner.y > before.y);
+  assert.equal(runner.x, l.movement.player.x);
+  assert.equal(runner.y, l.movement.player.y);
+});
+
+test('CPU Full Game runner accelerates in open field without repeating ACTION', () => {
+  const { g, l, runner } = field(-1);
+  g.possession = 'away'; l.movement.returnTime = 1;
+  l.athletes.filter(a => a.side === 'defense').forEach(a => {
+    a.x = a.startX = 1000; a.y = a.startY = 150; a.engaged = 100;
+  });
+  stepField(g, {}, 1 / 60);
+  assert.equal(l.movement.moves?.active?.kind, 'boost');
+  const first = l.movement.moves!.sequence;
+  for (let i = 0; i < 35; i++) stepField(g, {}, 1 / 60);
+  assert.equal(l.movement.moves!.sequence, first, 'CPU does not press ACTION every frame');
+  assert.equal(runner.x, l.movement.player.x);
+});
+
+test('Classic return collision and bounds still use the constrained spin position', () => {
+  const a = createKickAttempt(1986, 1);
+  a.phase = 'returning'; a.player = { x: 500, y: 96 }; a.returnTime = a.time = 1;
+  a.moves = { version: 2, sequence: 0, readyAt: 0, backward: false, vx: 60, furthestX: 500 };
+  a.defenders = [{ id: 0, x: 520, y: 80, vx: 0, vy: 0, homeX: 520,
+    minY: 24, maxY: 168, speed: 0, lateralSpeed: 0, active: true }];
+  let state = a;
+  for (let i = 0; i < 16 && state.phase === 'returning'; i++)
+    state = stepKickAttempt(state, 0, 1 / 60, { evasion: true, juke: i === 0 });
+  assert(state.player.y > 96);
+  assert(state.player.y <= 168);
+  assert(isKickMoves(state.moves, state));
+});
 
 function field(threatSide: -1 | 1) {
   const g = createFootball(1986);
@@ -44,10 +132,10 @@ for (const threatSide of [-1, 1] as const) for (const hold of [false, true]) {
       if (frame === 7) half = Math.abs(runner.y - start.y);
     }
     const end = { x: runner.x, y: runner.y };
-    assert(Math.abs(end.y - start.y + threatSide * EVADE.bodyWidth) < 1e-7);
+    assert(Math.abs(end.y - start.y + threatSide * EVADE.spinDistance) < 1e-7);
     assert(end.x > start.x + 10, 'forward momentum persists through the diagonal escape');
-    assert(quarter > EVADE.bodyWidth * .15);
-    assert(half > EVADE.bodyWidth * .45 && half < EVADE.bodyWidth * .6);
+    assert(quarter > EVADE.spinDistance * .15);
+    assert(half > EVADE.spinDistance * .45 && half < EVADE.spinDistance * .6);
     assert.equal(l.movement.moves!.active, undefined);
     for (let frame = 16; frame < 25; frame++)
       stepField(g, controls.sample(frame * 1000 / 60), 1 / 60);
@@ -141,7 +229,7 @@ for (const direction of [-1, 1] as const) for (const threatSide of [-1, 1] as co
         assert.equal(l.movement.moves!.active!.side, -threatSide);
         assert.equal(l.movement.moves!.active!.spinDirection, direction);
         const sx = runner.x - start.x - forward / 60, sy = runner.y - start.y - lateral / 60;
-        assert(Math.hypot(sx, sy) >= EVADE.bodyWidth / (EVADE.spin * 60) - 1e-7,
+        assert(Math.hypot(sx, sy) >= EVADE.spinDistance / (EVADE.spin * 60) - 1e-7,
           'a real lateral juke starts immediately at the first simulation step');
         const restored = JSON.parse(JSON.stringify(g));
         assert(isFootballGame(restored), 'active heading survives normal game save validation');
@@ -155,8 +243,8 @@ for (const direction of [-1, 1] as const) for (const threatSide of [-1, 1] as co
     const shift = { x: runner.x - start.x - forward * elapsed, y: runner.y - start.y - lateral * elapsed };
     assert(Math.abs(shift.x * forward / speed + shift.y * lateral / speed) < 1e-7,
       'the additional movement is perpendicular, not a forward boost or field-Y-only shift');
-    assert(Math.abs(shift.x * nx + shift.y * ny + threatSide * EVADE.bodyWidth) < 1e-7);
-    assert(Math.abs(Math.hypot(shift.x, shift.y) - EVADE.bodyWidth) < 1e-7);
+    assert(Math.abs(shift.x * nx + shift.y * ny + threatSide * EVADE.spinDistance) < 1e-7);
+    assert(Math.abs(Math.hypot(shift.x, shift.y) - EVADE.spinDistance) < 1e-7);
     assert.equal(l.movement.moves!.active, undefined);
     const end = { x: runner.x, y: runner.y };
     controls.release('steer', 270, true);
@@ -195,7 +283,7 @@ for (const direction of [-1, 0, 1] as const) for (const threatSide of [-1, 1] as
     }
     const shift = { x: runner.x - start.x + forward * 16 / 60, y: runner.y - start.y - lateral * 16 / 60 };
     assert(Math.abs(shift.x * -forward / speed + shift.y * lateral / speed) < 1e-7);
-    assert(Math.abs(shift.x * nx + shift.y * ny + threatSide * EVADE.bodyWidth) < 1e-7);
+    assert(Math.abs(shift.x * nx + shift.y * ny + threatSide * EVADE.spinDistance) < 1e-7);
     assert(runner.x < start.x, 'return preserves momentum toward the opposite goal');
     const end = { x: runner.x, y: runner.y };
     for (let frame = 0; frame < 6; frame++) stepField(g, {}, 1 / 60);

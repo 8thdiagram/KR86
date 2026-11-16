@@ -21,7 +21,7 @@ import { FOOTBALL_SIDELINES, outsideFootballSideline } from './sidelines';
 import { resolveReception } from './receiving';
 import { routePoint } from './route-geometry';
 import { playerSpeed } from '../player-pace';
-import { constrainEvasionStep } from '../carrier-evasion';
+import { constrainEvasionStep, cpuCarrierAction } from '../carrier-evasion';
 export { routePoint } from './route-geometry';
 export { releasePass } from './passing';
 import { clamp, isBlitz, other, random, type Athlete, type Defense, type FootballGame, type FootballInput, type LivePlay, type PlayId } from './types';
@@ -364,11 +364,12 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
     // Exactly the original running/juke/spin/hesitation movement; no new receiving controls.
     l.movement.defenders = defenders.map(d => ({ ...d, homeX: d.startX, minY: 24, maxY: 168, speed: 56, lateralSpeed: 56, active: true }));
     const previousMovement = { ...l.movement };
-    const movement = stepKickMoves(l.movement, direction, dt, l.mode === 'scramble' && (g.possession !== 'home' || canForwardPass(l)) ? { juke: false, hesitate: false }
+    const obstacles = l.athletes.filter(a => a.side === runner.side && a.id !== runner.id && !a.dive);
+    const movement = stepKickMoves(l.movement, direction, dt, l.mode === 'scramble' && canForwardPass(l) ? { juke: false, hesitate: false }
       : g.possession === 'home'
        ? { juke: !optionInput&&(!!input.juke || !!input.action), evasion: true, hesitate: !input.juke && !input.action && input.hesitate,
            obstacles: l.athletes.filter(a => a.side === runner.side && a.id !== runner.id && !a.dive).map(a => ({ x: a.x, y: a.y, vx: a.vx, vy: a.vy })) }
-       : { juke: !optionInput&&!!defenders.find(d => Math.hypot(d.x - runner.x, d.y - runner.y) < 25) && l.time % 1 < dt }, FOOTBALL_SIDELINES);
+       : optionInput ? { evasion: true } : cpuCarrierAction(l.movement, direction, FOOTBALL_SIDELINES, obstacles), FOOTBALL_SIDELINES);
     // Brief assignment execution gain, not a global speed increase. Never alter
     // evasion/hesitation, scramble restrictions, or return physics.
     const runningGains = !movement.spinStep && (!movement.moves?.active || movement.evasiveStep);

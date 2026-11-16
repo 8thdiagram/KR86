@@ -12,7 +12,7 @@ import { pursuitPoint } from '../open-field-pursuit';
 import { franchiseAthleteFactor } from './franchise-upgrades';
 import { carrierMoment } from './execution-moments';
 import { playerSpeed } from '../player-pace';
-import { constrainEvasionStep } from '../carrier-evasion';
+import { constrainEvasionStep, cpuCarrierAction } from '../carrier-evasion';
 
 /** Old saved returns without returnKind were interceptions; recovery returns
  * explicitly identify themselves. Never show a return banner over a loose ball. */
@@ -88,7 +88,9 @@ export function stepInterception(g: FootballGame, input: FootballInput, dt: numb
     dive: d.dive ? { ...d.dive, vx: -d.dive.vx } : undefined }));
   const movement = stepKickMoves(l.movement, direction, dt, human ? { juke: !!input.juke || !!input.action, evasion: true,
     hesitate: !!input.hesitate,
-    obstacles: blockers.map(d => ({ x: 1200 - d.x, y: d.y, vx: -d.vx, vy: d.vy })) } : {}, FOOTBALL_SIDELINES);
+    obstacles: blockers.map(d => ({ x: 1200 - d.x, y: d.y, vx: -d.vx, vy: d.vy })) }
+    : cpuCarrierAction(l.movement, direction, FOOTBALL_SIDELINES,
+      blockers.map(d => ({ x: 1200 - d.x, y: d.y, vx: -d.vx, vy: d.vy }))), FOOTBALL_SIDELINES);
   const secondary = l.athletes.filter(a => a.side === 'defense' && a.role === 'DB');
   const elite = eliteSlots(g, other(l.offense ?? other(g.possession))).includes(secondary.indexOf(runner));
   const runningGains = !movement.spinStep && (!movement.moves?.active || movement.evasiveStep);

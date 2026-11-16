@@ -12,6 +12,7 @@ import { chaosOpportunity, SPECIAL_EXECUTION_SPEED } from './clutch';
 import { advanceKickLoose, advanceKickRush, contactKickBlock, receptionMuff } from './kick-events';
 import { looseBall, tryFumble } from './rare-events';
 import { playerSpeed } from '../player-pace';
+import { cpuCarrierAction } from '../carrier-evasion';
 
 const point = (a: Athlete, x: number, y: number, speed: number, dt: number) => {
   const dx = x - a.x, dy = y - a.y, n = Math.hypot(dx, dy), f = n ? Math.min(1, playerSpeed(speed) * dt / n) : 0;
@@ -311,7 +312,10 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
     }
     const returnSide = s.returnSide ?? s.receiver;
     const direction = returnSide === 'home' ? input.direction ?? 0 : kickWitnessDirection(a);
-    const next = stepKickAttempt(a, direction, dt, returnSide === 'home' ? { juke: !!input.action || !!input.juke, evasion: true, hesitate: !input.action && !input.juke && input.hesitate } : {}, FOOTBALL_SIDELINES);
+    const next = stepKickAttempt(a, direction, dt, returnSide === 'home' ? { juke: !!input.action || !!input.juke, evasion: true, hesitate: !input.action && !input.juke && input.hesitate }
+      : cpuCarrierAction(a, direction, FOOTBALL_SIDELINES,
+        s.athletes.filter(b => b.side === (s.returnGroup ?? 'defense') && b.id !== s.returner)
+          .map(b => ({ x: physicalX(b.x), y: b.y, vx: s.mirrored ? -b.vx : b.vx, vy: b.vy }))), FOOTBALL_SIDELINES);
     g.returnAttempt = next;
     for (const d of next.defenders) { const actor = s.athletes[d.id]!, x = physicalX(d.x);
       actor.vx = (x - actor.x) / dt; actor.vy = (d.y - actor.y) / dt; actor.x = x; actor.y = d.y; }

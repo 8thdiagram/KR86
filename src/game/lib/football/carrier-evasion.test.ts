@@ -33,7 +33,7 @@ function game() {
   return g;
 }
 for (const [side, expected] of [[1, -1], [-1, 1]] as const) {
-  test(`near defender on lateral ${side}: spin away, with one body-width progressive displacement`, () => {
+  test(`near defender on lateral ${side}: spin away, with substantial progressive displacement`, () => {
     const a = attempt(); defender(a, 8, side * 26);
     const selected = chooseCarrierEvasion(a, bounds);
     assert.deepEqual(selected, { kind: 'spin', side: expected });
@@ -44,8 +44,8 @@ for (const [side, expected] of [[1, -1], [-1, 1]] as const) {
       a.player = m.player; a.moves = m.moves; a.returnTime += 1 / 60; elapsed += 1 / 60;
       assert(isKickMoves(a.moves, a), 'active and completed moves can be saved/restored');
     }
-    assert(Math.abs(a.player.y - 96 - expected * EVADE.bodyWidth) < 1e-7);
-    assert(maxStep <= EVADE.bodyWidth * 1.5 / (EVADE.spin * 60) + 1e-6,
+    assert(Math.abs(a.player.y - 96 - expected * EVADE.spinDistance) < 1e-7);
+    assert(maxStep <= EVADE.spinDistance * 1.5 / (EVADE.spin * 60) + 1e-6,
       'each step stays within the smooth movement curve, never a one-frame lane teleport');
     assert(!a.moves?.active); assert(elapsed > EVADE.spin);
     const x = a.player.x; const m = stepKickMoves(a, 0, 1 / 60, { evasion: true });
@@ -78,7 +78,7 @@ test('defender trajectory influences corridor choice without mutating coverage',
   const second = chooseCarrierEvasion(a, bounds);
   assert.notDeepEqual(first, second, 'crossing trajectory changes the safest exit');
 });
-test('boost is an 18-percent capped, time-bounded acceleration, never a permanent rating change', () => {
+test('boost is a 24-percent capped, time-bounded acceleration, never a permanent rating change', () => {
   const a = attempt(); const initial = JSON.stringify(a);
   const base = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
   let peak = 0, activeFrames = 0, last = a.player.x;
@@ -86,12 +86,12 @@ test('boost is an 18-percent capped, time-bounded acceleration, never a permanen
     const m = stepKickMoves(a, 0, 1 / 60, { evasion: true, juke: i === 0 });
     const speed = (m.player.x - last) * 60; peak = Math.max(peak, speed);
     if (m.moves?.active) activeFrames++;
-    assert(speed >= base - 1e-7 && speed <= base * 1.18 + 1e-7);
+    assert(speed >= base - 1e-7 && speed <= base * EVADE.boostRatio + 1e-7);
     last = m.player.x; a.player = m.player; a.moves = m.moves; a.returnTime += 1 / 60;
     assert(isKickMoves(a.moves, a));
     if (i > 30) assert(Math.abs(speed - base) < 1e-7);
   }
-  assert(Math.abs(peak / base - 1.18) < 1e-7);
+  assert(Math.abs(peak / base - EVADE.boostRatio) < 1e-7);
   assert(activeFrames >= 24 && activeFrames <= 26);
   assert.equal(a.kickoffBoost, JSON.parse(initial).kickoffBoost);
 });
