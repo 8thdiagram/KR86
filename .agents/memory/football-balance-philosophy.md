@@ -9,6 +9,12 @@ Good play call + good players + good execution should improve the probability of
 
 **How to apply:** Judge proposed football balance changes using actual gameplay outcomes, personnel differences and execution together. Inside runs should sometimes produce a usable blocking lane, several yards or a secondary breakthrough, while a correctly anticipated run defense should reduce those opportunities rather than automatically stop every run.
 
+Spectacular 30–90-yard rushing touchdowns should remain substantially more common than in real football. A last-line pursuit improvement should only occasionally save a touchdown, not comprehensively rebalance the game.
+
+**Why:** The user explicitly described this as an explosive arcade game, not an NFL simulation.
+
+**How to apply:** Compare conditional outcomes from identical already-earned breakaway states. Do not mistake fewer initial breakthroughs for improved downfield pursuit, and do not retain an angle change merely because some individual tackles look better when the paired outcomes fail to improve.
+
 When diagnosing breakaways, isolate the first secondary engagement from later re-blocking and inspect positions before changing pursuit.
 
 **Why:** Controlled diagnostics showed that conspicuous late re-blocking can occur after the initial hold has already made the runner uncatchable. Removing only those later holds did not change the observed outcomes.

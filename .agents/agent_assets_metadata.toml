@@ -470,3 +470,45 @@ mtime_ms = 1794862728497
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/58284bf7-a316-47fc-bd22-f6d202e4e44b/c2c47a69-da1b-4d4c-8cce-3063c3e79dd6"
 storage_version_token = "1794862746035953"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "gn35EpMS6a0jJ_y9vUAgB"
+uri = "file://generated-artifacts/football-pursuit-small/Deep-Pursuit-Trial-Report.txt"
+type = "text"
+title = "Small deep-pursuit trial — results and decision"
+description = "Copyable report covering the tested changes, conditional breakaway outcomes, ability checks, failures and why no gameplay change was retained."
+logical_id = "bef82766-5079-44b0-8996-5f54e103fe4f"
+content_hash = "sha256:81a0abcc123230a91cb68481f3a9681cf34ebf0796c1b1da3b07958fb0cd8b64"
+size = 24942
+mtime_ms = 1794865363429
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/bef82766-5079-44b0-8996-5f54e103fe4f/27130a1a-873c-405c-a2b3-b8fbcd1a0fb2"
+storage_version_token = "1794865399684778"
+content_type = "text/plain"
+
+[[outputs]]
+id = "KSqrQjUlnVtqJ1NYwZtZV"
+uri = "file://generated-artifacts/football-pursuit-small/paired-results.csv"
+type = "table"
+title = "All final paired pursuit comparisons"
+description = "Every tested matchup and geometry: sample sizes, touchdown differences with confidence intervals, tackle rates and recovery distances."
+logical_id = "0d43335a-169c-4172-ac95-11c46ca936e1"
+content_hash = "sha256:08b26a9094ced8e53412f3d957d3af443578de55976b94873621baa881d6380c"
+size = 17406
+mtime_ms = 1794864888967
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/0d43335a-169c-4172-ac95-11c46ca936e1/b4133a28-f124-4f0a-841c-c6fb6724f8c1"
+storage_version_token = "1794865400180502"
+content_type = "text/csv"
+
+[[outputs]]
+id = "ulICK4olzvhYEEnNkXMly"
+uri = "file://generated-artifacts/football-pursuit-small/Deep-Pursuit-Complete-Evidence.zip"
+type = "unspecified"
+title = "Complete pursuit-test evidence"
+description = "All three conservative comparisons, raw paired outcomes, positional traces, frozen engines, rejected diff and verification. Optional large download: approximately 97 MB."
+logical_id = "5802aa70-e4dc-4d22-904b-5e02a13f65ab"
+content_hash = "sha256:916fdf122ab28e242c1afa77519276f0a62e20230e15f13aca6d7d78f4d0be78"
+size = 97127527
+mtime_ms = 1794865372801
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/5802aa70-e4dc-4d22-904b-5e02a13f65ab/31c94b54-23e1-4f26-86b7-bf2c657a672c"
+storage_version_token = "1794865401894260"
+content_type = "application/octet-stream"
