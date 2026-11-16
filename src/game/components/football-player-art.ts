@@ -9,12 +9,15 @@ import {
 } from './football-player-frames';
 import {
   type FootballPlayerAction,
+  type FootballLocomotionGait,
   type FootballPlayerOptions,
   type FootballPlayerView,
   type FootballProneOptions,
 } from './football-player-actions';
 
-export type { FootballPlayerAction, FootballPlayerOptions, FootballPlayerView, FootballProneOptions };
+export type {
+  FootballLocomotionGait, FootballPlayerAction, FootballPlayerOptions, FootballPlayerView, FootballProneOptions,
+};
 export { PLAYER_FRAME_DIRECTIONS };
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
@@ -40,6 +43,8 @@ function resolveAction(options: FootballPlayerOptions): FootballPlayerAction {
 function resolvePhase(action: FootballPlayerAction, options: FootballPlayerOptions): number {
   if (options.action && options.progress !== undefined) {
     const progress = clamp01(options.progress);
+    if (action === 'run' || action === 'backpedal')
+      return Math.floor(progress * 8) % 8;
     if (action === 'throw') {
       // State emits <=.59 while the QB still owns the ball, then starts flight
       // at .60. Keep that release boundary visible in the authored arm phases.
@@ -57,7 +62,7 @@ function resolvePhase(action: FootballPlayerAction, options: FootballPlayerOptio
   }
   if (action === 'run' || action === 'backpedal') {
     const step = options.step ?? 0;
-    return step <= 0 ? 0 : Math.floor((((step % 4) + 4) % 4) * 1.5) % 6;
+    return step <= 0 ? 0 : Math.floor((((step % 4) + 4) % 4) * 2) % 8;
   }
   return options.progress === undefined ? 0 : Math.min(5, Math.floor(clamp01(options.progress) * 6));
 }
@@ -78,7 +83,9 @@ export function drawFootballPlayer(
   // state layer supplies it only while genuinely moving (including QB pocket
   // movement); legacy callers and planted poses keep their existing frames.
   const locomotionStep = options.locomotionStep;
-  const frame = selectFootballPlayerFrame(action, view, phase, !!options.ball, position, locomotionStep);
+  const frame = selectFootballPlayerFrame(
+    action, view, phase, !!options.ball, position, locomotionStep, options.locomotionGait,
+  );
   // A kick uses the same normalized visual phase as the legacy input while
   // keeping its visual follow-through independent of mechanics/timing.
   paintFootballPlayerFrame(ctx, frame, Math.round(x), Math.round(y), kit, options.lean ?? 0, kit.dir);

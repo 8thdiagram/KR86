@@ -152,6 +152,8 @@ export function isKickMoves(value: KickMoves | undefined, a: KickAttempt): boole
       (active.evasive ? m.version === 2 && ['spin', 'boost'].includes(active.kind) : (m.version === 2 ? ['spin', 'stutter', 'dive'] : ['spin', 'stutter']).includes(active.kind)) &&
       (active.side === -1 || active.side === 1 || m.version === 2 && active.side === 0) && Number.isFinite(active.elapsed) &&
        (!active.evasive || (active.kind === 'boost' ? active.side === 0 : active.side !== 0)) &&
-       active.elapsed >= 0 && active.elapsed <= (active.evasive ? active.kind === 'spin' ? EVADE.spin : EVADE.boost : m.version === 2
+       // Older saved spins lasted .44s. Accept those snapshots; the movement
+       // step safely finishes an elapsed legacy spin without moving it back.
+       active.elapsed >= 0 && active.elapsed <= (active.evasive ? active.kind === 'spin' ? Math.max(.44, EVADE.spin) : EVADE.boost : m.version === 2
          ? active.kind === 'dive' ? kickDiveRules(a).duration : BURST.duration : active.kind === 'boost' ? 0 : JUKE[active.kind]));
 }

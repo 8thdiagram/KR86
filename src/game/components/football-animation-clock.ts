@@ -9,7 +9,7 @@ export type FootballAnimationSample = Readonly<{
   facing: 1 | -1;
 }>;
 export type FootballAnimationFrame = Readonly<{
-  /** Fraction through the six-pose loop. */
+  /** Fraction through the authored eight-pose locomotion loop. */
   phase: number;
   /** Compatibility step for the existing sprite API: one full loop is 4. */
   step: number;
@@ -51,12 +51,12 @@ const MAX_OBSERVED_SPEED = 180;
 function clamp01(n: number) { return Math.max(0, Math.min(1, n)); }
 
 export const FOOTBALL_STRIDE_PERIOD_SCALE = .88;
-/** Deliberate cadence: 12% quicker than the reviewed cadence, with slow
- * travel still deliberate and sprinting capped at a readable six-pose loop. */
+/** Full eight-pose gait lasts .40–.55s; speed scales cadence without restarting
+ * the continuously integrated per-athlete phase. */
 export function footballStridePeriod(speed: number): number {
-  if (!Number.isFinite(speed) || speed <= START_SPEED) return 1.2 * FOOTBALL_STRIDE_PERIOD_SCALE;
-  if (speed <= 18) return (1.2 - .4 * clamp01((speed - START_SPEED) / (18 - START_SPEED))) * FOOTBALL_STRIDE_PERIOD_SCALE;
-  return (.8 - .2 * clamp01((speed - 18) / (60 - 18))) * FOOTBALL_STRIDE_PERIOD_SCALE;
+  if (!Number.isFinite(speed) || speed <= START_SPEED) return .625 * FOOTBALL_STRIDE_PERIOD_SCALE;
+  if (speed <= 18) return (.625 - .08 * clamp01((speed - START_SPEED) / (18 - START_SPEED))) * FOOTBALL_STRIDE_PERIOD_SCALE;
+  return (.545 - .09 * clamp01((speed - 18) / (60 - 18))) * FOOTBALL_STRIDE_PERIOD_SCALE;
 }
 
 /** Legacy stateless API retained for callers/tests; renderers use the integrated clock below. */

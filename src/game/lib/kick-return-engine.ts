@@ -210,7 +210,7 @@ function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number
       movement.player.y = clamp(a.player.y + (movement.player.y - a.player.y) * gain, bounds.minY, bounds.maxY);
     }
   }
-  if (movement.evasiveStep) movement.player = constrainEvasionStep(a.player, movement.player, a.defenders);
+  if (movement.evasiveStep) movement.player = constrainEvasionStep(a.player, movement.player, a.defenders, [], movement.spinStep);
   const { player } = movement;
   const fooled = movement.started ? readKickJuke(a, movement.moves!) : new Set<number>();
   const defenders = a.defenders.map(original => {

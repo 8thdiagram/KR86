@@ -11,7 +11,9 @@
  * are memoized only when their selected frame is first requested.
  */
 import { BALL_ART, UNIFORM, playerSkin, type FootballKit } from './football-art';
-import type { FootballPlayerAction, FootballPlayerView } from './football-player-actions';
+import type {
+  FootballLocomotionGait, FootballPlayerAction, FootballPlayerView,
+} from './football-player-actions';
 import { PLAYER_RASTER_SCALE } from '../lib/player-dimensions';
 import {
   applyEliteCPosition,
@@ -22,6 +24,8 @@ import {
   ELITE_C_PLANTED_LEGS,
   ELITE_C_RUN_LEGS,
   ELITE_C_STANCE_LEGS,
+  ELITE_C_STRAFE_LEGS,
+  ELITE_C_BACKPEDAL_LEGS,
   stripEliteCBakedArmOverhang,
 } from './football-player-sheets';
 
@@ -34,8 +38,10 @@ export const PLAYER_FRAME_SCALE = PLAYER_RASTER_SCALE;
 export const PLAYER_FRAME_ANCHOR = Object.freeze({ x: 16, y: 42 });
 export const PLAYER_FRAME_DIRECTIONS = Object.freeze([0, 1, 2, 3, 4, 5, 6, 7, 8] as const);
 export const PLAYER_RUN_PHASES = Object.freeze([
-  'stride', 'plant', 'push', 'opposite-stride', 'opposite-plant', 'opposite-push',
+  'left-reach', 'left-plant', 'pass-left-to-right', 'right-reach',
+  'right-plant', 'pass-right-to-left', 'left-drive', 'left-plant-prepare',
 ] as const);
+export const PLAYER_LOCOMOTION_PHASE_COUNT = 8;
 export const PLAYER_ACTIONS = Object.freeze([
   'idle', 'stance', 'run', 'hold', 'snap', 'handoff', 'throw', 'catch', 'block',
   'break', 'backpedal', 'jump', 'kick', 'kneel', 'fall', 'dive', 'ground',
@@ -52,6 +58,7 @@ export type FootballPlayerFrame = Readonly<{
   action: FootballPlayerAction;
   phase: number;
   locomotionPhase?: number;
+  locomotionGait?: FootballLocomotionGait;
   ball: boolean;
   build: string;
   grip: Readonly<{ x: number; y: number }> | null;
@@ -102,6 +109,8 @@ const UPRIGHT: Record<string, Grid> = {
 // of the former draft. The native y+5 foot line is unchanged.
 const LOWER = (rows: readonly string[]): Grid => [...blank(13), ...rows, '................'];
 const RUN_LEGS: readonly Grid[] = ELITE_C_RUN_LEGS.map(LOWER);
+const STRAFE_LEGS: readonly Grid[] = ELITE_C_STRAFE_LEGS.map(LOWER);
+const BACKPEDAL_LEGS: readonly Grid[] = ELITE_C_BACKPEDAL_LEGS.map(LOWER);
 const GROUNDED_RUN_LEGS = RUN_LEGS;
 
 // The production atlas keeps the selected C body/legs and uses a separate
@@ -144,18 +153,31 @@ const KICK_LEGS: readonly Grid[] = ELITE_C_KICK_LEGS.map(LOWER);
 
 for (const [name, sheet] of Object.entries(UPRIGHT)) validateSheet(`upright:${name}`, sheet);
 RUN_LEGS.forEach((sheet, index) => validateSheet(`run-legs:${index}`, sheet));
+STRAFE_LEGS.forEach((sheet, index) => validateSheet(`strafe-legs:${index}`, sheet));
+BACKPEDAL_LEGS.forEach((sheet, index) => validateSheet(`backpedal-legs:${index}`, sheet));
 GROUNDED_RUN_LEGS.forEach((sheet, index) => validateSheet(`grounded-run-legs:${index}`, sheet));
 for (const [name, sheet] of Object.entries(ARMS)) validateSheet(`arms:${name}`, sheet);
 for (const [name, sheet] of Object.entries(ACTION_LEGS)) validateSheet(`action-legs:${name}`, sheet!);
 KICK_LEGS.forEach((sheet, index) => validateSheet(`kick:${index}`, sheet));
 
-function actionPose(action: FootballPlayerAction, phase: number, ball: boolean): { arms: Grid; legs: Grid; bodyShift?: number } {
+function locomotionLegs(action: FootballPlayerAction, gait: FootballLocomotionGait, phase: number): Grid {
+  const poses = action === 'backpedal' ? BACKPEDAL_LEGS
+    : gait === 'strafe' ? STRAFE_LEGS : RUN_LEGS;
+  return poses[((phase % PLAYER_LOCOMOTION_PHASE_COUNT) + PLAYER_LOCOMOTION_PHASE_COUNT)
+    % PLAYER_LOCOMOTION_PHASE_COUNT]!;
+}
+
+function actionPose(
+  action: FootballPlayerAction, phase: number, ball: boolean, gait: FootballLocomotionGait,
+): { arms: Grid; legs: Grid; bodyShift?: number } {
   if (action === 'run' || action === 'backpedal') {
-    const p = action === 'backpedal' ? (phase + 3) % 6 : phase;
+    const p = ((phase % PLAYER_LOCOMOTION_PHASE_COUNT) + PLAYER_LOCOMOTION_PHASE_COUNT)
+      % PLAYER_LOCOMOTION_PHASE_COUNT;
+    const leftLead = p < 3 || p >= 6;
     const arms = ball
-      ? (p < 3 ? ARMS.carryA : ARMS.carryB)
-      : (p < 3 ? ARMS.pumpA : ARMS.pumpB);
-    return { arms, legs: GROUNDED_RUN_LEGS[p]! };
+      ? (leftLead ? ARMS.carryA : ARMS.carryB)
+      : (leftLead ? ARMS.pumpA : ARMS.pumpB);
+    return { arms, legs: locomotionLegs(action, gait, p) };
   }
   if (action === 'throw') {
     const throwArms = [ARMS.guard, ARMS.drawBack, ARMS.throwForward, ARMS.release, ARMS.followThrough, ARMS.guard];
@@ -205,16 +227,18 @@ function applyBuild(grid: string[], build: Build) {
 
 function buildGlyphGrid(
   view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean,
-  build: Build, locomotionPhase?: number,
+  build: Build, locomotionPhase?: number, gait: FootballLocomotionGait = 'run',
 ): Grid {
   const out = blank(22);
   const baseName = VIEW_BASE[view];
   const mirror = VIEW_MIRROR[view];
-  const pose = actionPose(action, phase, ball);
+  const posePhase = action === 'run' || action === 'backpedal'
+    ? locomotionPhase ?? phase : phase;
+  const pose = actionPose(action, posePhase, ball, gait);
   const bodyShift = pose.bodyShift ?? 0;
   overlay(out, UPRIGHT[baseName]!, VIEW_OFFSETS[view], bodyShift, mirror);
   const legs = locomotionPhase !== undefined && LOCOMOTION_LEG_ACTIONS.has(action)
-    ? GROUNDED_RUN_LEGS[locomotionPhase]!
+    ? locomotionLegs('run', gait, locomotionPhase)
     : pose.legs;
   overlay(out, legs, 0, 0, mirror);
   for (const y of [15, 16]) {
@@ -248,7 +272,7 @@ const PRONE_PARTS = {
     '........KKKKKK..','......KMMMMMMK..','.....KMTMMMMK...',
     '......KMMMMMMK..','........KSSFFK..','....KKKKKKKKKK..',
     '...KJJJJJJJJJKK.','..KJJjJJJJJJJKK.','..KJJJJJJJJJKK..',
-    'KWWWWKKJJJJJKK..','KCWWWWKKKKKK....','KCWWWWKKKKKK....',
+    'KWWWWKKJJJJJKK..','KCWWWWKKKKKKWW..','KCWWWWKKKKKKWW..',
   ],
   verticalDown: [
     '................','................','.....KKKKKK.....','....KMMMMMMK....',
@@ -356,9 +380,9 @@ function addBall(grid: string[], view: FootballPlayerView, action: FootballPlaye
 
 function flatten(
   view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean,
-  build: Build, locomotionPhase?: number,
+  build: Build, locomotionPhase?: number, gait: FootballLocomotionGait = 'run',
 ): FootballPlayerFrame {
-  const grid = buildGlyphGrid(view, action, phase, ball, build, locomotionPhase);
+  const grid = buildGlyphGrid(view, action, phase, ball, build, locomotionPhase, gait);
   validateSheet('complete-player-frame', grid);
   if (grid[21] !== '................')
     throw new Error('Player sheet paints below native foot anchor row 42.');
@@ -391,6 +415,8 @@ function flatten(
   return Object.freeze({
     width: 32, height: 44, view, action, phase,
     ...(locomotionPhase === undefined ? {} : { locomotionPhase }),
+    ...(action === 'run' || action === 'backpedal' || LOCOMOTION_LEG_ACTIONS.has(action)
+      ? { locomotionGait: gait } : {}),
     ball, build, grip,
     runs: Object.freeze(runs),
   });
@@ -427,16 +453,16 @@ export function refineFootballHelmetWidth(pixels: string[][]) {
 const frameCache = new Map<string, FootballPlayerFrame>();
 const frameKey = (
   view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean,
-  build: Build, locomotionPhase?: number,
-) => `${view}:${action}:${phase}:${Number(ball)}:${build}:${locomotionPhase ?? '-'}`;
+  build: Build, locomotionPhase?: number, gait: FootballLocomotionGait = 'run',
+) => `${view}:${action}:${phase}:${Number(ball)}:${build}:${locomotionPhase ?? '-'}:${gait}`;
 function cachedFrame(
   view: FootballPlayerView, action: FootballPlayerAction, phase: number, ball: boolean,
-  build: Build, locomotionPhase?: number,
+  build: Build, locomotionPhase?: number, gait: FootballLocomotionGait = 'run',
 ) {
-  const key = frameKey(view, action, phase, ball, build, locomotionPhase);
+  const key = frameKey(view, action, phase, ball, build, locomotionPhase, gait);
   let frame = frameCache.get(key);
   if (!frame) {
-    frame = flatten(view, action, phase, ball, build, locomotionPhase);
+    frame = flatten(view, action, phase, ball, build, locomotionPhase, gait);
     frameCache.set(key, frame);
   }
   return frame;
@@ -450,28 +476,30 @@ export const FOOTBALL_PLAYER_FRAME_CATALOG = new Proxy(Object.create(null) as Re
       || !ACTION_ORDER.includes(action as FootballPlayerAction)
       || !['standard', 'bulky', 'compact', 'linebacker', 'lean'].includes(build ?? '')
       || !Number.isInteger(Number(phase))) return undefined;
+    const phaseCount = action === 'run' || action === 'backpedal'
+      ? PLAYER_LOCOMOTION_PHASE_COUNT : 6;
     return cachedFrame(Number(view) as FootballPlayerView, action as FootballPlayerAction,
-      ((Number(phase) % 6) + 6) % 6, ball === '1', build as Build);
+      ((Number(phase) % phaseCount) + phaseCount) % phaseCount, ball === '1', build as Build);
   },
   set() { return false; },
 }) as Readonly<Record<string, FootballPlayerFrame>>;
 export const getCachedFootballPlayerFrameCount = () => frameCache.size;
 
-/** Stable pure selector; run phase is an explicit authored six-frame index. */
+/** Stable pure selector; locomotion is an explicit authored eight-frame index. */
 export function selectFootballPlayerFrame(
   action: FootballPlayerAction, view: FootballPlayerView, phase = 0, ball = false, position?: string,
-  locomotionStep?: number,
+  locomotionStep?: number, locomotionGait: FootballLocomotionGait = 'run',
 ): FootballPlayerFrame {
-  const normalizePhase = (value: number) => Number.isFinite(value)
-    ? ((Math.floor(value) % 6) + 6) % 6
+  const normalizePhase = (value: number, count: number) => Number.isFinite(value)
+    ? ((Math.floor(value) % count) + count) % count
     : 0;
-  const selected = normalizePhase(phase);
+  const selected = normalizePhase(phase, action === 'run' || action === 'backpedal' ? 8 : 6);
   const selectedLocomotion = locomotionStep === undefined || !Number.isFinite(locomotionStep)
     || !LOCOMOTION_LEG_ACTIONS.has(action)
     ? undefined
-    : normalizePhase(locomotionStep);
+    : normalizePhase(locomotionStep, PLAYER_LOCOMOTION_PHASE_COUNT);
   const build = buildForPosition(position);
-  return cachedFrame(view, action, selected, ball, build, selectedLocomotion);
+  return cachedFrame(view, action, selected, ball, build, selectedLocomotion, locomotionGait);
 }
 
 function teamShade(color: string, amount: number): string {

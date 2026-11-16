@@ -1,7 +1,8 @@
 /**
  * Independent anatomy studies for the iPhone-size CURRENT | A | B | C review.
- * Each concept owns its own head/torso/arm sheets and seven different lower
- * body constructions; none is derived from the production atlas.
+ * Each concept owns its own head/torso/arm sheets and lower-body constructions;
+ * none is derived from the production atlas. A/B retain six concept strides;
+ * C follows the eight-frame production locomotion cycle.
  */
 import type { FootballKit } from './football-art';
 import {
@@ -43,7 +44,7 @@ export const FOOTBALL_PLAYER_CONCEPTS = Object.freeze({
   C: Object.freeze({
     name: 'Elite 1988 NES Character',
     anatomy: 'Balanced adult silhouette, carved quarter-view torso, distinct knees, shaded helmet and separated calves.',
-    movement: 'Six articulated phases retain weight while shoulders and hips counter-rotate.',
+    movement: 'Eight articulated production phases retain weight while shoulders and hips counter-rotate.',
   }),
 } as const);
 
@@ -203,6 +204,9 @@ const B_LEGS: readonly (readonly Grid[])[] = [
 
 type ArmPose = 'pumpA' | 'pumpB' | 'guard';
 const ARM_PHASE: readonly ArmPose[] = ['pumpA', 'pumpB', 'pumpA', 'pumpB', 'pumpA', 'pumpB'];
+const ELITE_C_ARM_PHASE: readonly ArmPose[] = [
+  'pumpA', 'pumpA', 'pumpA', 'pumpB', 'pumpB', 'pumpB', 'pumpA', 'pumpA',
+];
 const TOPS = {
   A: fitViews(A_TOPS), B: fitViews(B_TOPS), C: ELITE_C_COMPARISON_TOPS,
 } as const;
@@ -228,7 +232,10 @@ const ARM_SHEETS = Object.fromEntries(
 ) as Readonly<Record<'A' | 'B', Readonly<Record<ArmPose, Grid>>>>;
 const CONCEPT_C_ARMS: Readonly<Record<ArmPose, Grid>> = ELITE_C_ARMS;
 const POSITION_LIST: readonly FootballConceptPosition[] = ['QB', 'RB', 'OL', 'LB', 'DB'];
-const ACTION_PHASES = ['idle', 'stride', 'plant', 'push', 'opposite-stride', 'opposite-plant', 'opposite-push'] as const;
+const ACTION_PHASES = [
+  'idle', 'left-reach', 'left-plant', 'pass-left-to-right', 'right-reach',
+  'right-plant', 'pass-right-to-left', 'left-drive', 'left-plant-prepare',
+] as const;
 
 function validateAuthoredSheets() {
   for (const [concept, views] of Object.entries(TOPS)) {
@@ -241,7 +248,7 @@ function validateAuthoredSheets() {
   }
   for (const concept of ['A', 'B'] as const) {
     if (LEGS[concept].length !== 2 || LEGS[concept]!.some(set => set.length !== 7)) {
-      throw new Error(`${concept} needs one planted and six independent stride sheets.`);
+      throw new Error(`${concept} needs one planted and six independent concept stride sheets.`);
     }
     for (const set of LEGS[concept]!) for (const rows of set) {
       if (rows.length !== 8 || rows.some(row => row.length !== 16))
@@ -252,9 +259,9 @@ function validateAuthoredSheets() {
         throw new Error(`${concept} ${pose} arms must be an authored 16x22 sheet.`);
     }
   }
-  if (ELITE_C_PLANTED_LEGS.length !== 8 || ELITE_C_RUN_LEGS.length !== 6
+  if (ELITE_C_PLANTED_LEGS.length !== 8 || ELITE_C_RUN_LEGS.length !== 8
     || ELITE_C_RUN_LEGS.some(sheet => sheet.length !== 8 || sheet.some(row => row.length !== 16))) {
-    throw new Error('Elite C needs one planted and six validated 16x8 stride sheets.');
+    throw new Error('Elite C needs one planted and eight validated 16x8 stride sheets.');
   }
 }
 validateAuthoredSheets();
@@ -301,7 +308,7 @@ function flatten(
 ): FootballPlayerConceptFrame {
   let grid: string[];
   if (concept === 'C') {
-    const arms = pose === 'run' ? ARM_PHASE[phase] ?? 'pumpA' : 'guard';
+      const arms = pose === 'run' ? ELITE_C_ARM_PHASE[phase] ?? 'pumpA' : 'guard';
     grid = composeEliteCGrid(view, pose, phase, arms, undefined, 0, position);
   } else {
     grid = [...blank(22)];
@@ -388,7 +395,8 @@ export function selectFootballPlayerConceptFrame(
   concept: FootballPlayerConcept, pose: FootballConceptPose, position: FootballConceptPosition,
   view: FootballConceptView = 0, phase = 0,
 ): FootballPlayerConceptFrame {
-  const selectedPhase = pose === 'planted' ? 0 : ((Math.floor(phase) % 6) + 6) % 6;
+  const phaseCount = concept === 'C' && pose === 'run' ? ELITE_C_RUN_LEGS.length : 6;
+  const selectedPhase = pose === 'planted' ? 0 : ((Math.floor(phase) % phaseCount) + phaseCount) % phaseCount;
   return cached(concept, pose, position, view, selectedPhase);
 }
 

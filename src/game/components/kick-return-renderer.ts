@@ -362,21 +362,21 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refer
         sprite(ctx, d.x + lean + (tackling ? lunge(d.x) : 0), d.y + (tackling ? 2 : 0),
           { ...defenderKit, dir: cadence.facing }, cadence.step, false, shuffling ? 1 : 0, 0, cadence.view,
           cadence.moving && a.phase === 'returning'
-            ? { action: 'run', progress: cadence.phase }
+            ? { action: 'run', progress: cadence.phase, locomotionGait: cadence.shuffling ? 'strafe' : 'run' }
             : { action: 'stance' });
       } else if (d.roamer) {
         const facing: 1 | -1 = tackling ? (p.x >= d.x ? 1 : -1) : cadence.facing;
         sprite(ctx, d.x + (tackling ? lunge(d.x) : 0), d.y + (tackling ? 1 : 0), { ...defenderKit, dir: facing },
           cadence.step, false, 0, 0, cadence.view,
           d.active && cadence.moving && a.phase === 'returning'
-            ? { action: 'run', progress: cadence.phase }
+            ? { action: 'run', progress: cadence.phase, locomotionGait: cadence.shuffling ? 'strafe' : 'run' }
             : { action: 'stance' });
       } else
       if (tackling) {
          sprite(ctx, d.x + lunge(d.x), d.y + 1, defenderKit, 0);
       }
        else sprite(ctx, d.x, d.y, defenderKit, cadence.step, false, 0, 0, cadence.view,
-         d.active && cadence.moving ? { action: 'run', progress: cadence.phase } : { action: 'stance' });
+         d.active && cadence.moving ? { action: 'run', progress: cadence.phase, locomotionGait: cadence.shuffling ? 'strafe' : 'run' } : { action: 'stance' });
     } });
   }
   const hasBall = !kick || a.time >= 1.4;
@@ -406,7 +406,7 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refer
        const running = !kick || a.time > .25 && a.time < 1.4;
        sprite(ctx, p.x, p.y, { ...home, dir: carrierCadence.facing }, t, hasBall, 0, 0,
          carrierCadence.view, running && carrierCadence.moving
-           ? { action: 'run', progress: carrierCadence.phase }
+           ? { action: 'run', progress: carrierCadence.phase, locomotionGait: carrierCadence.shuffling ? 'strafe' : 'run' }
            : { action: 'idle' });
      }
   } });
