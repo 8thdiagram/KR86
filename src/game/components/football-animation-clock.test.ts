@@ -30,18 +30,20 @@ test('Classic retains its stride clock across immutable simulation and interpola
 });
 
 test('integrated cadence produces a slow six-pose loop and caps sprint pace', () => {
-  assert(Math.abs(footballStridePeriod(18) - .8) < 1e-12);
-  assert(Math.abs(footballStridePeriod(60) - .6) < 1e-12);
+  assert(Math.abs(footballStridePeriod(18) - .704) < 1e-12);
+  assert(Math.abs(footballStridePeriod(60) - .528) < 1e-12);
+  assert(Math.abs(footballStridePeriod(18) / .8 - .88) < 1e-12,
+    'cycle period is 12% shorter (13.6% faster cadence), without changing player speed');
   assert(footballStridePeriod(8) > footballStridePeriod(18));
-  assert(footballStridePeriod(90) >= .6);
+  assert(footballStridePeriod(90) >= .528);
 
   const owner = {};
   let frame = updateFootballAnimation(owner, 'athlete', sample(0, 0));
   assert.equal(frame.phase, 0);
-  for (let n = 1; n <= 8; n++)
+  for (let n = 1; n <= 6; n++)
     frame = updateFootballAnimation(owner, 'athlete', sample(n / 10, n * 2));
-  assert(frame.phase > .8 && frame.phase < 1, `expected about one stride in 0.8s, got ${frame.phase}`);
-  assert.equal(Math.floor(frame.phase * 6), 5, 'six deliberate running poses are reached over the cycle');
+  assert(frame.phase > .7 && frame.phase < .95, `expected about one stride in 0.6s, got ${frame.phase}`);
+  assert(Math.floor(frame.phase * 6) >= 4, 'six deliberate running poses are reached over the faster cycle');
 });
 
 test('velocity changes integrate smoothly and repeated renders at one clock are idempotent', () => {

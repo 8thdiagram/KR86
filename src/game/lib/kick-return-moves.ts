@@ -17,8 +17,11 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 /** Real bounded displacement; no invulnerability, collision exemption or teleport. */
 export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: number, input: KickMoveInput,
   bounds: CarrierBounds = { minY: 24, maxY: 168 }): { player: { x: number; y: number }; started: boolean; moves: KickMoves | undefined; outAt?: number; spinStep?: boolean; evasiveStep?: boolean } {
-  // A sustained ACTION owns movement even if its initial press started an evade.
-  // The established hesitation path stops forward travel but preserves steering.
+  // Holding stops forward travel, not the already-committed spin's lateral
+  // displacement. Otherwise an ordinary 200ms press cuts a 440ms spin in half.
+  if (a.moves?.active?.evasive && a.moves.active.kind === 'spin')
+    return stepCarrierEvasion(a, direction, dt, input, bounds);
+  // A held boost yields to the established stationary, steerable hesitation.
   if (input.hesitate && a.moves?.version === 2)
     return stepBurst(a, direction, dt, input, bounds);
   if (a.moves?.active?.evasive || input.evasion && !a.moves?.active && !input.hesitate)

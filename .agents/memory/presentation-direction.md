@@ -39,6 +39,12 @@ Moving players must visibly step in every direction, including strafing, pocket 
 
 **How to apply:** Preserve the approved bodies and game systems. Let actual movement animate the lower body independently of holding/throwing arms. Check default guards as well as action reaches and all directions. Keep players modestly smaller and the airborne football shorter and more compact, with readable white lace spiral motion, without changing flight physics or adding another speed increase.
 
+The user confirmed the smoother gameplay works well. Running animation should have approximately 10–15% faster cadence with recognizable alternating strides, and all football cleats should be black, preserving white socks and existing uniforms.
+
+**Why:** The user explicitly requested only targeted cadence, footwear and physical spin refinements, not another player redesign or movement-speed increase.
+
+**How to apply:** Keep animation timing separate from simulation speed, retain stable torsos and opposite-arm/leg coordination, and limit footwear recoloring to actual shoe material across all poses.
+
 Prioritize clear individual sprites: white pants, primary-team-color jerseys, secondary-team-color helmets, and white facemasks. Discrete highlight/shadow and cuff pixels are allowed by the complete redesign, but team identity must remain obvious. Use dark definition for silhouettes and limb separation, not black face panels. Do not add decorative lines around downed players.
 
 **Why:** The user specified “make the jerseys one color which is the primary team color separated from the helmet, which is the secondary team color.” Earlier they found detailed sprites and lines around grounded players messy.

@@ -9,6 +9,12 @@ Eligible human running ball carriers use ACTION immediately on press, not on rel
 
 **How to apply:** Keep spins physical and progressive, approximately one rendered body width in world coordinates, with an authored full turn and tucked ball. Keep boosts temporary, about 15–20% for 0.35–0.5 seconds, with a short cooldown and natural cadence. Never add tackle immunity, teleport through bodies, enlarge collision boxes or change baseline ratings as a shortcut.
 
+A sustained running ACTION must not truncate an already-started spin's lateral travel. Holding still halts forward motion and permits lateral steering; a clear, neutrally steered spin completes its body-width displacement and then remains halted until release.
+
+**Why:** The user reported rotation without a useful lane change and explicitly requested a completed physical spin while preserving the current controls.
+
+**How to apply:** Test holds that cross the hesitation threshold, not only quick taps; verify actual world coordinates and the persistent lane after release, including collision correction after rating multipliers.
+
 Quarterback pass taps, pass holds and deliberate one-second scramble activation own their entire gesture. That gesture's release must never become an evade. A fresh running ACTION becomes eligible after the quarterback commits beyond the line of scrimmage; it must never permit an illegal forward pass.
 
 Kicking meters retain their own ACTION commands. A runner-only eligibility restriction must not suppress a valid field-goal timing press.

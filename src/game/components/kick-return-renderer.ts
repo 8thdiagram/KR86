@@ -11,7 +11,7 @@ import { drawBroadcastStadium } from './football-stadium-art';
 import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
 import { drawBroadcastGoalPosts } from './football-broadcast-posts';
 import { turnSprite, type BodyView, type Pose } from './football-sprites';
-import { updateFootballAnimation } from './football-animation-clock';
+import { FOOTBALL_STRIDE_PERIOD_SCALE, updateFootballAnimation } from './football-animation-clock';
 import { drawPixelEnlarged } from './football-pixel-scale';
 import { refereeRenderY, REFEREE_WORLD_Y } from './football-referee-layout';
 import { drawFootballPlayer, drawFootballProne } from './football-player-art';
@@ -219,7 +219,8 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
     return true;
   }
   if (v2 && !act && m.hesitating) {
-    sprite(ctx, x, y, kit, t, true, 0, 0, undefined, { action: 'run', progress: (a.returnTime * 2) % 1 });
+    sprite(ctx, x, y, kit, t, true, 0, 0, undefined,
+      { action: 'run', progress: (a.returnTime * 2 / FOOTBALL_STRIDE_PERIOD_SCALE) % 1 });
     return true;
   }
   if (act && act.kind === 'spin') {

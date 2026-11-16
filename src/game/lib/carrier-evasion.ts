@@ -94,10 +94,10 @@ export function constrainEvasionStep(from: EvasionObstacle, to: EvasionObstacle,
 export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: number, input: KickMoveInput, bounds: CarrierBounds) {
   const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
   const lateral = playerSpeed(a.difficulty === 'hard' ? 86 : 78);
-  const moves: KickMoves = a.moves ? { ...a.moves, version: 2, backward: false, hesitating: false }
+  const moves: KickMoves = a.moves ? { ...a.moves, version: 2, backward: false, hesitating: !!input.hesitate }
     : { version: 2, backward: false, sequence: 0, readyAt: 0, vx: forward, furthestX: a.player.x };
   let started = false;
-  if (input.juke && !moves.active && a.returnTime + 1e-9 >= moves.readyAt) {
+  if (input.juke && !input.hesitate && !moves.active && a.returnTime + 1e-9 >= moves.readyAt) {
     const move = chooseCarrierEvasion(a, bounds, input.obstacles);
     moves.active = { ...move, elapsed: 0, evasive: true };
     moves.sequence++; moves.readyAt = a.returnTime + EVADE[move.kind] + EVADE.cooldown; started = true;
@@ -112,12 +112,16 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
     if (active.kind === 'spin') {
       dx = forward * ((.82 + .18 * (p0 + p1) / 2) * used + rest);
       dy = active.side * EVADE.bodyWidth * (ease(p1) - ease(p0)) + direction * lateral * rest;
+      // Retain the original hold's independent UP/DOWN steering. With neutral
+      // steering the full committed body-width move still finishes exactly.
+      if (input.hesitate) dy += direction * lateral * used;
     } else {
       const p = (p0 + p1) / 2, gain = Math.max(0, Math.min(1, p / .12, (1 - p) / .2));
       dx = forward * ((1 + (EVADE.boostRatio - 1) * gain) * used + rest);
     }
     moves.active = p1 >= 1 - 1e-9 ? undefined : { ...active, elapsed: active.elapsed + used };
   }
+  if (input.hesitate) dx = 0;
   let player = { x: clamp(a.player.x + dx, 8, 1101), y: clamp(a.player.y + dy, bounds.minY, bounds.maxY) };
   if (active) player = constrainEvasionStep(a.player, player, a.defenders, spinStep ? input.obstacles : []);
   moves.vx = (player.x - a.player.x) / dt; moves.furthestX = Math.max(moves.furthestX, player.x);

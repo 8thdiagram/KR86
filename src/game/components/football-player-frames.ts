@@ -41,7 +41,7 @@ export const PLAYER_ACTIONS = Object.freeze([
   'break', 'backpedal', 'jump', 'kick', 'kneel', 'fall', 'dive', 'ground',
 ] as const satisfies readonly FootballPlayerAction[]);
 
-export type FootballPlayerGlyph = '.' | 'K' | 'J' | 'j' | 'H' | 'M' | 'm' | 'W' | 'w' | 'S' | 'F' | 'B' | 'T' | 'L' | 'b' | 'O' | 'G';
+export type FootballPlayerGlyph = '.' | 'K' | 'J' | 'j' | 'H' | 'M' | 'm' | 'W' | 'w' | 'S' | 'F' | 'B' | 'T' | 'L' | 'b' | 'O' | 'G' | 'C';
 type Glyph = FootballPlayerGlyph;
 type Grid = readonly string[];
 type FrameRun = Readonly<{ row: number; x: number; length: number; color: Glyph }>;
@@ -248,7 +248,7 @@ const PRONE_PARTS = {
     '........KKKKKK..','......KMMMMMMK..','.....KMTMMMMK...',
     '......KMMMMMMK..','........KSSFFK..','....KKKKKKKKKK..',
     '...KJJJJJJJJJKK.','..KJJjJJJJJJJKK.','..KJJJJJJJJJKK..',
-    'KWWWWKKJJJJJKK..','KKWWWWKKKKKK....','KKWWWWKKKKKK....',
+    'KWWWWKKJJJJJKK..','KCWWWWKKKKKK....','KCWWWWKKKKKK....',
   ],
   verticalDown: [
     '................','................','.....KKKKKK.....','....KMMMMMMK....',
@@ -256,10 +256,10 @@ const PRONE_PARTS = {
     '......KKKK......','....KKKKKKKK....','...KJJJJJJJKK...',
     '..KJJJJJJJJJKK..','..KJJjJJJJJJKK..','...KJJJJJJJKK...',
     '....KKWWKK......','....KWWWWK......','....KWWwWK......',
-    '....KWWWWK......','...KKWWKK.......',
+    '....KWWWWK......','...KCWWCK.......',
   ],
   verticalUp: [
-    '...KKWWKK.......','....KWWWWK......','....KWWwWK......',
+    '...KCWWCK.......','....KWWWWK......','....KWWwWK......',
     '....KWWWWK......','...KKWWKK.......','....KJJJJJKK....',
     '...KJJJJJJKK....','..KJJJJjJJJJKK..','..KJJJJJJJJJKK..',
     '...KJJJJJJJKK...','....KKKKKK......','.....KKKK.......',
@@ -271,14 +271,14 @@ const PRONE_PARTS = {
     '......KMMMMMMK..','........KSSFFK..','.....KKKKKKKK...',
     '....KJJJJJJJKK..','...KJJJJjJJJJKK.','...KJJJJJJJJJKK.',
     '..KWWWWKJJJJKK..','.KWWWWKKJJJKK...','KKWWWWKKKK......',
-    'KKWWWWKKKK......','KKWWWWKKKK......','KKKKKKKK........',
+    'KKWWWWKKKK......','KKWWWWKKKK......','KKCKKCKK........',
   ],
   diagonalUp: [
     '..KKKKKK........','..KMMMMMMK......','..KMTMMMMK......',
     '..KMMMMMMK......','...KSSFFK.......','...KKKKKKKK.....',
     '...KJJJJJJJKK...','..KJJJJjJJJJKK..','..KJJJJJJJJJKK..',
     '...KJJJJJJJKK...','....KKJJJKKWWWWK','.....KKJJKKWWWWK',
-    '......KKKKKWWWWK','........KKWWWWKK','.........KKWWKK.',
+    '......KKKKKWWWWK','........KKWWWWKK','.........KCWWCK.',
   ],
 };
 for (const [name, rows] of Object.entries(PRONE_PARTS)) {
@@ -502,6 +502,8 @@ export function footballPlayerPalette(kit: FootballKit): Readonly<Record<Glyph, 
     T: teamShade(kit.trim, 0.23),
     O: BALL_ART.outline,
     G: playerSkin(kit),
+    // A dedicated footwear material keeps the authored ink outlines intact.
+    C: '#101214',
   });
 }
 
@@ -520,7 +522,16 @@ export function paintFootballPlayerFrame(
   ctx.imageSmoothingEnabled = false;
   for (const run of frame.runs) {
     if (possessionOnly && !POSSESSION_GLYPHS.has(run.color)) continue;
-    ctx.fillStyle = palette[run.color];
+    // The two atlas rows at the grounded foot line are authored shoe soles.
+    // Recolor only those shoe pixels; all K outline pixels elsewhere retain
+    // the ink palette. Jump art raises this same footprint by one design row.
+    const pronePose = frame.action === 'ground'
+      || ((frame.action === 'dive' || frame.action === 'fall') && frame.phase >= 2);
+    const cleatRow = !pronePose && (frame.action === 'jump'
+      ? run.row >= 38 && run.row <= 39
+      : run.row >= 40 && run.row <= 41);
+    const paintGlyph = run.color === 'K' && cleatRow ? 'C' : run.color;
+    ctx.fillStyle = palette[paintGlyph];
     const runX = direction < 0 ? PLAYER_FRAME_WIDTH - run.x - run.length : run.x;
     const left = anchorX + edge((runX - PLAYER_FRAME_ANCHOR.x) * PLAYER_FRAME_SCALE);
     const right = anchorX + edge((runX + run.length - PLAYER_FRAME_ANCHOR.x) * PLAYER_FRAME_SCALE);

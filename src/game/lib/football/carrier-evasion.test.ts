@@ -113,19 +113,55 @@ test('immediate touch down fires once; sustained hold hesitates without repeatin
   c.release('steer', 1002); c.enter('new', 'juke', 1003);
   assert(c.sample(1003).juke);
 });
-test('holding ACTION cancels either evade, halts forward progress and retains both steering directions', () => {
+test('holding ACTION halts forward progress without discarding a committed spin; steering remains available', () => {
   for (const kind of ['spin', 'boost'] as const) for (const direction of [-1, 0, 1] as const) {
     const a = attempt();
     a.moves!.active = { kind, side: kind === 'spin' ? 1 : 0, elapsed: .21, evasive: true };
     const held = stepKickMoves(a, direction, 1 / 60, { evasion: true, hesitate: true });
     assert.equal(held.player.x, a.player.x);
-    assert.equal(Math.sign(held.player.y - a.player.y), direction);
-    assert(held.moves?.hesitating); assert.equal(held.moves.active, undefined);
+    if (direction) assert.equal(Math.sign(held.player.y - a.player.y), direction);
+    else assert.equal(held.player.y > a.player.y, kind === 'spin');
+    assert(held.moves?.hesitating);
+    assert.equal(held.moves.active?.kind, kind === 'spin' ? 'spin' : undefined);
     a.player = held.player; a.moves = held.moves;
     const released = stepKickMoves(a, direction, 1 / 60, { evasion: true });
     assert(released.player.x > a.player.x);
     assert(!released.moves?.hesitating); assert(!released.started);
   }
+});
+test('a sustained ACTION completes the same body-width spin in either direction, then stays halted until release', () => {
+  for (const side of [-1, 1] as const) {
+    const a = attempt(), c = createKickControls({ immediateAction: true }), startY = a.player.y;
+    defender(a, 8, -side * 30);
+    c.enter('action', 'juke', 0);
+    let heldX = 0, previousY = startY;
+    for (let frame = 0; frame < 40; frame++) {
+      const s = c.sample(frame * 1000 / 60);
+      const m = stepKickMoves(a, s.direction, 1 / 60, s);
+      if (frame === 12) heldX = a.player.x;
+      if (frame >= 12) assert.equal(m.player.x, heldX, 'hold still stops forward movement at 200ms');
+      assert((m.player.y - previousY) * side >= -1e-9);
+      assert(Math.abs(m.player.y - previousY) < 1, 'no teleport at spin completion');
+      previousY = m.player.y; a.player = m.player; a.moves = m.moves; a.returnTime += 1 / 60;
+    }
+    assert(Math.abs(a.player.y - startY - side * EVADE.bodyWidth) < 1e-8);
+    assert.equal(a.moves!.active, undefined); assert(a.moves!.hesitating);
+    c.release('action', 700);
+    const released = stepKickMoves(a, 0, 1 / 60, c.sample(700));
+    assert(released.player.x > a.player.x); assert.equal(released.player.y, a.player.y);
+    assert.equal(released.moves!.sequence, 1, 'release cannot trigger a second evade');
+  }
+});
+test('Classic publishes the post-rating collision correction instead of a stale pre-correction coordinate', () => {
+  const a = attempt();
+  // Force a short existing boost: ordinary movement is initially clear, but
+  // a very high return multiplier would otherwise cross the defender this step.
+  a.moves!.active = { kind: 'boost', elapsed: .1, side: 0, evasive: true };
+  defender(a, 12, 0);
+  a.fullCoverage = { elite: [], returnSpeed: 8 };
+  const next = stepKickAttempt(a, 0, 1 / 60, { evasion: true });
+  assert(next.player.x <= a.defenders[0]!.x - 9 + .001);
+  assert(isKickContact(next.player, a.defenders[0]!));
 });
 test('cooldown rejects extra action presses without stopping steering or queuing late moves', () => {
   const a = attempt();
