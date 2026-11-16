@@ -89,12 +89,15 @@ for (const [side, expected] of [[1, -1], [-1, 1]] as const) {
     assert(m.player.x > x, 'running resumes immediately');
   });
 }
-test('open field, distant coverage and non-closing trailing defenders select spin', () => {
+test('open field selects a spin or juke; distant coverage still uses contextual spins', () => {
   for (const pos of [undefined, [100, 0], [-20, 0]] as const) {
     const a = attempt(); if (pos) defender(a, ...pos);
-    assert.equal(chooseCarrierEvasion(a, bounds).kind, 'spin');
+    const kind=chooseCarrierEvasion(a, bounds).kind;
+    if(pos?.[0]===100) assert.equal(kind,'spin');
+    else assert(['spin','juke'].includes(kind));
   }
   const closing = attempt(); defender(closing, -12, 17, 120, -20);
+  defender(closing, 300, 50);
   assert.equal(chooseCarrierEvasion(closing, bounds).kind, 'boost', 'dangerous trailing diagonal is a genuine rear threat');
 });
 test('head-on pressure chooses the open corridor, including other players and sidelines', () => {
@@ -117,6 +120,7 @@ test('defender trajectory influences corridor choice without mutating coverage',
 });
 test('boost is a 24-percent capped, time-bounded acceleration, never a permanent rating change', () => {
   const a = attempt(); defender(a, -18, 0, 140, 0);
+  defender(a, 300, 50);
   const initial = JSON.stringify(a);
   const base = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
   let peak = 0, activeFrames = 0, last = a.player.x;

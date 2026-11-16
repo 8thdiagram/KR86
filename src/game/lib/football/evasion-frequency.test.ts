@@ -74,6 +74,7 @@ test('a rear-pursuit burst yields immediately to a new credible side threat', ()
   a.phase = 'returning'; a.player = { x: 500, y: 96 }; a.returnTime = 1;
   a.defenders = [{ id: 0, x: 482, y: 96, vx: 140, vy: 0,
     homeX: 482, minY: 24, maxY: 168, speed: 140, lateralSpeed: 30, active: true }];
+  a.defenders.push({...a.defenders[0]!,id:1,x:900,y:150,vx:0,vy:0});
   let m = stepKickMoves(a, 0, 1 / 60, cpuCarrierAction(a, 0, FOOTBALL_SIDELINES));
   assert.equal(m.moves?.active?.kind, 'boost');
   a.player = m.player; a.moves = m.moves; a.returnTime += 1 / 60;

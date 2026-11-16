@@ -2,6 +2,7 @@ import type { KickAttempt, KickDefender } from './kick-return-engine';
 import type { CarrierBounds, KickMoveInput, KickMoves } from './kick-return-moves';
 import { playerSpeed } from './player-pace';
 import { CARRIER_BODY_WIDTH } from './player-dimensions';
+import { kickBurstKind } from './kick-return-burst';
 
 export const EVADE = Object.freeze({
   spin: .34,
@@ -41,6 +42,10 @@ function runningVector(a: KickAttempt, direction: -1 | 0 | 1) {
   return { x, y, normalX: -y / speed, normalY: x / speed };
 }
 const eligible = (d: KickDefender) => d.dive?.phase !== 'grounded' && d.dive?.phase !== 'recovering';
+// Every carrier adapter normalizes the attacking goal line to +X = 1100.
+// Check the whole field, not just nearby threats or the current diagonal heading.
+const hasDefenderAhead = (a: KickAttempt) =>
+  a.defenders.some(d => eligible(d) && d.x > a.player.x && d.x <= 1100);
 function velocity(a: KickAttempt, d: KickDefender) {
   const real = d as KickDefender & EvasionObstacle;
   if (d.dive) return d.dive.phase === 'airborne' ? d.dive : { vx: 0, vy: 0 };
@@ -125,14 +130,18 @@ function carrierThreats(a: KickAttempt, direction: -1 | 0 | 1) {
   }).sort((d, e) => d.t - e.t || d.closest - e.closest);
 }
 
-/** Shared human/CPU selection. Rear imminent contact has first priority;
- * otherwise choose the most imminent threat, not merely the closest body. */
+/** Shared human/CPU selection. A clear breakaway never grants extra speed.
+ * With defense still ahead, imminent rear contact retains burst priority. */
 export function chooseCarrierEvasion(a: KickAttempt, bounds: CarrierBounds, obstacles: readonly EvasionObstacle[] = [],
   direction: -1 | 0 | 1 = 0) {
   const threats = carrierThreats(a, direction);
-  if (threats.some(t => t.rear)) return { kind: 'boost' as const, side: 0 as const };
+  const clearField = !hasDefenderAhead(a);
+  if (!clearField && threats.some(t => t.rear)) return { kind: 'boost' as const, side: 0 as const };
   const threat = threats[0];
-  const kind = threat && threat.along > 0 && Math.abs(threat.across) <= Math.max(6, threat.along * .3)
+  // Reuse the existing per-action random bit: stable for previews/reloads,
+  // varied between presses, and never consumes the game's contest RNG.
+  const kind = clearField ? (kickBurstKind(a, a.moves?.sequence ?? 0) === 'spin' ? 'spin' as const : 'juke' as const)
+    : threat && threat.along > 0 && Math.abs(threat.across) <= Math.max(6, threat.along * .3)
     ? 'juke' as const : 'spin' as const;
   const approach = threat?.across ?? 0;
   let best: -1 | 1 | undefined, bestScore = -Infinity;
@@ -197,6 +206,9 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
   // A burst is acceleration, not a commitment to run into a newly arriving
   // defender. It may yield to a genuine escape, never to another burst.
   const interruptBoost = moves.active?.evasive && moves.active.kind === 'boost' && requested && requested.kind !== 'boost';
+  // Passing the final defender also ends a burst already in progress, without
+  // automatically starting another move or resetting the shared recovery.
+  if (moves.active?.kind === 'boost' && !hasDefenderAhead(a)) moves.active = undefined;
   if (requested && ((!moves.active && a.returnTime + 1e-9 >= moves.readyAt) || interruptBoost)) {
     const move = requested;
     moves.active = { ...move, elapsed: 0, evasive: true,

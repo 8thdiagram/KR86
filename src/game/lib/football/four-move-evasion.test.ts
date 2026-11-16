@@ -172,16 +172,17 @@ for (const direction of [-1, 0, 1] as const) {
     }
   });
 }
-test('G/H: close closing rear pressure bursts, distant/non-closing rear coverage and open field spin', () => {
+test('G/H: rear pressure bursts only with defense ahead; clear fields select spin or juke', () => {
   for (const dx of [-18, -25]) {
     const a = attempt(dx, 0, 160);
+    a.defenders.push({...a.defenders[0]!,id:1,x:950,y:150,vx:0,vy:0});
     assert.equal(chooseCarrierEvasion(a, bounds).kind, 'boost');
     tick(a, .01, true);
     assert.equal(a.moves?.active?.kind, 'boost');
   }
   for (const a of [attempt(), attempt(-25, 0, 0), attempt(-100, 0, 160), attempt(100)]) {
     tick(a, .01, true);
-    assert.equal(a.moves?.active?.kind, 'spin');
+    assert(['spin','juke'].includes(a.moves?.active?.kind!));
     assert(!cpuCarrierAction(attempt(), 0, bounds).juke);
   }
   const multiple = attempt(22);
@@ -193,6 +194,10 @@ test('I/J/K: CPU can choose each move using the same trajectories and recovery a
   const kinds = new Set<string>();
   for (const [dx, dy, vx] of [[26, 0, -70], [25, -19, -30], [25, 19, -30], [-18, 0, 160]]) {
     const cpu = attempt(dx, dy, vx), human = structuredClone(cpu);
+    if(dx<0){
+      cpu.defenders.push({...cpu.defenders[0]!,id:1,x:950,y:150,vx:0,vy:0});
+      human.defenders=structuredClone(cpu.defenders);
+    }
     const input = cpuCarrierAction(cpu, 0, bounds);
     assert(input.juke, `CPU should recognize this useful encounter ${dx},${dy},${vx}`);
     const c = stepKickMoves(cpu, 0, .01, input, bounds);
@@ -259,13 +264,13 @@ test('diagonal jukes return to the original travel lane, not backward to their s
   }
 });
 
-test('all four CPU outcomes occur in complete public-engine plays with real field reflection and frame timing', t => {
+test('CPU lateral escapes remain visible in complete public-engine plays with real field reflection and frame timing', t => {
   const counts = { 'spin:-1': 0, 'spin:1': 0, juke: 0, boost: 0 };
   let completed = 0;
-  for (let seed = 1; seed <= 12; seed++) for (const play of ['power', 'counter', 'sweep', 'draw', 'slant', 'screen'] as const) {
+  for (let seed = 1; seed <= 12; seed++) for (const play of ['power', 'counter', 'sweep', 'draw', 'slant', 'screen'] as const) for(const defense of ['pass','run'] as const) {
     const g = createFootball(seed * 1986, { player: 'Big Blue', opponent: 'Redbirds' });
     g.possession = 'away'; g.spot = 35; g.phase = 'live';
-    g.live = startField(g, play, 'pass');
+    g.live = startField(g, play, defense);
     let sequence = 0;
     for (let i = 0; i < 1800; i++) {
       stepFootball(g, {}, 1 / 60, FULL_GAME_SPEED);
@@ -281,7 +286,12 @@ test('all four CPU outcomes occur in complete public-engine plays with real fiel
       }
     }
   }
-  assert.equal(completed, 72);
+  assert.equal(completed, 144);
   t.diagnostic(JSON.stringify({ completed, counts }));
-  for (const [kind, count] of Object.entries(counts)) assert(count > 0, `${kind} must occur in real complete plays`);
+  // Bursts now require a defender still goal-side, so these complete-game
+  // seeds need not contain one. Their capped movement and remaining-defense
+  // eligibility are checked separately; never force open-field acceleration
+  // merely to satisfy a move-frequency quota.
+  for (const kind of ['spin:-1','spin:1','juke'] as const)
+    assert(counts[kind] > 0, `${kind} must occur in real complete plays`);
 });
