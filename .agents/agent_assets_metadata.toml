@@ -302,3 +302,31 @@ mtime_ms = 1794851267315
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/a4a9c7d5-40c3-41e4-a2f5-ee776924337a/8a8c0659-0db7-4dcf-b596-80e94f507c83"
 storage_version_token = "1794851282105223"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "V9S2IAFcIdxzhwJtj3YGK"
+uri = "file://generated-artifacts/football-breakaways/Kick-Return-86-Breakaway-Diagnostics.txt"
+type = "text"
+title = "Complete breakaway diagnostics report"
+description = "Copyable A–J report covering 27,250 diagnostic games, root causes, representative traces, and proposed corrections."
+logical_id = "690e5bdf-12cb-4005-8318-fed528e9cb12"
+content_hash = "sha256:4aa44bbd9c3e416405da1bc92a2d35e7648977008bf2846334173d0462fe6f04"
+size = 78850
+mtime_ms = 1794854782804
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/690e5bdf-12cb-4005-8318-fed528e9cb12/bf09c2f3-d7bf-4e2c-bf17-29e2d5e07a45"
+storage_version_token = "1794854837918418"
+content_type = "text/plain"
+
+[[outputs]]
+id = "5cHvS85cJ1Gl4KEn4UCkF"
+uri = "file://generated-artifacts/football-breakaways/Kick-Return-86-Breakaway-Evidence.zip"
+type = "unspecified"
+title = "Raw diagnostic evidence"
+description = "Seeds, full positional traces, comparisons, scripts, and validation results. Approximately 104 MB."
+logical_id = "8f8533f6-27fb-4739-81ef-6d63f9862749"
+content_hash = "sha256:3d25a7104a397afa4ac71988d697b6ba89a0eed389c451e572c421e742f2a35a"
+size = 103862200
+mtime_ms = 1794854796536
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/8f8533f6-27fb-4739-81ef-6d63f9862749/770049f0-4aba-498f-b46a-9e89cddc5031"
+storage_version_token = "1794854839614509"
+content_type = "application/octet-stream"
