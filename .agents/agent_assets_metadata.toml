@@ -274,3 +274,31 @@ mtime_ms = 1794769182443
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/16d156c2-6299-489d-8eba-026cf65b840d/1d6e3ada-0f79-44f9-ba30-e6b070cfe56c"
 storage_version_token = "1794769417587936"
 content_type = "text/html"
+
+[[outputs]]
+id = "1NxEUAWimpHupEoc_dupt"
+uri = "file://generated-artifacts/football-balance/Kick-Return-86-Balance-Report.txt"
+type = "text"
+title = "Kick Return ’86 — Full Balance Report"
+description = "Complete copyable A–J analysis: 93,000 simulations, every play matchup, blocking measurements, rating comparisons, confidence intervals and verified NFL references. No gameplay changes."
+logical_id = "051b1d17-7439-4e25-9e6a-d6d755c1894e"
+content_hash = "sha256:8794e47d24352ad843362fffa4200ef32118a6d160008adcefabb27b1892d553"
+size = 132950
+mtime_ms = 1794851256107
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/051b1d17-7439-4e25-9e6a-d6d755c1894e/e247fb8a-0139-43f0-b7d4-49c310bb6a5e"
+storage_version_token = "1794851281264801"
+content_type = "text/plain"
+
+[[outputs]]
+id = "BA1icUp45U2m9pu6c9NYm"
+uri = "file://generated-artifacts/football-balance/Kick-Return-86-Diagnostic-Evidence.zip"
+type = "unspecified"
+title = "Diagnostic Evidence and Reproduction Files"
+description = "Raw trial results, matchup CSV, formation/rating metadata, measurement scripts, validation results and source provenance."
+logical_id = "a4a9c7d5-40c3-41e4-a2f5-ee776924337a"
+content_hash = "sha256:91ab9a6d1e3eda0d8f9c8f3743c9d3f216ec07e7bb6fd3f19f0e91f10f1e1026"
+size = 16086565
+mtime_ms = 1794851267315
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/a4a9c7d5-40c3-41e4-a2f5-ee776924337a/8a8c0659-0db7-4dcf-b596-80e94f507c83"
+storage_version_token = "1794851282105223"
+content_type = "application/octet-stream"
