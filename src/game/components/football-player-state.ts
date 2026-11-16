@@ -17,8 +17,7 @@ export function footballAthletePose(live: LivePlay, athlete: Athlete,
   const stableFacing = cadence.facing;
   const base: Pose = {
     step: moving ? cadence.step : 0,
-    locomotionStep: moving ? Math.floor(cadence.phase * 8) % 8 : undefined,
-    locomotionGait: moving ? cadence.shuffling ? 'strafe' : 'run' : undefined,
+    locomotionStep: moving ? Math.floor(cadence.phase * 6) % 6 : undefined,
     ball, engaged, crouch: snapping, lean: engaged ? stableFacing : 0,
     view: cadence.view,
   };

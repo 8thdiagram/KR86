@@ -11,7 +11,6 @@ import { canForwardPass } from './passing';
 import { playerSpeed } from '../player-pace';
 import { isFootballGame } from './storage';
 import { constrainEvasionStep } from '../carrier-evasion';
-import { reflectPhysicalState } from './direction';
 
 const bounds = { minY: 24, maxY: 168 };
 function attempt() {
@@ -69,13 +68,6 @@ test('head-on pressure chooses the open corridor, including other players and si
   a.player.y = 166; a.defenders = []; defender(a, 25, -15);
   assert.equal(chooseCarrierEvasion(a, bounds).side, -1);
 });
-test('the quicker turn still forecasts a second defender beyond the spin exit', () => {
-  const a = attempt();
-  defender(a, 8, 30);
-  defender(a, 35, -12);
-  assert.deepEqual(chooseCarrierEvasion(a, bounds), { kind: 'spin', side: 1 },
-    'do not escape the nearest defender into another tackle just after the turn ends');
-});
 test('defender trajectory influences corridor choice without mutating coverage', () => {
   const a = attempt(); defender(a, 28, 18, -20, -100);
   const before = JSON.stringify(a);
@@ -121,55 +113,19 @@ test('immediate touch down fires once; sustained hold hesitates without repeatin
   c.release('steer', 1002); c.enter('new', 'juke', 1003);
   assert(c.sample(1003).juke);
 });
-test('holding ACTION halts forward progress without discarding a committed spin; steering remains available', () => {
+test('holding ACTION cancels either evade, halts forward progress and retains both steering directions', () => {
   for (const kind of ['spin', 'boost'] as const) for (const direction of [-1, 0, 1] as const) {
     const a = attempt();
     a.moves!.active = { kind, side: kind === 'spin' ? 1 : 0, elapsed: .21, evasive: true };
     const held = stepKickMoves(a, direction, 1 / 60, { evasion: true, hesitate: true });
     assert.equal(held.player.x, a.player.x);
-    if (direction) assert.equal(Math.sign(held.player.y - a.player.y), direction);
-    else assert.equal(held.player.y > a.player.y, kind === 'spin');
-    assert(held.moves?.hesitating);
-    assert.equal(held.moves.active?.kind, kind === 'spin' ? 'spin' : undefined);
+    assert.equal(Math.sign(held.player.y - a.player.y), direction);
+    assert(held.moves?.hesitating); assert.equal(held.moves.active, undefined);
     a.player = held.player; a.moves = held.moves;
     const released = stepKickMoves(a, direction, 1 / 60, { evasion: true });
     assert(released.player.x > a.player.x);
     assert(!released.moves?.hesitating); assert(!released.started);
   }
-});
-test('a sustained ACTION completes the same body-width spin in either direction, then stays halted until release', () => {
-  for (const side of [-1, 1] as const) {
-    const a = attempt(), c = createKickControls({ immediateAction: true }), startY = a.player.y;
-    defender(a, 8, -side * 30);
-    c.enter('action', 'juke', 0);
-    let heldX = 0, previousY = startY;
-    for (let frame = 0; frame < 40; frame++) {
-      const s = c.sample(frame * 1000 / 60);
-      const m = stepKickMoves(a, s.direction, 1 / 60, s);
-      if (frame === 12) heldX = a.player.x;
-      if (frame >= 12) assert.equal(m.player.x, heldX, 'hold still stops forward movement at 200ms');
-      assert((m.player.y - previousY) * side >= -1e-9);
-      assert(Math.abs(m.player.y - previousY) < 1, 'no teleport at spin completion');
-      previousY = m.player.y; a.player = m.player; a.moves = m.moves; a.returnTime += 1 / 60;
-    }
-    assert(Math.abs(a.player.y - startY - side * EVADE.bodyWidth) < 1e-8);
-    assert.equal(a.moves!.active, undefined); assert(a.moves!.hesitating);
-    c.release('action', 700);
-    const released = stepKickMoves(a, 0, 1 / 60, c.sample(700));
-    assert(released.player.x > a.player.x); assert.equal(released.player.y, a.player.y);
-    assert.equal(released.moves!.sequence, 1, 'release cannot trigger a second evade');
-  }
-});
-test('Classic publishes the post-rating collision correction instead of a stale pre-correction coordinate', () => {
-  const a = attempt();
-  // Force a short existing boost: ordinary movement is initially clear, but
-  // a very high return multiplier would otherwise cross the defender this step.
-  a.moves!.active = { kind: 'boost', elapsed: .1, side: 0, evasive: true };
-  defender(a, 12, 0);
-  a.fullCoverage = { elite: [], returnSpeed: 8 };
-  const next = stepKickAttempt(a, 0, 1 / 60, { evasion: true });
-  assert(next.player.x <= a.defenders[0]!.x - 9 + .001);
-  assert(isKickContact(next.player, a.defenders[0]!));
 });
 test('cooldown rejects extra action presses without stopping steering or queuing late moves', () => {
   const a = attempt();
@@ -238,69 +194,6 @@ test('the separate field-goal meter still locks immediately without creating a r
     assert(!c.sample(41).action);
   }
 });
-test('a quick spin advances one quarter body width per quarter cycle in both directions', () => {
-  assert(EVADE.spin >= .2 && EVADE.spin <= .3);
-  for (const side of [-1, 1] as const) {
-    const a = attempt(), start = { ...a.player };
-    defender(a, 8, -side * 30);
-    for (let quarter = 1; quarter <= 4; quarter++) {
-      const result = stepKickMoves(a, 0, EVADE.spin / 4, { evasion: true, juke: quarter === 1 });
-      a.player = result.player; a.moves = result.moves; a.returnTime += EVADE.spin / 4;
-      assert(Math.abs(a.player.y - start.y - side * EVADE.bodyWidth * quarter / 4) < 1e-7);
-      assert(a.player.x > start.x, 'reasonable forward momentum remains');
-    }
-    assert(!a.moves!.active);
-    const y = a.player.y;
-    const next = stepKickMoves(a, 0, 1 / 60, { evasion: true });
-    assert.equal(next.player.y, y, 'new lane persists in normal running');
-  }
-});
-
-test('a timed spin changes lanes while an unfrozen defensive back adjusts live pursuit', () => {
-  for (const fieldDirection of [-1, 1] as const) for (const side of [-1, 1] as const) {
-    const g = game(), l = g.live!;
-    g.homeOddDirection = fieldDirection; g.quarter = 1; g.fieldFrame = fieldDirection;
-    l.mode = 'run'; l.carrier = 6; l.time = 1;
-    for (const a of l.athletes) Object.assign(a, { x: a.side === 'defense' ? 1000 : 300, y: 30, vx: 0, vy: 0 });
-    const runner = l.athletes[6]!, db = l.athletes[11]!;
-    Object.assign(runner, { x: 530, y: 96 }); l.movement.player = { x: 530, y: 96 };
-    Object.assign(db, { x: 538, y: 96 - side * 28, vx: 0, vy: side * 20, engaged: 0 });
-    if (fieldDirection === -1) reflectPhysicalState(l);
-    const startX = runner.x, relativeThreat = (db.y - runner.y) * fieldDirection;
-    const dbStart = { x: db.x, y: db.y };
-    for (let frame = 0; frame < 15; frame++) stepFootball(g, { action: frame === 0 });
-    assert(Math.abs(runner.y - 96 - side * EVADE.bodyWidth) < .001, `actual lane change ${runner.y - 96}`);
-    assert((runner.x - startX) * fieldDirection > 0, 'forward momentum follows the actual direction of travel');
-    assert((runner.y - 96) * fieldDirection * relativeThreat < 0, 'escape is away from the threat in the runner-relative frame');
-    assert(Math.hypot(db.x - dbStart.x, db.y - dbStart.y) > 1, 'the defender kept pursuing rather than freezing');
-    assert.equal(g.phase, 'live', 'a well-timed open-side spin creates separation, not a guaranteed tackle');
-    assert(!l.movement.moves!.active);
-  }
-});
-
-test('a spin can take a clear sideways path around a forward corner, but cannot cross an athlete', () => {
-  for (const sign of [-1, 1]) {
-    const from = { x: 500, y: 96 }, to = { x: 515, y: 96 + sign * 11 };
-    const front = { x: 515, y: 96 };
-    const direct = constrainEvasionStep(from, to, [], [front]);
-    assert(Math.abs(direct.y - from.y) < 5, 'the old single diagonal sweep discarded most lateral travel');
-    assert.deepEqual(constrainEvasionStep(from, to, [], [front], true), to);
-    const side = { x: 500, y: 96 + sign * 15 };
-    const blocked = constrainEvasionStep(from, to, [], [front, side], true);
-    assert(Math.abs(blocked.y - from.y) <= 5.001, 'a genuinely occupied side lane remains solid');
-  }
-});
-
-test('a resumed older long spin never reverses or teleports after the quicker timing change', () => {
-  const a = attempt(), before = { ...a.player };
-  a.moves!.active = { kind: 'spin', side: -1, elapsed: .35, evasive: true };
-  assert(isKickMoves(a.moves, a), 'older active-spin saves remain valid');
-  const result = stepKickMoves(a, 0, 1 / 60, { evasion: true });
-  assert.equal(result.player.y, before.y);
-  assert(result.player.x > before.x);
-  assert(!result.moves?.active);
-});
-
 test('an existing teammate overlap can separate, but a new occupied corridor remains solid', () => {
   const from = { x: 500, y: 96 }, to = { x: 505, y: 88 };
   assert.deepEqual(constrainEvasionStep(from, to, [], [from]), to);

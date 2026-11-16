@@ -323,7 +323,6 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
         slim(ctx, a.x, a.y, { ...kit, dir: stableFacing }, {
           action: cadence.moving ? 'run' : 'idle',
           progress: cadence.phase,
-          locomotionGait: cadence.shuffling ? 'strafe' : 'run',
           view: cadence.view,
           ball: true,
         });
@@ -347,7 +346,7 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       const contact = st === 'flight' || st === 'loose' ? clamp(.5 + age / .44, 0, 1) : st === 'approach' && age > .24 ? .35 : -1;
       if (contact >= 0) slim(ctx, a.x, a.y, { ...kit, dir: kit.dir }, { kick: contact, hold: sp.kind === 'punt' && contact < .5 });
       else slim(ctx, a.x, a.y, { ...kit, dir: kit.dir },
-        { action: 'run', progress: cadence.phase, view: cadence.view, locomotionGait: cadence.shuffling ? 'strafe' : 'run', lean: stableFacing });
+        { action: 'run', progress: cadence.phase, view: cadence.view, lean: stableFacing });
     } else if (fg && a.id === sp.returner && (st === 'hold' || st === 'approach')) {
       slim(ctx, a.x, a.y, kit, { action: 'kneel' });
     } else if (a.id === sp.kicker && (st === 'snap' || st === 'hold' || st === 'lineup') && (sp.kind === 'punt' || fg)) {
@@ -368,8 +367,6 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       const action = fielding ? 'catch' : a.engaged > sp.age ? 'block' : moving ? 'run' : 'stance';
       slim(ctx, a.x, a.y, { ...kit, dir: actualFacing }, {
         step: cadence.step, hold: fielding, action,
-        locomotionStep: moving ? Math.floor(cadence.phase * 8) % 8 : undefined,
-        locomotionGait: moving ? cadence.shuffling ? 'strafe' : 'run' : undefined,
         progress: fielding ? clamp(1 - Math.hypot(a.x - sp.ball.x, a.y - sp.ball.y) / 26, 0, .55)
           : action === 'run' ? cadence.phase : action === 'block' ? .5 : undefined,
         engaged: a.engaged > sp.age, lean: a.engaged > sp.age ? stableFacing : 0,

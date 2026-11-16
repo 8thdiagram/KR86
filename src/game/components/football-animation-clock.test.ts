@@ -29,20 +29,19 @@ test('Classic retains its stride clock across immutable simulation and interpola
   assert(cadence.phase > .05, 'the renderer actually advanced the stable canvas-owned stride clock');
 });
 
-test('integrated cadence keeps the authored eight-pose cycle within the readable timing target', () => {
-  assert(Math.abs(footballStridePeriod(18) - .4796) < 1e-12);
-  assert(Math.abs(footballStridePeriod(60) - .4004) < 1e-12);
-  assert(Math.abs(footballStridePeriod(2) - .55) < 1e-12);
+test('integrated cadence produces a slow six-pose loop and caps sprint pace', () => {
+  assert(Math.abs(footballStridePeriod(18) - .8) < 1e-12);
+  assert(Math.abs(footballStridePeriod(60) - .6) < 1e-12);
   assert(footballStridePeriod(8) > footballStridePeriod(18));
-  assert(footballStridePeriod(90) >= .4004);
+  assert(footballStridePeriod(90) >= .6);
 
   const owner = {};
   let frame = updateFootballAnimation(owner, 'athlete', sample(0, 0));
   assert.equal(frame.phase, 0);
-  for (let n = 1; n <= 6; n++)
+  for (let n = 1; n <= 8; n++)
     frame = updateFootballAnimation(owner, 'athlete', sample(n / 10, n * 2));
-  assert(frame.phase > .15 && frame.phase < .4, `expected a stable phase after a 0.6s stride cycle, got ${frame.phase}`);
-  assert(Math.floor(frame.phase * 8) >= 1, 'the eight authored running poses are traversed');
+  assert(frame.phase > .8 && frame.phase < 1, `expected about one stride in 0.8s, got ${frame.phase}`);
+  assert.equal(Math.floor(frame.phase * 6), 5, 'six deliberate running poses are reached over the cycle');
 });
 
 test('velocity changes integrate smoothly and repeated renders at one clock are idempotent', () => {
@@ -111,9 +110,9 @@ test('faster travel stays on a deliberate six-pose cadence without frame twitchi
     phase = updateFootballAnimation(owner, 'runner', sample(n / 60, n * 1.1)).phase;
     const delta = (phase - prior + 1) % 1;
     assert(delta > 0, 'a moving runner advances through the stride');
-    assert(delta < .055, `one display frame cannot jump across poses (${delta})`);
+    assert(delta < .04, `one display frame cannot jump across poses (${delta})`);
     prior = phase;
   }
-  assert(phase > .35, 'the deliberate eight-pose stride continues at faster travel speeds');
+  assert(phase > .5, 'the deliberate six-pose stride continues at faster travel speeds');
 });
 

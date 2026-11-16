@@ -112,72 +112,31 @@ export function stripEliteCBakedArmOverhang(top: PlayerDesignGrid): PlayerDesign
   }));
 }
 
-export const ELITE_C_PLANTED_LEGS = fit([
-  '...KWWWWWK......','..KWWWWWWWK.....','..KWWwWWWKK.....','..KWWK..KWWK....',
-  '.KKWWK...KWWK...','KKWK.....KKWK...','KKK.......KKK...','KKKK.....KKKK...',
-]);
-export const ELITE_C_RUN_LEGS: readonly PlayerDesignGrid[] = Object.freeze([
-  // 1 — left drives long, right thigh recoils and its heel lifts behind.
-  fit(['..KWWWK...KWWWK.','..KWWWK....KWWWK','...KWWwK...KWWWK','....KWWwK..KWWwK',
-    '.....KWWwK.KWWwK','......KWWK..KWWK','..........CCCCC.','..CCCCC.........']),
-  // 2 — left foot plants under the hip as the right knee drives through.
-  fit(['...KWWWK.KWWWK..','...KWWWK..KWWWK.','....KWWwK.KWWwK.','.....KWWwK.KWWwK',
-    '.....KWWK..KWWK.','....KWWK...KWWK.','...CCC.....CCC..','...CCCCC........']),
-  // 3 — close passing step; both knees scissor without merging either calf.
-  fit(['...KWWWK...KWWWK.','....KWWWK..KWWWK.','....KWWwK.KWWwK.','.....KWWwK.KWWwK',
-    '.....KWWK.KWWK..','....KWWK.KWWK...','....KWWK..KWWK..','...CCCCC...CCCCC']),
-  // 4 — the opposite lead: a deliberate mirror of the left-leg reach.
-  fit(['..KWWWK...KWWWK.','KWWWK....KWWWK..','KWWWK...KWWwK...','KWWwK..KWWwK....',
-    'KWWwK.KWWwK.....','KWWK..KWWK......','.CCCCC..........','.........CCCCC..']),
-  // 5 — right foot plants; the left leg folds back into recovery.
-  fit(['..KWWWK.KWWWK...','KWWWK..KWWWK...','KWWwK.KWWwK....','KWWwK.KWWwK.....',
-    'KWWK..KWWK.....','KWWK...KWWK....','..CCC.....CCC...','..........CCCCC.']),
-  // 6 — right-to-left pass, with a bent left knee and the right toe airborne.
-  fit(['...KWWWK...KWWWK.','....KWWWK..KWWWK.','....KWWwK.KWWwK.','....KWWwK..KWWwK.',
-    '.....KWWK..KWWK..','......KWWK.KWWK..','..CCCCC..CCCCC...','................']),
-  // 7 — left knee reaches again while the right leg extends into push-off.
-  fit(['..KWWWK...KWWWK.','...KWWWK...KWWWK.','....KWWwK..KWWwK.','.....KWWwK..KWWK.',
-    '.....KWWK...KWWK.','....KWWK.....KWWK','...CCC.......CCC.','..CCCCC.....CCCCC']),
-  // 8 — settle toward the next plant; left toe low, rear right heel raised.
-  fit(['..KWWWK....KWWWK','...KWWWK...KWWWK.','...KWWwK...KWWwK.','....KWWwK..KWWK..',
-    '.....KWWK..KWWK..','....KWWK...KWWK..','..........CCC....','...CCCCC.........']),
-]);
-export const ELITE_C_STRAFE_LEGS: readonly PlayerDesignGrid[] = Object.freeze([
-  fit(['...KWWWK..KWWWK..','...KWWWK...KWWWK.','....KWWwK...KWWWK','.....KWWwK..KWWK..',
-    '......KWWK...KWWK.','.....KWWK....KWWK.','...CCC......CCCCC.','..CCCCC...........']),
-  fit(['....KWWWK.KWWWK..','....KWWWK...KWWWK.','.....KWWwK..KWWwK.','......KWWwK..KWWK..',
-    '.....KWWK...KWWK..','....KWWK.....KWWK.','....CCC.....CCC...','.....CCCCC..CCCCC.']),
-  fit(['.....KWWWK.KWWWK.','....KWWWK...KWWWK.','...KWWwK....KWWwK.','..KWWwK.....KWWK..',
-    '..KWWK......KWWK..','...KWWK.....KWWK..','..CCCCC.....CCCCC.','...CCCCC....CCCCC.']),
-  fit(['....KWWWK...KWWWK','.....KWWWK...KWWWK','......KWWwK..KWWK.','.......KWWwK.KWWK..',
-    '......KWWK..KWWK...','.....KWWK...KWWK...','......CCC..CCCCC...','.......CCCCC..CCCCC']),
-  fit(['...KWWWK...KWWWK.','..KWWWK....KWWWK..','.KWWwK.....KWWwK..','KWWwK......KWWK...',
-    'KWWK.......KWWK...','.KWWK......KWWK....','CCCCC......CCC.....','CCCCC.....CCCCC....']),
-  fit(['..KWWWK...KWWWK...','...KWWWK..KWWWK...','....KWWwK.KWWwK...','.....KWWwK.KWWK...',
-    '......KWWK..KWWK..','.....KWWK....KWWK.','....CCCCC..CCC....','...CCCCC....CCCCC.']),
-  fit(['...KWWWK....KWWWK.','....KWWWK...KWWWK.','.....KWWwK..KWWwK.','......KWWwK.KWWK..',
-    '.....KWWK..KWWK...','....KWWK....KWWK..','...CCC.....CCCCC..','..CCCCC....CCCCC..']),
-  fit(['....KWWWK..KWWWK..','...KWWWK...KWWWK..','..KWWwK....KWWwK..','.KWWwK.....KWWK...',
-    'KWWK......KWWK....','.KWWK.....KWWK.....','CCCCC.....CCC......','CCCCC....CCCCC.....']),
-]);
-export const ELITE_C_BACKPEDAL_LEGS: readonly PlayerDesignGrid[] = Object.freeze([
-  fit(['..KWWWK....KWWWK.','...KWWWK...KWWWK..','....KWWwK...KWWwK.','....KWWK.....KWWK.',
-    '...KWWK......KWWK.','..KWWK.......KWWK..','...CCC......CCCCC.','..CCCCC...........']),
-  fit(['...KWWWK...KWWWK..','....KWWWK...KWWWK.','.....KWWwK..KWWwK.','......KWWK..KWWK..',
-    '.....KWWK...KWWK..','....KWWK.....KWWK.','....CCC......CCC...','.....CCCCC..CCCCC.']),
-  fit(['....KWWWK..KWWWK..','...KWWWK....KWWWK..','..KWWwK.....KWWwK..','..KWWK......KWWK...',
-    '...KWWK.....KWWK...','....KWWK...KWWK.....','..CCCCC.....CCCCC.','...CCCCC...CCCCC..']),
-  fit(['.....KWWWK...KWWWK','....KWWWK...KWWWK.','...KWWwK....KWWwK.','..KWWK......KWWK..',
-    '...KWWK.....KWWK..','....KWWK...KWWK...','......CCC..CCC....','.....CCCCC..CCCCC.']),
-  fit(['...KWWWK....KWWWK.','..KWWWK.....KWWWK..','.KWWwK......KWWwK..','KWWwK.......KWWK...',
-    'KWWK........KWWK...','.KWWK......KWWK....','CCCCC.......CCC....','CCCCC......CCCCC...']),
-  fit(['..KWWWK...KWWWK...','...KWWWK...KWWWK...','....KWWwK..KWWwK...','.....KWWK...KWWK...',
-    '......KWWK..KWWK...','.....KWWK....KWWK..','....CCCCC..CCC.....','...CCCCC....CCCCC..']),
-  fit(['...KWWWK...KWWWK...','....KWWWK..KWWWK...','.....KWWwK.KWWwK...','......KWWK.KWWK....',
-    '.....KWWK...KWWK...','....KWWK.....KWWK..','...CCC......CCCCC..','..CCCCC.....CCCCC..']),
-  fit(['..KWWWK....KWWWK...','...KWWWK...KWWWK...','....KWWwK...KWWwK..','.....KWWK....KWWK..',
-    '....KWWK.....KWWK..','...KWWK.......KWWK.','..........CCC......','...CCCCC....CCCCC..']),
-]);
+// Selected C's planted body plus six independently articulated stride poses.
+const C_PLANTED_AND_RUN: readonly (readonly PlayerDesignGrid[])[] = [
+  [
+    fit(['...KWWWWWK......','...KWWWWWK......','...KWWwWWK......','...KWWK..KWWK...',
+      '..KKWK...KWWK...','..KKK.....KKWK..','..KKK......KKK..','..KKKK....KKKK..']),
+  ],
+  [
+    fit(['..KWWWWWKK......','..KWWWWWKK......','..KWWwWWKK......','..KWWK...KWWK...',
+      '.KKWK....KWWK...','KKK.......KKWK..','KKK........KKK...','KKKK......KKKK...']),
+    fit(['..KWWWWWKK......','..KWWWWWKK......','..KWWwWWKK......','..KWWK....KWWK..',
+      '.KKWK.....KWWK..','KKK.......KKWK..','KKK........KKK...','KKKK......KKKK...']),
+    fit(['..KWWWWWKK......','..KWWWWWKK......','..KWWwWWKKK.....','..KWWK...KWWK...',
+      '..KKWK...KWWK...','..KKK....KWWK..','..KKKK....KKWK..','..KKKK....KKKK..']),
+    fit(['..KWWWWWKK......','..KWWWWWKK......','..KWWwWWK..KK....','..KWWK...KWWK...',
+      '..KKWK....KWWK..','..KKK.....KKWK..','..KKKK.....KKK..','..KKKK....KKKK..']),
+    fit(['..KWWWWWKK......','..KWWWWWKK......','..KWWwWWKK......','..KWWK....KWWK..',
+      '..KKWK.....KWWK.','..KKK......KKWK.','..KKKK......KKK.','..KKKK.....KKKK.']),
+    fit(['..KWWWWWKK......','..KWWWWWKK......','..KWWwWWKK......','...KWWK...KWWK..',
+      '....KKWK...KWWK.','.....KKK....KKWK.','......KKK....KKK.','......KKKK..KKKK.']),
+    fit(['..KWWWWWKK......','..KWWWWWKK......','..KWWwWWKK......','..KWWK...KWWK...',
+      '..KWWK...KWWK...','..KKWK...KKWK...','..KKK.....KKK...','..KKKK...KKKK...']),
+  ],
+];
+export const ELITE_C_PLANTED_LEGS = C_PLANTED_AND_RUN[0]![0]!;
+export const ELITE_C_RUN_LEGS = Object.freeze(C_PLANTED_AND_RUN[1]!.slice(0, 6));
 
 export type EliteCArmPose = 'pumpA' | 'pumpB' | 'guard' | 'reach' | 'throw' | 'block';
 const arms22 = (poseRows: readonly string[]) => fit([...Array.from({ length: 8 }, () => D), ...poseRows, ...Array.from({ length: 22 - 8 - poseRows.length }, () => D)]);
@@ -327,7 +286,7 @@ export function composeEliteCGrid(
   pose: 'planted' | 'run',
   phase: number,
   arms: EliteCArmPose,
-  legs: PlayerDesignGrid = pose === 'run' ? ELITE_C_RUN_LEGS[((phase % 8) + 8) % 8]! : ELITE_C_PLANTED_LEGS,
+  legs: PlayerDesignGrid = pose === 'run' ? ELITE_C_RUN_LEGS[((phase % 6) + 6) % 6]! : ELITE_C_PLANTED_LEGS,
   bodyShift = 0,
   position: EliteCPosition = 'QB',
 ): string[] {

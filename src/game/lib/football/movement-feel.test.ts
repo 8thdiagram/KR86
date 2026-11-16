@@ -16,7 +16,7 @@ test('position-only movement animates feet and chooses a real strafing direction
         now: n / 60, x: 500 + vx! * n / 60, y: 96 + vy! * n / 60,
         vx: 0, vy: 0, facing: 1,
       });
-      if (frame.moving) phases.add(Math.floor(frame.phase * 8));
+      if (frame.moving) phases.add(Math.floor(frame.phase * 6));
     }
     assert(phases.size >= 5, `${vx},${vy}: visible stepping throughout movement`);
     if (vx === 0) {
@@ -48,23 +48,18 @@ test('real QB hold and charged-throw poses keep stepping legs in either strafe d
         const frame = drawFootballPlayer(ctx, qb.x, qb.y, { body: '#d21f34', trim: '#eeeeee', dir: 1 }, pose);
         if (pose.locomotionStep !== undefined) {
           phases.add(pose.locomotionStep);
-          assert.equal(pose.locomotionGait, 'strafe', 'pure up/down movement explicitly selects the strafe gait');
           assert.equal(frame.locomotionPhase, pose.locomotionStep, 'the actual painter consumes QB locomotion');
-          assert.equal(frame.locomotionGait, 'strafe', 'the painter selects the strafe atlas rather than inferring from view');
           legs.add(JSON.stringify(frame.runs.filter(run => run.row >= 28)));
         }
         assert.equal(JSON.stringify(live), before, 'rendering never changes quarterback physics or throw timing');
       }
-      assert(phases.size >= 7 && legs.size >= 7, `${offense}/${vy}/${charging}: distinct stepping legs`);
+      assert(phases.size >= 5 && legs.size >= 5, `${offense}/${vy}/${charging}: distinct stepping legs`);
       for (let n = 61; n <= 80; n++) {
         live.time = n / 60; qb.vx = qb.vy = 0;
         const planted = footballAthletePose(live, qb, {
           snapping: false, ball: true, engaged: false, facing: 1, direction: 1,
         });
-        if (n === 80) {
-          assert.equal(planted.locomotionStep, undefined, 'stationary QB plants his feet');
-          assert.equal(planted.locomotionGait, undefined, 'stationary pose does not retain a moving gait');
-        }
+        if (n === 80) assert.equal(planted.locomotionStep, undefined, 'stationary QB plants his feet');
       }
     }
   }

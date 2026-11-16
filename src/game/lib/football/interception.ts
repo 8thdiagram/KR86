@@ -106,7 +106,7 @@ export function stepInterception(g: FootballGame, input: FootballInput, dt: numb
   movement.player = { x: before.x + (movement.player.x - before.x) * upgrade,
     y: movement.spinStep ? movement.player.y : clamp(before.y + (movement.player.y - before.y) * upgrade, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY) };
   if (movement.evasiveStep) movement.player = constrainEvasionStep(before, movement.player, l.movement.defenders,
-    movement.spinStep ? blockers.map(d => ({ x: 1200 - d.x, y: d.y })) : [], movement.spinStep);
+    movement.spinStep ? blockers.map(d => ({ x: 1200 - d.x, y: d.y })) : []);
   l.movement.player = movement.player; l.movement.moves = movement.moves;
   runner.vx = -(movement.player.x - before.x) / dt; runner.vy = (movement.player.y - before.y) / dt;
   runner.x = 1200 - movement.player.x; runner.y = movement.player.y;

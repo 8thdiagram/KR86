@@ -219,7 +219,7 @@ test('running gait keyframes add distinct intermediate pixel poses without shift
   const kit = uniformKit(KICK_TEAMS[0]!, 1);
   for (const mode of ['classic', 'full'] as const) {
     const frames = new Set<string>();
-    for (const step of [.001, .501, 1.001, 1.501, 2.001, 2.501, 3.001, 3.501]) {
+    for (const step of [.01, .7, 1.4, 2.1, 2.8, 3.5]) {
       const { ctx, paints } = canvas();
       if (mode === 'classic') kickFootballArt.sprite(ctx, 100, 100, kit, step, true);
       else slim(ctx, 100, 100, kit, { step, ball: true });
@@ -229,7 +229,7 @@ test('running gait keyframes add distinct intermediate pixel poses without shift
       for (const p of paints) for (const n of [p.x, p.y, p.w, p.h])
         assert(Math.abs(n * 40 - Math.round(n * 40)) < 1e-7);
     }
-    assert.equal(frames.size, 8, `${mode} exposes eight authored running silhouettes`);
+    assert.equal(frames.size, 6, `${mode} exposes six authored running silhouettes`);
   }
 });
 test('all turn views keep primary jersey masses above substantial articulated white legs', () => {

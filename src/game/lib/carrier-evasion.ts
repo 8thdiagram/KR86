@@ -4,7 +4,7 @@ import { playerSpeed } from './player-pace';
 import { CARRIER_BODY_WIDTH } from './player-dimensions';
 
 export const EVADE = Object.freeze({
-  spin: .25,
+  spin: .44,
   boost: .42,
   cooldown: .45,
   boostRatio: 1.18,
@@ -13,9 +13,7 @@ export const EVADE = Object.freeze({
 } as const);
 export type EvasionObstacle = { x: number; y: number; vx?: number; vy?: number };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
-// Uniform lateral travel starts with the plant instead of spending the first
-// quarter rotating with almost no lane change. Each quarter covers D / 4.
-const spinTravel = (p: number) => p;
+const ease = (p: number) => p * p * (3 - 2 * p);
 const eligible = (d: KickDefender) => d.dive?.phase !== 'grounded' && d.dive?.phase !== 'recovering';
 function velocity(a: KickAttempt, d: KickDefender) {
   const real = d as KickDefender & EvasionObstacle;
@@ -45,12 +43,8 @@ export function chooseCarrierEvasion(a: KickAttempt, bounds: CarrierBounds, obst
     if (endY <= bounds.minY || endY >= bounds.maxY) continue;
     let nearest = 100, danger = 0;
     for (let i = 1; i <= 16; i++) {
-      // Check the exit lane after the quick turn too: a .25s spin can finish
-      // clear yet drive straight into the second defender a few strides later.
-      const t = i / 16 * (EVADE.spin + .18), p = Math.min(1, t / EVADE.spin);
-      const turning = Math.min(t, EVADE.spin);
-      const x = a.player.x + forward * ((.82 + .09 * p) * turning + Math.max(0, t - EVADE.spin));
-      const y = a.player.y + side * EVADE.bodyWidth * spinTravel(p);
+      const p = i / 16, t = p * EVADE.spin;
+      const x = a.player.x + forward * .9 * t, y = a.player.y + side * EVADE.bodyWidth * ease(p);
       for (const d of [...coverage, ...obstacles]) {
         const v = 'id' in d ? velocity(a, d as KickDefender) : { vx: d.vx ?? 0, vy: d.vy ?? 0 };
         const clearance = gap(x - d.x - v.vx * t, y - d.y - v.vy * t);
@@ -89,29 +83,21 @@ export function sweptCarrierContact(from: EvasionObstacle, to: EvasionObstacle, 
 
 /** Recheck after existing rating/execution multipliers, using actual contact positions. */
 export function constrainEvasionStep(from: EvasionObstacle, to: EvasionObstacle,
-  defenders: readonly KickDefender[], blockers: readonly EvasionObstacle[] = [], lateralFirst = false) {
+  defenders: readonly KickDefender[], blockers: readonly EvasionObstacle[] = []) {
   // Old blocking physics can already overlap teammates. Let the carrier
   // separate from that overlap rather than trapping him inside his own blocker.
   const solidBlockers = blockers.filter(d => gap(from.x - d.x, from.y - d.y) >= 1 ||
     gap(to.x - d.x, to.y - d.y) < gap(from.x - d.x, from.y - d.y));
-  const solid = [...defenders.filter(eligible), ...solidBlockers].map(d => ({ x: d.x, y: d.y }));
-  const direct = sweptCarrierContact(from, to, solid, 0);
-  if (!lateralFirst || direct.x === to.x && direct.y === to.y) return direct;
-  // A spin plants sideways before driving forward. A blocked forward segment
-  // must not erase a clear side step. Sweep BOTH segments through the same
-  // contact boxes; an occupied sideways lane or existing tackle still stops it.
-  const lateral = sweptCarrierContact(from, { x: from.x, y: to.y }, solid, 0);
-  const around = sweptCarrierContact(lateral, { x: to.x, y: lateral.y }, solid, 0);
-  return Math.abs(around.y - from.y) > Math.abs(direct.y - from.y) ? around : direct;
+  return sweptCarrierContact(from, to, [...defenders.filter(eligible), ...solidBlockers].map(d => ({ x: d.x, y: d.y })), 0);
 }
 
 export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: number, input: KickMoveInput, bounds: CarrierBounds) {
   const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
   const lateral = playerSpeed(a.difficulty === 'hard' ? 86 : 78);
-  const moves: KickMoves = a.moves ? { ...a.moves, version: 2, backward: false, hesitating: !!input.hesitate }
+  const moves: KickMoves = a.moves ? { ...a.moves, version: 2, backward: false, hesitating: false }
     : { version: 2, backward: false, sequence: 0, readyAt: 0, vx: forward, furthestX: a.player.x };
   let started = false;
-  if (input.juke && !input.hesitate && !moves.active && a.returnTime + 1e-9 >= moves.readyAt) {
+  if (input.juke && !moves.active && a.returnTime + 1e-9 >= moves.readyAt) {
     const move = chooseCarrierEvasion(a, bounds, input.obstacles);
     moves.active = { ...move, elapsed: 0, evasive: true };
     moves.sequence++; moves.readyAt = a.returnTime + EVADE[move.kind] + EVADE.cooldown; started = true;
@@ -121,23 +107,19 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
   const spinStep = active?.kind === 'spin';
   if (active) {
     const duration = active.kind === 'spin' ? EVADE.spin : EVADE.boost;
-    const used = Math.max(0, Math.min(dt, duration - active.elapsed)), rest = dt - used;
-    const p0 = clamp(active.elapsed / duration, 0, 1), p1 = clamp((active.elapsed + used) / duration, 0, 1);
+    const used = Math.min(dt, duration - active.elapsed), rest = dt - used;
+    const p0 = active.elapsed / duration, p1 = Math.min(1, (active.elapsed + used) / duration);
     if (active.kind === 'spin') {
       dx = forward * ((.82 + .18 * (p0 + p1) / 2) * used + rest);
-      dy = active.side * EVADE.bodyWidth * (spinTravel(p1) - spinTravel(p0)) + direction * lateral * rest;
-      // Retain the original hold's independent UP/DOWN steering. With neutral
-      // steering the full committed body-width move still finishes exactly.
-      if (input.hesitate) dy += direction * lateral * used;
+      dy = active.side * EVADE.bodyWidth * (ease(p1) - ease(p0)) + direction * lateral * rest;
     } else {
       const p = (p0 + p1) / 2, gain = Math.max(0, Math.min(1, p / .12, (1 - p) / .2));
       dx = forward * ((1 + (EVADE.boostRatio - 1) * gain) * used + rest);
     }
     moves.active = p1 >= 1 - 1e-9 ? undefined : { ...active, elapsed: active.elapsed + used };
   }
-  if (input.hesitate) dx = 0;
   let player = { x: clamp(a.player.x + dx, 8, 1101), y: clamp(a.player.y + dy, bounds.minY, bounds.maxY) };
-  if (active) player = constrainEvasionStep(a.player, player, a.defenders, spinStep ? input.obstacles : [], spinStep);
+  if (active) player = constrainEvasionStep(a.player, player, a.defenders, spinStep ? input.obstacles : []);
   moves.vx = (player.x - a.player.x) / dt; moves.furthestX = Math.max(moves.furthestX, player.x);
   return { player, moves, started, spinStep, evasiveStep: !!active };
 }

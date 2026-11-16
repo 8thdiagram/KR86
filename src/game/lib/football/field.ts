@@ -393,7 +393,7 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
     }
     if (movement.evasiveStep) {
       movement.player = constrainEvasionStep(previousMovement.player, movement.player, l.movement.defenders,
-        movement.spinStep ? l.athletes.filter(a => a.side === runner.side && a.id !== runner.id && !a.dive) : [], movement.spinStep);
+        movement.spinStep ? l.athletes.filter(a => a.side === runner.side && a.id !== runner.id && !a.dive) : []);
       l.movement.player = movement.player;
     }
     runner.vx = (movement.player.x - previousMovement.player.x) / dt;

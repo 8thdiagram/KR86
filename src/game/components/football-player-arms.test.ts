@@ -16,7 +16,7 @@ import {
 function armPixels(frame: FootballPlayerFrame) {
   const pixels = new Map<string, string>();
   for (const run of frame.runs) for (let x = run.x; x < run.x + run.length; x++) {
-    if (run.row < 16 || run.row > 25 || (x >= 14 && x < 18)) continue;
+    if (run.row < 16 || run.row > 27 || (x >= 14 && x < 18)) continue;
     pixels.set(`${x},${run.row}`, run.color);
   }
   return pixels;
@@ -120,7 +120,7 @@ test('frame catalog normalizes phase keys so render cache growth stays finite', 
   const before = getCachedFootballPlayerFrameCount();
   const first = FOOTBALL_PLAYER_FRAME_CATALOG['0:run:1000000:0:standard'];
   const afterFirst = getCachedFootballPlayerFrameCount();
-  const equivalent = FOOTBALL_PLAYER_FRAME_CATALOG['0:run:1000008:0:standard'];
+  const equivalent = FOOTBALL_PLAYER_FRAME_CATALOG['0:run:1000006:0:standard'];
   assert(first);
   assert.strictEqual(first, equivalent);
   assert(afterFirst >= before);
