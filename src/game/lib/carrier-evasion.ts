@@ -4,17 +4,24 @@ import { playerSpeed } from './player-pace';
 import { CARRIER_BODY_WIDTH } from './player-dimensions';
 
 export const EVADE = Object.freeze({
-  spin: .26,
+  spin: .34,
+  spinTravel: .26,
   boost: .42,
   cooldown: .45,
   boostRatio: 1.24,
   bodyWidth: CARRIER_BODY_WIDTH,
-  spinDistance: CARRIER_BODY_WIDTH * 1.45,
+  spinDistance: CARRIER_BODY_WIDTH * 1.45 * 1.2,
   threatRadius: 42,
 } as const);
 /** Untagged timing belongs to pre-correction saves; finish those moves at
  * their original rate instead of invalidating or snapping a restored runner. */
 export const carrierSpinDuration = (active: { duration?: number }) => active.duration ?? .44;
+/** New turns finish their larger escape in the old travel window, then finish
+ * the rotation while running in the new lane. Restored turns keep their curve. */
+export function carrierSpinProgress(active: { duration?: number; spinDirection?: number }, p: number) {
+  if (active.spinDirection === undefined) return p * p * (3 - 2 * p);
+  return active.duration === EVADE.spin ? Math.min(1, p * EVADE.spin / EVADE.spinTravel) : p;
+}
 export type EvasionObstacle = { x: number; y: number; vx?: number; vy?: number };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 function runningVector(a: KickAttempt, direction: -1 | 0 | 1) {
@@ -43,7 +50,9 @@ function corridorClearance(a: KickAttempt, bounds: CarrierBounds, obstacles: rea
   if (endY <= bounds.minY || endY >= bounds.maxY) return { nearest: 0, danger: Infinity, endY };
   let nearest = 100, danger = 0;
   for (let i = 1; i <= 16; i++) {
-    const p = i / 16, t = p * EVADE.spin;
+    // Keep the established short tackle-approach forecast: the larger escape
+    // still completes within .26s even though the authored turn lasts .34s.
+    const p = i / 16, t = p * EVADE.spinTravel;
     const x = a.player.x + travel.x * t + side * EVADE.spinDistance * travel.normalX * p;
     const y = a.player.y + travel.y * t + side * EVADE.spinDistance * travel.normalY * p;
     for (const d of [...a.defenders.filter(eligible), ...obstacles]) {
@@ -177,8 +186,8 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
       // starting at full lateral rate on the first frame, not a visual offset.
       // Older saves without heading metadata retain their existing world-Y move.
       const travel = runningVector(a, active.spinDirection ?? 0);
-      const progress = (p: number) => active.spinDirection === undefined ? p * p * (3 - 2 * p) : p;
-      const shift = active.side * (active.lateralDistance ?? EVADE.bodyWidth) * (progress(p1) - progress(p0));
+      const shift = active.side * (active.lateralDistance ?? EVADE.bodyWidth) *
+        (carrierSpinProgress(active, p1) - carrierSpinProgress(active, p0));
       dx = forward * dt + travel.normalX * shift;
       dy = travel.y * used + travel.normalY * shift + direction * lateral * rest;
     } else {

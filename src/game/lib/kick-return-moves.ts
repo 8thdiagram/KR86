@@ -149,15 +149,16 @@ export function isKickMoves(value: KickMoves | undefined, a: KickAttempt): boole
     // A diagonal juke has a world-X component in addition to normal running.
     // Its final frame can still carry that velocity after active is cleared.
     typeof m.backward === 'boolean' && (m.version !== 2 || !m.backward) && Number.isFinite(m.vx) &&
-    Math.abs(m.vx) <= playerSpeed(m.version === 2 ? 100 : 86) + (m.version === 2 ? EVADE.spinDistance / EVADE.spin : 0) &&
+    Math.abs(m.vx) <= playerSpeed(m.version === 2 ? 100 : 86) + (m.version === 2 ? EVADE.spinDistance / EVADE.spinTravel : 0) &&
     Number.isFinite(m.furthestX) && m.furthestX >= 0 && m.furthestX <= 1101 &&
     m.furthestX + .000001 >= a.player.x &&
     (active === undefined || !!active && (active.evasive === undefined || active.evasive === true) &&
-      (active.duration === undefined || active.evasive === true && active.kind === 'spin' && active.duration === EVADE.spin) &&
+      (active.duration === undefined || active.evasive === true && active.kind === 'spin' && [EVADE.spin, .26].includes(active.duration)) &&
       (active.lateralDistance === undefined || active.evasive === true && active.kind === 'spin' &&
-        active.duration === EVADE.spin && active.lateralDistance === EVADE.spinDistance) &&
+        (active.duration === EVADE.spin && active.lateralDistance === EVADE.spinDistance ||
+          active.duration === .26 && active.lateralDistance === EVADE.bodyWidth * 1.45)) &&
       (active.spinDirection === undefined || active.evasive === true && active.kind === 'spin'
-        && active.duration === EVADE.spin && [-1, 0, 1].includes(active.spinDirection)) &&
+        && [EVADE.spin, .26].includes(active.duration ?? 0) && [-1, 0, 1].includes(active.spinDirection)) &&
       (active.evasive ? m.version === 2 && ['spin', 'boost'].includes(active.kind) : (m.version === 2 ? ['spin', 'stutter', 'dive'] : ['spin', 'stutter']).includes(active.kind)) &&
       (active.side === -1 || active.side === 1 || m.version === 2 && active.side === 0) && Number.isFinite(active.elapsed) &&
        (!active.evasive || (active.kind === 'boost' ? active.side === 0 : active.side !== 0)) &&

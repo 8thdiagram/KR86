@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createKickAttempt, isKickContact, stepKickAttempt, type KickAttempt } from '../kick-return-engine';
-import { chooseCarrierEvasion, EVADE, sweptCarrierContact } from '../carrier-evasion';
+import { chooseCarrierEvasion, cpuCarrierAction, EVADE, sweptCarrierContact } from '../carrier-evasion';
 import { stepKickMoves, isKickMoves } from '../kick-return-moves';
 import { createKickControls } from '../kick-return-controls';
 import { createFootballControls, canRunningAction } from './controls';
@@ -32,6 +32,43 @@ function game() {
   g.live.athletes.filter(a => a.side === 'defense').forEach(a => { a.x = a.startX = 1000; a.y = a.startY = 150; });
   return g;
 }
+test('human and CPU spins travel exactly 20% farther immediately, then finish the slower turn in the new lane', () => {
+  assert.equal(EVADE.spin, .34);
+  assert.equal(EVADE.boost, .42); assert.equal(EVADE.boostRatio, 1.24); assert.equal(EVADE.cooldown, .45);
+  assert(Math.abs(EVADE.spinDistance / (EVADE.bodyWidth * 1.45) - 1.2) < 1e-12);
+  for (const cpu of [false, true]) {
+    const a = attempt(); defender(a, 25, -19, -30, 0);
+    let atTravelEnd = 0;
+    for (let i = 0; i < 34; i++) {
+      const input = cpu ? cpuCarrierAction(a, 0, bounds) : { evasion: true, juke: i === 0 };
+      const m = stepKickMoves(a, 0, .01, input, bounds);
+      a.player = m.player; a.moves = m.moves; a.returnTime += .01;
+      assert(isKickMoves(a.moves, a));
+      if (i === 0) assert(a.player.y - 96 >= EVADE.spinDistance * .01 / EVADE.spinTravel - 1e-8);
+      if (i === 25) {
+        atTravelEnd = a.player.y;
+        assert(Math.abs(atTravelEnd - 96 - EVADE.spinDistance) < 1e-8);
+        assert.equal(a.moves?.active?.kind, 'spin', 'the rotation visibly continues after the early escape');
+      }
+      if (i >= 26) assert(Math.abs(a.player.y - atTravelEnd) < 1e-8, 'the new lane persists throughout the remaining turn');
+      if (i < 33) assert(a.moves?.active, 'one full turn lasts .34 seconds, not .26');
+    }
+    assert.equal(a.moves?.active, undefined);
+    assert(a.player.x > 520, 'normal forward momentum persists throughout');
+  }
+});
+test('a restored .26-second spin keeps its original distance and timing', () => {
+  const a = attempt(), oldDistance = EVADE.bodyWidth * 1.45;
+  a.moves!.active = { kind: 'spin', side: 1, elapsed: .1, evasive: true,
+    duration: .26, spinDirection: 0, lateralDistance: oldDistance };
+  assert(isKickMoves(a.moves, a));
+  for (let i = 0; i < 16; i++) {
+    const m = stepKickMoves(a, 0, .01, {});
+    a.player = m.player; a.moves = m.moves; a.returnTime += .01;
+  }
+  assert.equal(a.moves?.active, undefined);
+  assert(Math.abs(a.player.y - 96 - oldDistance * .16 / .26) < 1e-8);
+});
 for (const [side, expected] of [[1, -1], [-1, 1]] as const) {
   test(`near defender on lateral ${side}: spin away, with substantial progressive displacement`, () => {
     const a = attempt(); defender(a, 8, side * 26);

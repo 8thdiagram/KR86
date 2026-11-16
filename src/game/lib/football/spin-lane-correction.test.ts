@@ -10,6 +10,7 @@ import { createKickAttempt } from '../kick-return-engine';
 import { playerSpeed } from '../player-pace';
 import { cpuCarrierAction, chooseCarrierEvasion } from '../carrier-evasion';
 import { stepKickAttempt } from '../kick-return-engine';
+const spinFrames = Math.ceil(EVADE.spin * 60);
 
 test('an open-lane diagonal spin evades the actual tackle path in Full Game', () => {
   const { g, l, runner, threat } = field(-1);
@@ -121,7 +122,7 @@ for (const threatSide of [-1, 1] as const) for (const hold of [false, true]) {
     const controls = createFootballControls(), start = { x: runner.x, y: runner.y };
     controls.enter('touch', 'juke', 0, g);
     let quarter = 0, half = 0;
-    for (let frame = 0; frame < 16; frame++) {
+    for (let frame = 0; frame < spinFrames; frame++) {
       const now = frame * 1000 / 60;
       if (!hold && frame === 4) controls.release('touch', now);
       assert.equal(stepField(g, controls.sample(now), 1 / 60), undefined);
@@ -137,7 +138,7 @@ for (const threatSide of [-1, 1] as const) for (const hold of [false, true]) {
     assert(quarter > EVADE.spinDistance * .15);
     assert(half > EVADE.spinDistance * .45 && half < EVADE.spinDistance * .6);
     assert.equal(l.movement.moves!.active, undefined);
-    for (let frame = 16; frame < 25; frame++)
+    for (let frame = spinFrames; frame < 25; frame++)
       stepField(g, controls.sample(frame * 1000 / 60), 1 / 60);
     assert.equal(runner.y, end.y, 'ordinary movement never resets the new lane');
     if (hold) {
@@ -159,7 +160,7 @@ test('live secondary pursuit observes the new authoritative lane after a spin', 
   const { g, l, runner, threat } = field(1);
   const controls = createFootballControls();
   controls.enter('touch', 'juke', 0, g);
-  for (let frame = 0; frame < 16; frame++) {
+  for (let frame = 0; frame < spinFrames; frame++) {
     if (frame === 3) controls.release('touch', 50);
     stepField(g, controls.sample(frame * 1000 / 60), 1 / 60);
   }
@@ -220,7 +221,7 @@ for (const direction of [-1, 1] as const) for (const threatSide of [-1, 1] as co
     const controls = createFootballControls();
     controls.enter('steer', direction < 0 ? 'up' : 'down', 0, g);
     controls.enter('action', 'juke', 0, g);
-    for (let frame = 0; frame < 16; frame++) {
+    for (let frame = 0; frame < spinFrames; frame++) {
       if (frame === 3) controls.release('action', 50);
       assert.equal(stepField(g, controls.sample(frame * 1000 / 60), 1 / 60), undefined);
       assert.deepEqual(l.movement.player, { x: runner.x, y: runner.y });
@@ -239,7 +240,7 @@ for (const direction of [-1, 1] as const) for (const threatSide of [-1, 1] as co
         assert.deepEqual(original, restored);
       }
     }
-    const elapsed = 16 / 60;
+    const elapsed = spinFrames / 60;
     const shift = { x: runner.x - start.x - forward * elapsed, y: runner.y - start.y - lateral * elapsed };
     assert(Math.abs(shift.x * forward / speed + shift.y * lateral / speed) < 1e-7,
       'the additional movement is perpendicular, not a forward boost or field-Y-only shift');
@@ -247,8 +248,8 @@ for (const direction of [-1, 1] as const) for (const threatSide of [-1, 1] as co
     assert(Math.abs(Math.hypot(shift.x, shift.y) - EVADE.spinDistance) < 1e-7);
     assert.equal(l.movement.moves!.active, undefined);
     const end = { x: runner.x, y: runner.y };
-    controls.release('steer', 270, true);
-    for (let frame = 16; frame < 22; frame++) stepField(g, controls.sample(frame * 1000 / 60), 1 / 60);
+    controls.release('steer', spinFrames * 1000 / 60, true);
+    for (let frame = spinFrames; frame < spinFrames + 6; frame++) stepField(g, controls.sample(frame * 1000 / 60), 1 / 60);
     assert.equal(runner.y, end.y, 'new coordinates persist when ordinary forward running resumes');
     assert(runner.x > end.x);
     t.diagnostic(`world (${start.x}, ${start.y}) -> (${end.x.toFixed(3)}, ${end.y.toFixed(3)}), perpendicular displacement ${Math.hypot(shift.x, shift.y).toFixed(3)}`);
@@ -275,13 +276,13 @@ for (const direction of [-1, 0, 1] as const) for (const threatSide of [-1, 1] as
     threat.x = runner.x - forward / speed * 8 + nx * threatSide * 30;
     threat.y = runner.y + lateral / speed * 8 + ny * threatSide * 30;
     const start = { x: runner.x, y: runner.y };
-    for (let frame = 0; frame < 16; frame++) {
+    for (let frame = 0; frame < spinFrames; frame++) {
       assert.equal(stepField(g, { direction, action: frame === 0 }, 1 / 60), undefined);
       assert.equal(l.movement.player.x, 1200 - runner.x);
       assert.equal(l.movement.player.y, runner.y);
       if (!frame) assert.equal(l.movement.moves!.active!.kind, 'spin');
     }
-    const shift = { x: runner.x - start.x + forward * 16 / 60, y: runner.y - start.y - lateral * 16 / 60 };
+    const shift = { x: runner.x - start.x + forward * spinFrames / 60, y: runner.y - start.y - lateral * spinFrames / 60 };
     assert(Math.abs(shift.x * -forward / speed + shift.y * lateral / speed) < 1e-7);
     assert(Math.abs(shift.x * nx + shift.y * ny + threatSide * EVADE.spinDistance) < 1e-7);
     assert(runner.x < start.x, 'return preserves momentum toward the opposite goal');
