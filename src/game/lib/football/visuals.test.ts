@@ -229,7 +229,7 @@ test('running gait keyframes add distinct intermediate pixel poses without shift
       for (const p of paints) for (const n of [p.x, p.y, p.w, p.h])
         assert(Math.abs(n * 40 - Math.round(n * 40)) < 1e-7);
     }
-    assert.equal(frames.size, 4, `${mode} cycles through four deliberate running silhouettes`);
+    assert.equal(frames.size, 8, `${mode} exposes eight authored running silhouettes`);
   }
 });
 test('all turn views keep primary jersey masses above substantial articulated white legs', () => {

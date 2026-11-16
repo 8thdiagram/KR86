@@ -9,7 +9,7 @@ export type FootballAnimationSample = Readonly<{
   facing: 1 | -1;
 }>;
 export type FootballAnimationFrame = Readonly<{
-  /** Fraction through the authored four-pose locomotion loop. */
+  /** Fraction through the authored eight-pose locomotion loop. */
   phase: number;
   /** Compatibility step for the existing sprite API: one full loop is 4. */
   step: number;
@@ -47,15 +47,16 @@ const VIEW_DWELL = 0.075;
 const VIEW_RELEASE_DWELL = 0.14;
 const SPEED_FILTER_SECONDS = 0.14;
 const MAX_OBSERVED_SPEED = 180;
-/** Legacy kick-return progress input: progress advances twice per second per unit. */
-export const FOOTBALL_STRIDE_PERIOD_SCALE = 1.25;
 
 function clamp01(n: number) { return Math.max(0, Math.min(1, n)); }
 
-/** A full four-pose cycle stays between .56 and .68s at every movement speed. */
+export const FOOTBALL_STRIDE_PERIOD_SCALE = .88;
+/** Full eight-pose gait lasts .40–.55s; speed scales cadence without restarting
+ * the continuously integrated per-athlete phase. */
 export function footballStridePeriod(speed: number): number {
-  if (!Number.isFinite(speed) || speed <= START_SPEED) return .68;
-  return .68 - .12 * clamp01((speed - START_SPEED) / (60 - START_SPEED));
+  if (!Number.isFinite(speed) || speed <= START_SPEED) return .625 * FOOTBALL_STRIDE_PERIOD_SCALE;
+  if (speed <= 18) return (.625 - .08 * clamp01((speed - START_SPEED) / (18 - START_SPEED))) * FOOTBALL_STRIDE_PERIOD_SCALE;
+  return (.545 - .09 * clamp01((speed - 18) / (60 - 18))) * FOOTBALL_STRIDE_PERIOD_SCALE;
 }
 
 /** Legacy stateless API retained for callers/tests; renderers use the integrated clock below. */

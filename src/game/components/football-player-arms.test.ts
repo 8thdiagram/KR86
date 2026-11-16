@@ -31,12 +31,14 @@ const hasHandOnEachSide = (frame: FootballPlayerFrame) => {
 };
 
 test('run arms counter-pump in two steady, opposing bent silhouettes with both hands readable', () => {
-  const phases = Array.from({ length: 4 }, (_, phase) =>
+  const phases = Array.from({ length: 6 }, (_, phase) =>
     selectFootballPlayerFrame('run', 0, phase, false, 'RB'));
   assert(phases.every(hasHandOnEachSide), 'each pose keeps both skin-tone hands visible outside the torso');
   assert.equal(signature(phases[0]!), signature(phases[1]!));
-  assert.equal(signature(phases[2]!), signature(phases[3]!));
-  assert.notEqual(signature(phases[0]!), signature(phases[2]!), 'opposite stride has the opposite arm pump');
+  assert.equal(signature(phases[1]!), signature(phases[2]!));
+  assert.equal(signature(phases[3]!), signature(phases[4]!));
+  assert.equal(signature(phases[4]!), signature(phases[5]!));
+  assert.notEqual(signature(phases[0]!), signature(phases[3]!), 'opposite stride has the opposite arm pump');
 
   const carrying = selectFootballPlayerFrame('run', 0, 1, true, 'RB');
   assert(carrying.runs.some(run => run.color === 'B'), 'one authored football remains secured in the hand');

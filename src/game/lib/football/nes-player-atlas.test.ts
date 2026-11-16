@@ -143,24 +143,24 @@ test('the replacement atlas contains bounded immutable connected frames for ever
   }
 });
 
-test('four deliberate running phases retain substantial thigh and calf clusters in every direction', () => {
-  assert.equal(PLAYER_RUN_PHASES.length, 4);
+test('eight distinct running phases retain substantial thigh and calf clusters in every direction', () => {
+  assert.equal(PLAYER_RUN_PHASES.length, 8);
   for (const role of ['RB', 'OL', 'LB', 'DB']) for (const view of [0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
     const frames = new Set<string>();
-    for (let phase = 0; phase < 4; phase++) {
+    for (let phase = 0; phase < 8; phase++) {
       const frame = selectFootballPlayerFrame('run', view, phase, false, role);
       frames.add(JSON.stringify(frame.runs));
       const legs = frame.runs.filter(r => (r.color === 'W' || r.color === 'w') && r.row >= 30);
       assert(legs.reduce((n, r) => n + r.length, 0) >= 24, 'visible trouser masses, not single-pixel sticks');
       assert(legs.some(r => r.length >= 4), 'thigh/calf contours have actual pixel-cluster width');
     }
-    assert.equal(frames.size, 4, `${role}/${view}: four actual authored poses`);
+    assert.equal(frames.size, 8, `${role}/${view}: eight actual poses, not duplicate labels`);
   }
 });
 
 test('directional run frames change both articulated legs and the opposing arm pump', () => {
   for (const role of ['RB', 'QB']) for (const view of [0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
-    const frames = Array.from({ length: 4 }, (_, phase) =>
+    const frames = Array.from({ length: 8 }, (_, phase) =>
       selectFootballPlayerFrame('run', view, phase, false, role));
     const legSignatures = frames.map(frame => JSON.stringify(
       frame.runs.filter(run => (run.color === 'W' || run.color === 'w') && run.row >= 26),
@@ -168,8 +168,8 @@ test('directional run frames change both articulated legs and the opposing arm p
     const armSignature = (frame: FootballPlayerFrame) => JSON.stringify(
       frame.runs.filter(run => run.row >= 16 && run.row < 26),
     );
-    assert.equal(new Set(legSignatures).size, 4, `${role}/${view}: all four lower-body poses visibly step`);
-    assert.notEqual(armSignature(frames[0]!), armSignature(frames[2]!),
+    assert.equal(new Set(legSignatures).size, 8, `${role}/${view}: all eight lower-body poses visibly step`);
+    assert.notEqual(armSignature(frames[0]!), armSignature(frames[3]!),
       `${role}/${view}: arm pump reverses with the stride`);
   }
 });
@@ -180,11 +180,11 @@ test('moving action legs use independent cadence without changing action arms or
     const planted = selectFootballPlayerFrame(action, 2, 3, true, 'QB');
     assert.strictEqual(selectFootballPlayerFrame(action, 2, 3, true, 'QB', undefined), planted,
       `${action}: omitted cadence preserves the stationary baseline`);
-    const moving = Array.from({ length: 4 }, (_, cadence) =>
+    const moving = Array.from({ length: 8 }, (_, cadence) =>
       selectFootballPlayerFrame(action, 2, 3, true, 'QB', cadence));
     assert.equal(new Set(moving.map(frame => JSON.stringify(
       frame.runs.filter(run => (run.color === 'W' || run.color === 'w') && run.row >= 26),
-    ))).size, 4, `${action}: moving cadence drives four leg poses`);
+    ))).size, 8, `${action}: moving cadence drives eight leg frames`);
     assert(moving.every(frame => frame.phase === 3), `${action}: upper-body action phase is unchanged`);
     assert(moving.every(frame => frame.grip?.x === planted.grip?.x && frame.grip?.y === planted.grip?.y),
       `${action}: cadence does not move the possession anchor`);
@@ -192,8 +192,8 @@ test('moving action legs use independent cadence without changing action arms or
     assert.equal(new Set(arms).size, 1, `${action}: cadence does not alter action arms`);
   }
   const equivalent = selectFootballPlayerFrame('throw', 2, 3, false, 'QB', 1);
-  assert.strictEqual(selectFootballPlayerFrame('throw', 2, 3, false, 'QB', 5), equivalent,
-    'locomotion phase keys wrap to the same four canonical cache frames');
+  assert.strictEqual(selectFootballPlayerFrame('throw', 2, 3, false, 'QB', 9), equivalent,
+    'locomotion phase keys wrap to the same eight canonical cache frames');
   const beforeInvalid = getCachedFootballPlayerFrameCount();
   assert.strictEqual(selectFootballPlayerFrame('throw', 2, 3, false, 'QB', Number.NaN),
     selectFootballPlayerFrame('throw', 2, 3, false, 'QB'));
@@ -297,7 +297,7 @@ test('all team palettes retain primary jerseys, secondary shells, white equipmen
 test('the football stays in the same authored hand through strides, spins and the actual release boundary', () => {
     for (const action of ['run', 'throw', 'catch', 'dive', 'ground'] as const)
     for (const view of [0, 1, 2, 3, 4, 5, 6, 7, 8] as const)
-      for (let phase = 0; phase < (action === 'run' ? 4 : 6); phase++) {
+      for (let phase = 0; phase < (action === 'run' ? 8 : 6); phase++) {
       const held = selectFootballPlayerFrame(action, view, phase, true, 'RB');
       const empty = selectFootballPlayerFrame(action, view, phase, false, 'RB');
       assert(held.grip, 'held ball has a pose-specific grip anchor');
@@ -306,7 +306,7 @@ test('the football stays in the same authored hand through strides, spins and th
     }
 });
 
-test('velocity-driven cadence plants stopped athletes and advances the four-pose gait without changing state', () => {
+test('velocity-driven cadence plants stopped athletes and accelerates the same eight-phase gait without changing state', () => {
   assert.equal(movementStep(0, 0, 5), 0);
   assert.equal(movementStep(2, 1, 10), 0);
   assert(movementStep(60, 0, 1) > movementStep(20, 0, 1));
@@ -355,9 +355,9 @@ test('the selected C concept is the actual production art rather than a comparis
       outsideGameplayArmPixels(conceptAfterHelmetRefinement(plantedConcept), idleAllowedMask),
       'idle differs only by the exact gameplay guard, removed baked arm overhang, and helmet trim',
     );
-    for (let phase = 0; phase < 4; phase++) {
+    for (let phase = 0; phase < 8; phase++) {
       const runConcept = selectFootballPlayerConceptFrame('C', 'run', role, view, phase);
-      const leftLead = phase < 2;
+      const leftLead = phase < 3 || phase >= 6;
       const legacyArms = ELITE_C_ARMS[leftLead ? 'pumpA' : 'pumpB'];
       const gameplayArms = ELITE_C_GAME_ARMS[leftLead ? 'pumpA' : 'pumpB'];
       const armMask = gameplayArmPixelMask(view, phase, role, legacyArms, gameplayArms);
@@ -379,8 +379,8 @@ test('the selected C concept is the actual production art rather than a comparis
         outsideGameplayArmPixels(conceptAfterHelmetRefinement(runConcept), allowedMask),
       `${role}/${view}/${phase}: production only differs by gameplay arms, exact baked-arm removal, and helmet trim`);
     }
-    assert.equal(selectFootballPlayerConceptFrame('C', 'run', role, view, 4).phase, 0,
-      'Elite C concept wraps on its four-pose locomotion cycle');
+    assert.equal(selectFootballPlayerConceptFrame('C', 'run', role, view, 8).phase, 0,
+      'Elite C concept wraps on its eight-frame locomotion cycle');
     for (const concept of ['A', 'B'] as const) {
       assert.equal(selectFootballPlayerConceptFrame(concept, 'run', role, view, 6).phase, 0,
         `${concept} concept study retains its original six-phase selector`);

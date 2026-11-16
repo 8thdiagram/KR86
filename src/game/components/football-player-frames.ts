@@ -38,9 +38,10 @@ export const PLAYER_FRAME_SCALE = PLAYER_RASTER_SCALE;
 export const PLAYER_FRAME_ANCHOR = Object.freeze({ x: 16, y: 42 });
 export const PLAYER_FRAME_DIRECTIONS = Object.freeze([0, 1, 2, 3, 4, 5, 6, 7, 8] as const);
 export const PLAYER_RUN_PHASES = Object.freeze([
-  'left-reach', 'pass-left-to-right', 'right-reach', 'pass-right-to-left',
+  'left-reach', 'left-plant', 'pass-left-to-right', 'right-reach',
+  'right-plant', 'pass-right-to-left', 'left-drive', 'left-plant-prepare',
 ] as const);
-export const PLAYER_LOCOMOTION_PHASE_COUNT = 4;
+export const PLAYER_LOCOMOTION_PHASE_COUNT = 8;
 export const PLAYER_ACTIONS = Object.freeze([
   'idle', 'stance', 'run', 'hold', 'snap', 'handoff', 'throw', 'catch', 'block',
   'break', 'backpedal', 'jump', 'kick', 'kneel', 'fall', 'dive', 'ground',
@@ -122,7 +123,7 @@ const ACTION_LEGS: Partial<Record<FootballPlayerAction, Grid>> = {
   idle: IDLE_LEGS, stance: STANCE_LEGS, hold: IDLE_LEGS, snap: STANCE_LEGS,
   handoff: STANCE_LEGS, throw: STANCE_LEGS, catch: STANCE_LEGS, block: STANCE_LEGS,
   break: GROUNDED_RUN_LEGS[2], backpedal: GROUNDED_RUN_LEGS[3], jump: GROUNDED_RUN_LEGS[2], kick: IDLE_LEGS,
-  kneel: KNEEL_LEGS, fall: GROUNDED_RUN_LEGS[0], dive: GROUNDED_RUN_LEGS[1], ground: KNEEL_LEGS,
+  kneel: KNEEL_LEGS, fall: GROUNDED_RUN_LEGS[4], dive: GROUNDED_RUN_LEGS[5], ground: KNEEL_LEGS,
 };
 const ACTION_ARMS: Partial<Record<FootballPlayerAction, Grid>> = {
   idle: ARMS.guard, stance: ARMS.guard, hold: ARMS.carryA, snap: ARMS.reach,
@@ -172,7 +173,7 @@ function actionPose(
   if (action === 'run' || action === 'backpedal') {
     const p = ((phase % PLAYER_LOCOMOTION_PHASE_COUNT) + PLAYER_LOCOMOTION_PHASE_COUNT)
       % PLAYER_LOCOMOTION_PHASE_COUNT;
-    const leftLead = p < 2;
+    const leftLead = p < 3 || p >= 6;
     const arms = ball
       ? (leftLead ? ARMS.carryA : ARMS.carryB)
       : (leftLead ? ARMS.pumpA : ARMS.pumpB);
@@ -192,15 +193,15 @@ function actionPose(
   }
   if (action === 'break') return {
     arms: phase < 3 ? ARMS.reach : phase % 2 ? ARMS.pumpA : ARMS.pumpB,
-    legs: GROUNDED_RUN_LEGS[(phase + 2) % PLAYER_LOCOMOTION_PHASE_COUNT]!,
+    legs: GROUNDED_RUN_LEGS[(phase + 2) % 6]!,
   };
-  if (action === 'jump') return { arms: phase < 3 ? ARMS.reach : ARMS.guard, legs: GROUNDED_RUN_LEGS[phase < 3 ? 2 : 0]! };
+  if (action === 'jump') return { arms: phase < 3 ? ARMS.reach : ARMS.guard, legs: GROUNDED_RUN_LEGS[phase < 3 ? 2 : 5]! };
   if (action === 'kick') {
     const kickArms = [ARMS.pumpA, ARMS.guard, ARMS.throwForward, ARMS.reach, ARMS.pumpB, ARMS.guard];
     return { arms: kickArms[phase]!, legs: KICK_LEGS[phase]! };
   }
   if (action === 'dive' || action === 'fall') {
-    return { arms: ARMS.reach, legs: GROUNDED_RUN_LEGS[(phase + 4) % PLAYER_LOCOMOTION_PHASE_COUNT]! };
+    return { arms: ARMS.reach, legs: GROUNDED_RUN_LEGS[(phase + 4) % 6]! };
   }
   if (action === 'stance' || action === 'snap' || action === 'handoff') {
     return { arms: ACTION_ARMS[action] ?? ARMS.guard, legs: STANCE_LEGS, bodyShift: 1 };
@@ -475,7 +476,8 @@ export const FOOTBALL_PLAYER_FRAME_CATALOG = new Proxy(Object.create(null) as Re
       || !ACTION_ORDER.includes(action as FootballPlayerAction)
       || !['standard', 'bulky', 'compact', 'linebacker', 'lean'].includes(build ?? '')
       || !Number.isInteger(Number(phase))) return undefined;
-    const phaseCount = action === 'run' || action === 'backpedal' ? PLAYER_LOCOMOTION_PHASE_COUNT : 6;
+    const phaseCount = action === 'run' || action === 'backpedal'
+      ? PLAYER_LOCOMOTION_PHASE_COUNT : 6;
     return cachedFrame(Number(view) as FootballPlayerView, action as FootballPlayerAction,
       ((Number(phase) % phaseCount) + phaseCount) % phaseCount, ball === '1', build as Build);
   },
@@ -483,7 +485,7 @@ export const FOOTBALL_PLAYER_FRAME_CATALOG = new Proxy(Object.create(null) as Re
 }) as Readonly<Record<string, FootballPlayerFrame>>;
 export const getCachedFootballPlayerFrameCount = () => frameCache.size;
 
-/** Stable pure selector; locomotion is an explicit authored four-pose index. */
+/** Stable pure selector; locomotion is an explicit authored eight-frame index. */
 export function selectFootballPlayerFrame(
   action: FootballPlayerAction, view: FootballPlayerView, phase = 0, ball = false, position?: string,
   locomotionStep?: number, locomotionGait: FootballLocomotionGait = 'run',
@@ -491,7 +493,7 @@ export function selectFootballPlayerFrame(
   const normalizePhase = (value: number, count: number) => Number.isFinite(value)
     ? ((Math.floor(value) % count) + count) % count
     : 0;
-  const selected = normalizePhase(phase, action === 'run' || action === 'backpedal' ? 4 : 6);
+  const selected = normalizePhase(phase, action === 'run' || action === 'backpedal' ? 8 : 6);
   const selectedLocomotion = locomotionStep === undefined || !Number.isFinite(locomotionStep)
     || !LOCOMOTION_LEG_ACTIONS.has(action)
     ? undefined

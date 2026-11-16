@@ -11,7 +11,7 @@ export type FootballPlayerOptions = {
   view?: FootballPlayerView;
   /** Legacy continuous cycle, 0..4. Zero is a planted, non-running pose. */
   step?: number;
-  /** Independent four-pose ground stride, 0..3; present only while moving.
+  /** Independent eight-phase ground stride, 0..7; present only while moving.
    * Keeps legs active beneath holding/throwing arms. */
   locomotionStep?: number;
   /** Explicit movement gait; orientation does not determine sideways travel. */
