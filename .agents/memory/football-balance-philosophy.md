@@ -20,3 +20,15 @@ Validate spatial diagnostics independently of unchanged game outcomes.
 **Why:** An observer can reproduce every score and random-state result while measuring positions in the wrong attacking direction. That can silently invalidate goal-side and recovery counts.
 
 **How to apply:** Normalize attacking direction before interpreting milestones. Check milestone times and defender-side counts against independent traces for both field orientations, in addition to complete-state outcome replays.
+
+Preserving a goal-side position is not the same as preserving a useful tackle opportunity.
+
+**Why:** Isolated last-line experiments retained defenders ahead of the runner but exposed separate lateral-prediction, close-down and responsibility-handoff failures. Fewer touchdowns alone did not establish the intended intermediate-gain behavior.
+
+**How to apply:** Inspect actual contact and full positional traces after a breakthrough. Separate the initial alignment, maintained depth, lateral leverage, blocking and final close-down. Do not infer catch-up ability from a single milestone velocity: intervening legal burst phases can offset an elite defender's apparent cruising-speed advantage.
+
+Use receiver-only hold ablations before attributing a blocking effect to receivers.
+
+**Why:** Removing all DB holds also removes OL-to-DB blocking, which can overstate the WR/TE contribution.
+
+**How to apply:** Keep the original contests and bodies, vary only successful WR/TE-to-DB hold duration, and compare matched seeds separately from the broader all-DB ablation.

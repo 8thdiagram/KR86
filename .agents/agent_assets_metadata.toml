@@ -372,3 +372,101 @@ mtime_ms = 1794858006256
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/32c4a89d-d087-4535-a687-451ab4bcac3a/a282f5e5-aa1d-4827-bdbd-117e41aa4d73"
 storage_version_token = "1794858026353708"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "BAoQdraAEuncCgGhzs7Xo"
+uri = "file://generated-artifacts/football-secondary/Secondary-Defense-and-Breakaway-Report.txt"
+type = "text"
+title = "Complete copyable secondary-defense report"
+description = "170,500 recorded plays, paired confidence intervals, full distributions, representative positional traces, findings and recommendations. No production changes."
+logical_id = "750f53d9-f173-47bb-9a4e-4ce16ed30cce"
+content_hash = "sha256:eb6a12d7a2b4757736806ac24d3c69a4afc31e21276c7e16483bbe4fc714153e"
+size = 255062
+mtime_ms = 1794862524620
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/750f53d9-f173-47bb-9a4e-4ce16ed30cce/9dae79e8-abdf-4395-9844-985a2a7c040e"
+storage_version_token = "1794862741949397"
+content_type = "text/plain"
+
+[[outputs]]
+id = "08u7uWuoOLQDMxDlYnu_v"
+uri = "file://generated-artifacts/football-secondary/distributions.csv"
+type = "table"
+title = "Complete play-outcome distributions"
+description = "Every experimental configuration: yardage bins, first-down and touchdown rates, and actual DB/LB tackles."
+logical_id = "6a747b84-3dd8-425b-9128-7bd6c6379c3a"
+content_hash = "sha256:014c06444919207822bd098e76b5b5320bc4f54656546e54f23a1c269b5d2857"
+size = 33188
+mtime_ms = 1794862043072
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/6a747b84-3dd8-425b-9128-7bd6c6379c3a/961b0049-041d-4bf9-8fd4-83242e94786c"
+storage_version_token = "1794862642346400"
+content_type = "text/csv"
+
+[[outputs]]
+id = "_ORnhdWDZmM_KoS69kTsz"
+uri = "file://generated-artifacts/football-secondary/milestones.csv"
+type = "table"
+title = "Complete milestone and conditional results"
+description = "Positions and recovery summaries at the requested milestones, with denominators, conditional outcome bins and confidence intervals."
+logical_id = "ecf58225-40fe-4cd8-b9dc-436811654adc"
+content_hash = "sha256:a0b20e013a6492f198616677ca4a2bbaeb470777cc3cb1218f3c696f113b4d74"
+size = 444780
+mtime_ms = 1794862524653
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/ecf58225-40fe-4cd8-b9dc-436811654adc/a717f6c1-f30b-4844-ad47-80d99dd9654c"
+storage_version_token = "1794862642940446"
+content_type = "text/csv"
+
+[[outputs]]
+id = "CYqSt0I0BKGj5OZRsIUmu"
+uri = "file://generated-artifacts/football-secondary/Secondary-Review-and-Reproduction.zip"
+type = "unspecified"
+title = "Report, spreadsheets, traces and reproduction scripts"
+description = "Compact review package: report, both CSVs, complete paired positional traces, validation, manifests and isolated source. About 4.6 MB. Download all three raw parts below for every trial."
+logical_id = "a682d4ed-ee03-4395-bc20-ae8119f7eee6"
+content_hash = "sha256:ac547d856c78ebd174a3fc1e4533c1bcaf28fa8a27723d5313373f83cf81e7a6"
+size = 4555714
+mtime_ms = 1794862723205
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/a682d4ed-ee03-4395-bc20-ae8119f7eee6/12d51d36-f58f-4c45-b50b-add3e4dd467b"
+storage_version_token = "1794862742548318"
+content_type = "application/octet-stream"
+
+[[outputs]]
+id = "RRS6ZxOGV0MN9YFp5EmcR"
+uri = "file://generated-artifacts/football-secondary/Secondary-Raw-Trials-Part-1-of-3.zip"
+type = "unspecified"
+title = "Complete raw trials — part 1 of 3"
+description = "Standalone ZIP, about 89.7 MB. Extract all three parts alongside the review package. No trials omitted."
+logical_id = "e7ce0797-9533-4c78-8679-c0ff78ed072d"
+content_hash = "sha256:6ee732c9643b8169ae0ae53294b7a8e392f16f47b92b022c2580d5c457df58df"
+size = 89701262
+mtime_ms = 1794862725237
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/e7ce0797-9533-4c78-8679-c0ff78ed072d/42392cfc-e21f-4c65-8af9-67b273f63a6b"
+storage_version_token = "1794862743881305"
+content_type = "application/octet-stream"
+
+[[outputs]]
+id = "V6t3PMWN_Gr_G2YRrj1Dp"
+uri = "file://generated-artifacts/football-secondary/Secondary-Raw-Trials-Part-2-of-3.zip"
+type = "unspecified"
+title = "Complete raw trials — part 2 of 3"
+description = "Standalone ZIP, about 89.7 MB. Includes per-seed outcomes, blocking events and normalized position snapshots."
+logical_id = "be954445-d0e1-4544-a2ac-21286f167ebf"
+content_hash = "sha256:9c78e71e21b93b83e4d4a374d7123759c63c3dbe73567aad56b6102fe8ee3507"
+size = 89677177
+mtime_ms = 1794862727145
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/be954445-d0e1-4544-a2ac-21286f167ebf/2fbefdc5-96df-4507-8b35-f6e85fc8d49f"
+storage_version_token = "1794862745127665"
+content_type = "application/octet-stream"
+
+[[outputs]]
+id = "i2KuiP52JD1LhDcPGj-WH"
+uri = "file://generated-artifacts/football-secondary/Secondary-Raw-Trials-Part-3-of-3.zip"
+type = "unspecified"
+title = "Complete raw trials — part 3 of 3"
+description = "Standalone ZIP, about 41.9 MB. All parts share the file-hash manifest and archive index in the review package."
+logical_id = "58284bf7-a316-47fc-bd22-f6d202e4e44b"
+content_hash = "sha256:45b75e4b1e07c1fab1178a83f568f281231287e7215865b5527772dc01cfd331"
+size = 41923832
+mtime_ms = 1794862728497
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/58284bf7-a316-47fc-bd22-f6d202e4e44b/c2c47a69-da1b-4d4c-8cce-3063c3e79dd6"
+storage_version_token = "1794862746035953"
+content_type = "application/octet-stream"
