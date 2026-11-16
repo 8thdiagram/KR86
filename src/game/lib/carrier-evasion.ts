@@ -56,18 +56,21 @@ function corridorClearance(a: KickAttempt, bounds: CarrierBounds, obstacles: rea
   return { nearest, danger, endY };
 }
 
-/** CPU runners share human physics/cooldowns, but only commit when the
- * forecast improves clearance. Extra decision spacing prevents move spam. */
+/** CPU runners share human physics/cooldowns. Evaluate the deliberate escape
+ * before ordinary lane steering; otherwise a tentative cut suppresses ACTION
+ * every frame without ever committing to a complete evasive move. */
 export function cpuCarrierAction(a: KickAttempt, direction: -1 | 0 | 1, bounds: CarrierBounds,
   obstacles: readonly EvasionObstacle[] = []): KickMoveInput {
   const idle: KickMoveInput = { evasion: true, obstacles };
-  if (a.moves?.active || a.returnTime < .35 ||
-    a.returnTime < (a.moves?.readyAt ?? 0) + (a.moves?.sequence ? 1.1 : 0)) return idle;
-  const move = chooseCarrierEvasion(a, bounds, obstacles, direction);
+  const boosting = a.moves?.active?.evasive && a.moves.active.kind === 'boost';
+  if (a.moves?.active && !boosting) return idle;
+  if (!boosting && a.returnTime < (a.moves?.readyAt ?? 0)) return idle;
+  const move = chooseCarrierEvasion(a, bounds, obstacles, 0);
   if (move.kind === 'spin') {
-    const exit = corridorClearance(a, bounds, obstacles, direction, move.side);
-    const straight = corridorClearance(a, bounds, obstacles, direction, 0);
-    return { ...idle, juke: exit.nearest > 1.05 && exit.nearest > straight.nearest + .25 };
+    const exit = corridorClearance(a, bounds, obstacles, 0, move.side);
+    const straight = corridorClearance(a, bounds, obstacles, 0, 0);
+    return { ...idle, evasionDirection: 0,
+      juke: exit.nearest > 1.05 && exit.nearest > straight.nearest + .12 };
   }
   // Accelerate through a genuinely clear forward corridor, not merely because
   // an unsafe spin has no legal lane. CPU never boosts into nearby contact.
@@ -76,7 +79,7 @@ export function cpuCarrierAction(a: KickAttempt, direction: -1 | 0 | 1, bounds: 
     const dx = d.x - a.player.x, dy = d.y - a.player.y;
     return dx * travel.x + dy * travel.y < 0 || Math.hypot(dx, dy) > 70;
   });
-  return { ...idle, juke: open && direction === 0 };
+  return { ...idle, juke: !boosting && open };
 }
 
 /** Forecast actual approach and both escape corridors, never a random move. */
@@ -131,11 +134,17 @@ export function sweptCarrierContact(from: EvasionObstacle, to: EvasionObstacle, 
 /** Recheck after existing rating/execution multipliers, using actual contact positions. */
 export function constrainEvasionStep(from: EvasionObstacle, to: EvasionObstacle,
   defenders: readonly KickDefender[], blockers: readonly EvasionObstacle[] = []) {
-  // Old blocking physics can already overlap teammates. Let the carrier
-  // separate from that overlap rather than trapping him inside his own blocker.
-  const solidBlockers = blockers.filter(d => gap(from.x - d.x, from.y - d.y) >= 1 ||
-    gap(to.x - d.x, to.y - d.y) < gap(from.x - d.x, from.y - d.y));
-  return sweptCarrierContact(from, to, [...defenders.filter(eligible), ...solidBlockers].map(d => ({ x: d.x, y: d.y })), 0);
+  // Ordinary running/blocking can already overlap a body (especially an engaged
+  // defender). A sweep starting INSIDE it reports contact at t=0 forever, even
+  // when the runner is leaving that overlap. Permit only outward separation;
+  // the normal tackle resolver still tests actual contact at the new position.
+  const solid = [...defenders.filter(eligible), ...blockers].filter(d => {
+    const x = from.x - d.x, y = from.y - d.y;
+    const separating = x * (to.x - from.x) + y * (to.y - from.y) >= 0;
+    return gap(x, y) >= 1 || !separating ||
+      gap(to.x - d.x, to.y - d.y) < gap(x, y);
+  });
+  return sweptCarrierContact(from, to, solid.map(d => ({ x: d.x, y: d.y })), 0);
 }
 
 export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: number, input: KickMoveInput, bounds: CarrierBounds) {
@@ -144,10 +153,15 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
   const moves: KickMoves = a.moves ? { ...a.moves, version: 2, backward: false, hesitating: false }
     : { version: 2, backward: false, sequence: 0, readyAt: 0, vx: forward, furthestX: a.player.x };
   let started = false;
-  if (input.juke && !moves.active && a.returnTime + 1e-9 >= moves.readyAt) {
-    const move = chooseCarrierEvasion(a, bounds, input.obstacles, direction);
+  const heading = input.evasionDirection ?? direction;
+  const requested = input.juke ? chooseCarrierEvasion(a, bounds, input.obstacles, heading) : undefined;
+  // A burst is acceleration, not a commitment to run into a newly arriving
+  // defender. It may yield to a genuine escape, never to another burst.
+  const interruptBoost = moves.active?.evasive && moves.active.kind === 'boost' && requested?.kind === 'spin';
+  if (requested && ((!moves.active && a.returnTime + 1e-9 >= moves.readyAt) || interruptBoost)) {
+    const move = requested;
     moves.active = { ...move, elapsed: 0, evasive: true,
-      ...(move.kind === 'spin' ? { duration: EVADE.spin, spinDirection: direction, lateralDistance: EVADE.spinDistance } : {}) };
+      ...(move.kind === 'spin' ? { duration: EVADE.spin, spinDirection: heading, lateralDistance: EVADE.spinDistance } : {}) };
     moves.sequence++; moves.readyAt = a.returnTime + EVADE[move.kind] + EVADE.cooldown; started = true;
   }
   const active = moves.active;

@@ -4,7 +4,9 @@ import { BURST, chooseKickBurst, kickBurstKind, kickBurstVelocity, kickDiveRules
 import { EVADE, carrierSpinDuration, stepCarrierEvasion, type EvasionObstacle } from './carrier-evasion';
 
 export const JUKE = { holdMs: 200, spin: .34, stutter: .36, dive: .34, cooldown: 1, backwardRatio: .7 } as const;
-export type KickMoveInput = { backward?: boolean; hesitate?: boolean; juke?: boolean; evasion?: boolean; obstacles?: readonly EvasionObstacle[] };
+export type KickMoveInput = { backward?: boolean; hesitate?: boolean; juke?: boolean; evasion?: boolean; obstacles?: readonly EvasionObstacle[];
+  /** CPU may commit a deliberate forward escape instead of its ordinary lane steering. */
+  evasionDirection?: KickDirection };
 export type CarrierBounds = { minY: number; maxY: number };
 export type KickMoves = {
   version: 1 | 2; sequence: number; readyAt: number; backward: boolean; vx: number; furthestX: number;
