@@ -116,7 +116,8 @@ export type FootballGame = {
   delayPenalty?: { remaining: number; yards: number; offense: Side };
 };
 export type FootballInput = { direction?: KickDirection; action?: boolean; hesitate?: boolean; juke?: boolean; passPress?: boolean; passTarget?: number; passRelease?: PassType; passCancel?: boolean; qbScramble?: boolean;
-  /** Temporary human defensive intentions; never change original assignments. */
+  /** Transient, human-only ACTION hold; never persisted as a defensive assignment. */
+  defenseHold?: boolean;
 };
 export type FootballMove = KickMoveInput;
 export const other = (side: Side): Side => side === 'home' ? 'away' : 'home';

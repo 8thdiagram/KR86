@@ -377,7 +377,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
   const ctxAction = contextual();
   const jukeLabel = 'ACTION';
   const jukeHint = running
-    ? defenseActive ? `Tap: ${defensiveActionKind(g) === 'intercept' ? 'intercept / break up pass' : defensiveActionKind(g) === 'recover' ? 'dive for loose ball' : 'nearest defender tackles'}`
+    ? defenseActive ? `Tap: ${defensiveActionKind(g) === 'intercept' ? 'intercept / break up pass' : defensiveActionKind(g) === 'recover' ? 'dive for loose ball' : 'tackle · Hold: get back · Release: pursue'}`
     : !controlsActive ? 'Watch the play'
     : g.special?.stage === 'return' || live?.mode === 'return' ? 'Press: juke / spin / burst · Hold: halt · UP/DOWN: steer'
     : live && canForwardPass(live) ? live.mode === 'scramble'

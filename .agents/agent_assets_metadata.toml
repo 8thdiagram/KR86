@@ -512,3 +512,17 @@ mtime_ms = 1794865372801
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/5802aa70-e4dc-4d22-904b-5e02a13f65ab/31c94b54-23e1-4f26-86b7-bf2c657a672c"
 storage_version_token = "1794865401894260"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "S4Edt1GuxQ1c6I7hvVxLb"
+uri = "file://generated-artifacts/defensive-panic/Test-Results.txt"
+type = "text"
+title = "Defensive panic switch — test results"
+description = "Implementation details, A–H results, original-engine comparison, performance sample and limitations."
+logical_id = "6c279d7b-d68a-4096-aa66-a42348cc1cbe"
+content_hash = "sha256:25b1c7728fe7adcc362a26c3eab38bced1d4d9879b695a4563cd72f0364aa1af"
+size = 5472
+mtime_ms = 1794866914537
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/6c279d7b-d68a-4096-aa66-a42348cc1cbe/4e50c05b-ca0e-412d-bd99-ea9ca69c5cb9"
+storage_version_token = "1794866938939976"
+content_type = "text/plain"

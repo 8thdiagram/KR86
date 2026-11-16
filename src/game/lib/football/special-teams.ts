@@ -6,6 +6,7 @@ import { fieldGoalDistance } from './playbook';
 import { fieldGoalAim, fieldGoalHeight, fieldGoalMeterAccuracy, fieldGoalMeterSpeed } from './field-goal-geometry';
 import { FIELD_GOAL_FLIGHT_SCALE } from './celebration-timing';
 import { canDefensiveAction, startNearestDive } from './defensive-action';
+import { defensivePanicTarget } from './defensive-panic';
 import { ELITE, eliteSlots } from './secondary';
 import { franchiseFactor, franchiseKickControl } from './franchise-upgrades';
 import { chaosOpportunity, SPECIAL_EXECUTION_SPEED } from './clutch';
@@ -298,6 +299,7 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
     }
     // Receiving teammates block nearby coverage, preserving actual visible contact.
     const blocked = new Set<number>();
+    const engagedCoverage = input.defenseHold ? new Set<number>() : undefined;
     const physicalX = (x: number) => s.mirrored ? 1200 - x : x;
     for (const b of s.athletes.filter(a => a.side === (s.returnGroup ?? 'defense') && a.id !== s.returner)) {
       const d = a.defenders.filter(d => d.x > a.player.x - 30 && !blocked.has(d.id)).sort((d, e) =>
@@ -306,16 +308,19 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
         blocked.add(d.id);
         point(b, physicalX(d.x - 5), d.y, 57, dt);
         if (Math.hypot(b.x - physicalX(d.x), b.y - d.y) < 12 && Math.hypot(a.player.x - d.x, a.player.y - d.y) > 13) {
+          engagedCoverage?.add(d.id);
           d.speed = 12; d.lateralSpeed = 12;
         } else if (!a.fullCoverage) { d.speed = 44; d.lateralSpeed = 48; }
       }
     }
     const returnSide = s.returnSide ?? s.receiver;
+    const panic = defensivePanicTarget(s, !!input.defenseHold && returnSide === 'away',
+      a.defenders, a.player, 1100, a.time, engagedCoverage);
     const direction = returnSide === 'home' ? input.direction ?? 0 : kickWitnessDirection(a);
     const next = stepKickAttempt(a, direction, dt, returnSide === 'home' ? { juke: !!input.action || !!input.juke, evasion: true, hesitate: !input.action && !input.juke && input.hesitate }
       : cpuCarrierAction(a, direction, FOOTBALL_SIDELINES,
         s.athletes.filter(b => b.side === (s.returnGroup ?? 'defense') && b.id !== s.returner)
-          .map(b => ({ x: physicalX(b.x), y: b.y, vx: s.mirrored ? -b.vx : b.vx, vy: b.vy }))), FOOTBALL_SIDELINES);
+          .map(b => ({ x: physicalX(b.x), y: b.y, vx: s.mirrored ? -b.vx : b.vx, vy: b.vy }))), FOOTBALL_SIDELINES, panic);
     g.returnAttempt = next;
     for (const d of next.defenders) { const actor = s.athletes[d.id]!, x = physicalX(d.x);
       actor.vx = (x - actor.x) / dt; actor.vy = (d.y - actor.y) / dt; actor.x = x; actor.y = d.y; }

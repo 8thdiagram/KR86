@@ -162,8 +162,8 @@ export function isKickContact(player: { x: number; y: number }, defender: { x: n
   return Math.abs(player.x - defender.x) < 9 && Math.abs(player.y - defender.y) < 10;
 }
 export function stepKickAttempt(a: KickAttempt, direction: KickDirection, dt = KR.dt, input: KickMoveInput = {},
-  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }): KickAttempt {
-  return advanceKickAttempt(a, direction, dt, true, input, bounds);
+  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }, position?: { id: number; x: number; y: number }): KickAttempt {
+  return advanceKickAttempt(a, direction, dt, true, input, bounds, position);
 }
 
 /** Conservative admission check: offer at least one immediate, real-physics escape.
@@ -179,7 +179,7 @@ export function canEvadeKickDive(a: KickAttempt, diver: KickDefender): boolean {
 }
 
 function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number, allowDiveStarts: boolean, input: KickMoveInput = {},
-  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }): KickAttempt {
+  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }, position?: { id: number; x: number; y: number }): KickAttempt {
   if (a.phase === 'touchdown' || a.phase === 'tackled') return a;
   if (!Number.isFinite(dt) || dt <= 0 || dt > KR.dt + .000001)
     throw new Error('Kick Return requires fixed, bounded physics steps');
@@ -217,6 +217,10 @@ function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number
       const d = fooled.has(original.id) ? { ...original,
         jukeRead: jukePursuitRead(a, original, movement.moves!.active!.side) } : original;
        if (a.diveVersion === 1 && d.dive) return stepCommittedDive(d, dt, a.mechanicsVersion === 2);
+      // Full-game human defense only supplies this temporary destination.
+      // Keep all ordinary movement/collision rules; never start an automatic dive on hold.
+      if (position?.id === d.id) return a.fullCoverage ? stepFullCoverage(a, d, dt, position)
+        : stepOpenFieldCoverage(a, d, dt, d.speed, d.lateralSpeed, position);
       if (!a.pursuitVersion && !a.fullCoverage && a.safetyVersion === 1 && d.id === 10) return d;
      const active = d.active || player.x >= d.homeX - (a.pursuitVersion && d.id === 10 ? 350 : hard?215:180);
     if (!active) return d;

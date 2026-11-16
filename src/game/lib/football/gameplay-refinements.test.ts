@@ -33,8 +33,8 @@ test('context priority routes one gesture to pass or loose ball, without steerin
   assert(canDefensiveAction(g)); assert.equal(defensiveActionKind(g), 'intercept');
   c.enter('test', 'juke', 0, g);
   const sample = c.sample(0);
-  assert(sample.action); assert(!sample.passPress && !sample.passRelease && !sample.juke);
-  c.release('test', 80); assert(!c.sample(80).action);
+  assert(!sample.action); assert(!sample.passPress && !sample.passRelease && !sample.juke);
+  c.release('test', 80); assert(c.sample(80).action); assert(!c.sample(80).action);
   c.release('test', 500); assert(!c.sample(500).action);
   l.mode = 'loose'; l.loose = { x: 650, y: 96, time: 0 };
   assert.equal(defensiveActionKind(g), 'recover');

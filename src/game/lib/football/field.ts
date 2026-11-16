@@ -6,6 +6,7 @@ import { canForwardPass, progression, releasePass, scramblePoint } from './passi
 import { stepDefense } from './pursuit';
 import { stepInterception } from './interception';
 import { canDefensiveAction, canTackle, startNearestDive, stepAthleteDive } from './defensive-action';
+import { defensivePanicTarget } from './defensive-panic';
 import { attemptPassDefense, cpuPassDefense, resolvePassDefense, PASS_DEFENSE } from './pass-defense';
 import { EXECUTION, primaryPlayer, skillExecution, runApproach } from './execution';
 import { eliteSlots } from './secondary';
@@ -129,6 +130,11 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
   // A real center-to-backfield snap; fake punt and punt are indistinguishable here.
   if (l.snapAge !== undefined && l.snapAge < .18) { l.snapAge = Math.min(.18, l.snapAge + dt); return; }
   const los = 100 + l.snapSpot * 10, offense = l.athletes.filter(a => a.side === 'offense'), defenders = l.athletes.filter(a => a.side === 'defense');
+  const carrier = l.athletes[l.carrier]!;
+  const panic = defensivePanicTarget(l, !!input.defenseHold && g.possession === 'away' &&
+    !l.flight && !l.loose && l.option?.phase !== 'pitch' && (l.mode === 'run' || l.mode === 'scramble') &&
+    (carrier.role !== 'QB' || carrier.x >= los || !!l.crossedLos || !!l.carrierCrossedLos),
+    defenders, carrier, 1100, l.time);
   if (l.mode === 'loose' && l.loose) {
     const ball = l.loose;
     // Lock proximity at the instant of the fumble; running speeds must never reroll recovery.
@@ -268,7 +274,7 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
   if(l.option?.phase==='pitch') {
     // Ball is airborne: no QB tackle can end the play as if he still held it.
     qb.x+=Math.max(0,qb.vx)*dt;
-    stepDefense(g,dt);return;
+    stepDefense(g,dt,panic);return;
   }
   if (l.mode === 'dropback') {
     // The scripted dropback owns x; UP/DOWN exclusively reposition the pocket laterally.
@@ -303,7 +309,7 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
     }
   }
   observeCoachingRun(l);
-  stepDefense(g, dt);
+  stepDefense(g, dt, panic);
   l.pressure = clamp(defenders.filter(d => Math.hypot(d.x - qb.x, d.y - qb.y) < 34).length / 2, 0, 2);
   if ((l.mode === 'dropback' || l.mode === 'scramble') && !l.crossedLos && qb.x < los &&
       defenders.some(d => canTackle(d) && d.engaged <= l.time && isKickContact(qb, d))) {

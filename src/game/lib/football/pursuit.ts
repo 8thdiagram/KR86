@@ -12,6 +12,7 @@ import { pursuitPoint } from '../open-field-pursuit';
 import { coachingAssignment } from './coaching-execution';
 import { containmentTarget } from './containment';
 import { playerSpeed } from '../player-pace';
+import type { DefensivePosition } from './defensive-panic';
 
 type Role = NonNullable<Athlete['pursuit']>['role'];
 /** Bounded interception horizon from observed motion, never from the next control input. */
@@ -29,7 +30,7 @@ export function interceptionTime(dx: number, dy: number, vx: number, vy: number,
   return clamp(t, .08, 1.1);
 }
 /** Full-game defense only. Classic return movement and collisions are never routed here. */
-export function stepDefense(g: FootballGame, dt: number) {
+export function stepDefense(g: FootballGame, dt: number, panic?: DefensivePosition) {
   const l = g.live!, profile = g.profiles[other(g.possession)];
   const defense = l.athletes.filter(a => a.side === 'defense');
   const positions = defense.map(d => ({ id: d.id, x: d.x, y: d.y }));
@@ -198,6 +199,7 @@ export function stepDefense(g: FootballGame, dt: number) {
     let tx = d.pursuit.x, ty = d.pursuit.y;
     const escape = openField ? undefined : penetrationTarget(l, d);
     if (escape) { tx = escape.x; ty = escape.y; }
+    if (panic?.id === d.id) { tx = panic.x; ty = panic.y; }
     // Work around actual blockers, rather than ghosting through them or choosing a random gap.
     const pathX = tx - d.x, pathY = ty - d.y, pathLen = Math.max(1, Math.hypot(pathX, pathY));
     for (const block of offense) {

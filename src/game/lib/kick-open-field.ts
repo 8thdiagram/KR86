@@ -8,7 +8,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
  * Lanes organize the approach, but never imprison a nearby or beaten tackler.
  */
 export function stepOpenFieldCoverage(a: KickAttempt, d: KickDefender, dt: number,
-  speed = d.speed, lateral = d.lateralSpeed): KickDefender {
+  speed = d.speed, lateral = d.lateralSpeed, position?: { x: number; y: number }): KickDefender {
   speed = playerSpeed(speed); lateral = playerSpeed(lateral);
   const m = d.motion ?? { vx: 0, vy: 0, targetX: d.x, targetY: d.y,
     reactionLeft: 0, stride: 0, facing: -1 as const };
@@ -32,9 +32,10 @@ export function stepOpenFieldCoverage(a: KickAttempt, d: KickDefender, dt: numbe
     const dx = d.x - mate.x, dy = d.y - mate.y, n = Math.hypot(dx, dy);
     if (n > .01 && n < 12) { sx += dx / n * (12 - n) * .75; sy += dy / n * (12 - n) * .75; }
   }
-  const arrival = Math.max(dt, Math.abs(tx - d.x) / Math.max(.001, speed), Math.abs(ty - d.y) / Math.max(.001, lateral));
-  const wantedX = clamp((tx - d.x) / arrival + sx, -speed, speed);
-  const wantedY = clamp((ty - d.y) / arrival + sy, -lateral, lateral);
+  const steerX = position?.x ?? tx, steerY = position?.y ?? ty;
+  const arrival = Math.max(dt, Math.abs(steerX - d.x) / Math.max(.001, speed), Math.abs(steerY - d.y) / Math.max(.001, lateral));
+  const wantedX = clamp((steerX - d.x) / arrival + sx, -speed, speed);
+  const wantedY = clamp((steerY - d.y) / arrival + sy, -lateral, lateral);
   const dx = wantedX - m.vx, dy = wantedY - m.vy, change = Math.hypot(dx, dy);
   const fraction = Math.min(1, 650 * dt / Math.max(.001, change));
   const vx = m.vx + dx * fraction, vy = m.vy + dy * fraction;

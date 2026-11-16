@@ -2,6 +2,7 @@ import { createKickControls, type KickControl } from '../kick-return-controls';
 import { canForwardPass, highlightedReceiver, PASS_HOLD_MS, QB_SCRAMBLE_MS } from './passing';
 import type { FootballGame, FootballInput } from './types';
 import { canDefensiveAction } from './defensive-action';
+import { DEFENSIVE_HOLD_MS } from './defensive-panic';
 
 export function canRunningAction(g: FootballGame): boolean {
   if (g.tackleScene) return false;
@@ -19,11 +20,18 @@ export function createFootballControls() {
   const movement = createKickControls({ immediateAction: true });
   const consumed = new Set<string>();
   const defensivePresses = new Set<string>();
+  let defense: { id: string; since: number; game: FootballGame; live: FootballGame['live'];
+    special: FootballGame['special']; plays: number } | undefined;
+  const validDefense = () => !!defense && defense.game.live === defense.live &&
+    defense.game.special === defense.special && defense.game.plays === defense.plays && canDefensiveAction(defense.game);
   let owner: { id: string; since: number; scrambled?: boolean } | undefined;
   let scramble = false;
   let press = false, target: number | undefined, cancel = false, release: FootballInput['passRelease'], kick = false;
   const enter = (id: string, control: KickControl | null, now: number, g: FootballGame) => {
-    if (control !== 'juke') defensivePresses.delete(id);
+    if (control !== 'juke') {
+      defensivePresses.delete(id);
+      if (defense?.id === id) { defense = undefined; consumed.delete(id); }
+    }
     if (owner?.id === id) {
       if (control === 'juke') return;
       owner = undefined; press = false; cancel = true; consumed.delete(id);
@@ -31,7 +39,8 @@ export function createFootballControls() {
     if (control === 'juke' && canDefensiveAction(g)) {
       movement.release(id, now, true);
       defensivePresses.add(id);
-      kick = true; consumed.add(id); return;
+      defense ??= { id, since: now, game: g, live: g.live, special: g.special, plays: g.plays };
+      consumed.add(id); return;
     }
     if (control === 'juke' && (g.phase === 'live' || g.phase === 'kickoff') && g.special?.kind === 'field-goal' &&
       g.special.stage === 'hold' && g.special.kicking === 'home') {
@@ -65,6 +74,10 @@ export function createFootballControls() {
     has: (id: string) => movement.has(id) || owner?.id === id || consumed.has(id),
     release(id: string, now: number, canceled = false) {
       defensivePresses.delete(id);
+      if (defense?.id === id) {
+        if (!canceled && validDefense() && now - defense.since < DEFENSIVE_HOLD_MS) kick = true;
+        defense = undefined;
+      }
       if (owner?.id === id) {
         if (canceled) { cancel = true; press = false; }
         else {
@@ -78,7 +91,7 @@ export function createFootballControls() {
       if (consumed.delete(id)) return;
       movement.release(id, now, canceled);
     },
-    clear() { movement.clear(); owner = undefined; defensivePresses.clear(); consumed.clear(); press = false; target = undefined; cancel = false; release = undefined; kick = false; scramble = false; },
+    clear() { movement.clear(); owner = undefined; defense = undefined; defensivePresses.clear(); consumed.clear(); press = false; target = undefined; cancel = false; release = undefined; kick = false; scramble = false; },
     tapJuke: () => movement.tapJuke(),
     tapDirection(direction: -1 | 1, now: number) {
       movement.tapDirection(direction, now);
@@ -88,6 +101,7 @@ export function createFootballControls() {
       const startScramble = scramble || !!owner && !owner.scrambled && now - owner.since >= QB_SCRAMBLE_MS;
       if (consume && startScramble && owner) owner.scrambled = true;
       const result = { ...s, action: kick || s.juke, passPress: press, passTarget: target, passRelease: release, passCancel: cancel,
+        defenseHold: validDefense() && !!defense && now - defense.since >= DEFENSIVE_HOLD_MS,
         qbScramble: startScramble,
         bulletReady: !!owner && !owner.scrambled && now - owner.since >= PASS_HOLD_MS && now - owner.since < QB_SCRAMBLE_MS,
         pressed: { ...s.pressed, juke: s.pressed.juke || !!owner || defensivePresses.size > 0 } };

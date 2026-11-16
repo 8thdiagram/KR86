@@ -4,8 +4,10 @@ import type { Athlete, FootballGame } from './types';
 
 /** ACTION belongs to the team defending the current carrier, including returns. */
 export function defensiveActionKind(g: FootballGame): 'tackle' | 'intercept' | 'recover' | undefined {
+  if (g.tackleScene || g.playResult || !['live', 'kickoff'].includes(g.phase)) return;
   if (g.special) return g.special.stage === 'loose' ? 'recover' :
     g.special.stage === 'return' && (g.special.returnSide ?? g.special.receiver) === 'away' ? 'tackle' : undefined;
+  if (g.phase === 'kickoff') return g.kickReceiver === 'away' && g.returnAttempt?.phase === 'returning' ? 'tackle' : undefined;
   if (g.phase !== 'live' || !g.live) return;
   if (g.live.mode === 'return') return g.live.offense === 'home' && !g.live.flight ? 'tackle' : undefined;
   if (g.possession !== 'away') return;

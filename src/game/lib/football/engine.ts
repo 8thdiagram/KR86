@@ -9,6 +9,8 @@ import { secondaryRoster } from './secondary';
 import { beginPlayResult, fieldResultText, specialResultText } from './play-result';
 import { FIELD_GOAL_FLIGHT_SCALE } from './celebration-timing';
 import { inFootballFrame } from './direction';
+import { defensivePanicTarget } from './defensive-panic';
+import { startNearestDive } from './defensive-action';
 import { FOOTBALL_SIDELINES } from './sidelines';
 import { lockClutch } from './clutch';
 import { franchiseKickControl } from './franchise-upgrades';
@@ -418,9 +420,13 @@ function stepFootballLocal(g: FootballGame, input: FootballInput = {}, dt = KR.d
   if (g.phase === 'kickoff') {
     const a = g.returnAttempt!;
     if (a.phase === 'returning') { consumeClock(g, dt); g.clockRunning = true; delete g.clockStoppage; }
+    if (input.action && g.kickReceiver === 'away' && a.phase === 'returning')
+      startNearestDive(a.defenders, { ...a.player, vx: KR.forwardSpeed });
+    const panic = defensivePanicTarget(g, !!input.defenseHold && g.kickReceiver === 'away' &&
+      a.phase === 'returning', a.defenders, a.player, 1100, a.time);
     const direction = g.kickReceiver === 'home' ? input.direction ?? 0 : kickWitnessDirection(a);
     g.returnAttempt = stepKickAttempt(a, direction, dt * worldSpeed, g.kickReceiver === 'home'
-      ? { juke: !!input.juke || !!input.action, hesitate: input.hesitate } : {}, FOOTBALL_SIDELINES);
+      ? { juke: !!input.juke || !!input.action, hesitate: input.hesitate } : {}, FOOTBALL_SIDELINES, panic);
     const next = g.returnAttempt;
     if (next.phase === 'touchdown') { g.possession = g.kickReceiver; remember(g, 'Kick return', 'TOUCHDOWN', 100); scoreTouchdown(g); }
     else if (next.phase === 'tackled') {

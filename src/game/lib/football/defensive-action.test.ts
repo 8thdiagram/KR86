@@ -23,10 +23,11 @@ test('a quick defensive ACTION tap chooses the closest defender and never contro
   const nearest = defenders[3]!; nearest.x = 545; nearest.y = 110;
   assert(canDefensiveAction(g));
   controls.enter('defense', 'juke', 0, g);
-  assert(controls.sample(0, false).action, 'the original defensive action is immediate on press');
-  stepFootball(g, controls.sample(0));
+  assert(!controls.sample(0, false).action, 'press waits briefly to distinguish a hold');
+  controls.sample(0);
   controls.release('defense', 80);
-  assert(!controls.sample(80).action, 'release never repeats the action');
+  stepFootball(g, controls.sample(80));
+  assert(!controls.sample(80).action, 'the quick tap fires only once');
   assert(nearest.dive); assert.equal(defenders.filter(d => d.dive).length, 1);
   assert.equal(nearest.dive.phase, 'windup');
   assert(!l.movement.moves?.active, 'defensive action does not juke the opposing runner');

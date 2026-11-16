@@ -13,6 +13,7 @@ import { franchiseAthleteFactor } from './franchise-upgrades';
 import { carrierMoment } from './execution-moments';
 import { playerSpeed } from '../player-pace';
 import { constrainEvasionStep, cpuCarrierAction } from '../carrier-evasion';
+import { defensivePanicTarget } from './defensive-panic';
 
 /** Old saved returns without returnKind were interceptions; recovery returns
  * explicitly identify themselves. Never show a return banner over a loose ball. */
@@ -38,6 +39,9 @@ const move = (a: Athlete, x: number, y: number, speed: number, dt: number) => {
 };
 export function stepInterception(g: FootballGame, input: FootballInput, dt: number): { spot: number; touchdown: boolean; outOfBounds?: boolean } | undefined {
   const l = g.live!, c = l.interception!, runner = l.athletes[c.catcher]!;
+  const pursuing = l.athletes.filter(a => a.side === 'offense');
+  const panic = defensivePanicTarget(l, !!input.defenseHold && l.offense === 'home' &&
+    !l.flight && c.age >= .38, pursuing, runner, 100, l.time);
   c.age += dt;
   if (l.flight) {
     const f = l.flight; f.age += dt; const t = clamp(f.age / f.duration, 0, 1);
@@ -46,7 +50,7 @@ export function stepInterception(g: FootballGame, input: FootballInput, dt: numb
     return;
   }
   if (c.age < .38) return;
-  const pursuing = l.athletes.filter(a => a.side === 'offense'), blockers = l.athletes.filter(a => a.side === 'defense' && a.id !== runner.id);
+  const blockers = l.athletes.filter(a => a.side === 'defense' && a.id !== runner.id);
   if (input.action && canDefensiveAction(g)) startNearestDive(pursuing, runner);
   for (const b of blockers) {
     const d = [...pursuing].sort((a, c) => Math.hypot(a.x - b.x, a.y - b.y) - Math.hypot(c.x - b.x, c.y - b.y))[0]!;
@@ -69,7 +73,8 @@ export function stepInterception(g: FootballGame, input: FootballInput, dt: numb
       d.pursuit = { ...point, until: l.time + .08, role: 'tackle',
         seenX: runner.x, seenY: runner.y, seenVx: runner.vx, seenVy: runner.vy };
     }
-    const dx = d.pursuit.x - d.x, dy = d.pursuit.y - d.y;
+    const target = panic?.id === d.id ? panic : d.pursuit;
+    const dx = target.x - d.x, dy = target.y - d.y;
     const arrival = Math.max(dt, Math.abs(dx) / speed, Math.abs(dy) / lateral);
     const cx = dx / arrival - d.vx, cy = dy / arrival - d.vy;
     const f = Math.min(1, 650 * dt / Math.max(.001, Math.hypot(cx, cy)));

@@ -1,21 +1,21 @@
 ---
-name: CPU-controlled defense
-description: User removed experimental manual defender controls while preserving original ACTION and unrelated gameplay improvements.
+name: Defensive ACTION control boundaries
+description: CPU defense by default with a narrowly authorized human hold/release panic-positioning control.
 ---
 
-All defensive movement is CPU-controlled, including kickoff coverage and the kicker. Do not select or highlight a defender, enable manual defensive strafing, add manual assignment-restoration states, or connect ACTION holds to pursuit. Defensive arrows must not steer anyone. Keep ordinary defensive playcalling.
+Defensive movement is CPU-controlled by default. The user subsequently authorized this specific human ACTION exception: HOLD = REPOSITION the deepest eligible defender toward his own goal line at the carrier's current lateral position; RELEASE = NORMAL CPU PURSUIT immediately; TAP = ATTEMPT TACKLE. Select once per hold. No manual defensive arrow steering, persistent selection, added highlight system or general manual-defense mode.
 
-**Why:** The user explicitly reset the experimental manual-defender system to restore stable original defensive gameplay, leaving any reconsideration of manual controls for later.
+**Why:** The user previously removed broad manual defense, then explicitly requested a narrow human panic switch instead of another automatic pursuit rebalance.
 
-**How to apply:** Remove the experimental systems rather than leaving inactive overrides. Preserve offensive receiver targets, passing/running controls, ordinary diagrams, all unrelated defensive AI improvements, animations, special teams, game modes, presentation and saved progress. Do not revert the whole game.
+**How to apply:** Keep the override temporary, human-only and positioning-only. Use normal speeds, acceleration, turning, collision and assignments. Restore ordinary pursuit from the new physical state without a post-release timer. Preserve offensive controls, diagrams, animations, presentation, modes and saved progress. Do not automatically activate it for CPU opponents or pull defenders out of coverage before a handoff, catch or QB line crossing.
 
-Defensive ACTION must retain its original immediate-on-press, nearest-eligible-defender context-sensitive behavior, with original ranges, cooldowns, contact requirements, probabilities and animations. No selected-player priority, tap/hold pursuit, repeated hold actions, or release actions.
+Quick defensive ACTION taps use the ordinary nearest-eligible-defender tackle/intercept/recovery rules. Distinguish taps from holds; releasing a sustained hold must never launch a tackle. Preserve original ranges, cooldowns, contact requirements, probabilities, committed dive animations and sounds. No selected-player tackle priority or repeated hold dives.
 
-**Why:** The user explicitly retained original ACTION while removing all defender selection and manual movement.
+**Why:** The new feature gives the human a positioning decision, not an automatic tackle or guaranteed touchdown prevention.
 
 **How to apply:** Keep selection out of defensive action eligibility and routing; if no defender is eligible, do not force a dive.
 
-The user subsequently requested more effective defensive dives, no apparent sprite shrinking during dives, and smarter, more cautious defensive backs/safeties with better pursuit angles and deep-play prevention. This authorizes refining dive launches and secondary reads, not restoring manual defense or granting automatic tackles.
+The user requested more effective defensive dives, no apparent sprite shrinking during dives, and smarter, more cautious defensive backs/safeties. The panic-switch request does not authorize additional automatic pursuit or broad balance changes.
 
 **Why:** The user explicitly requested these defensive improvements after the controls-only restoration.
 

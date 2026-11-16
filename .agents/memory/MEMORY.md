@@ -1,6 +1,6 @@
 - [Temporary preview servers](temporary-preview-servers.md) — asset-check servers can replace the app's forwarded preview port; use file-based rendering where possible.
 - [Retro presentation direction](presentation-direction.md) — authored NES athletes, substantial legs and complete action poses; preserve team identity, intro, camera, audio, gameplay and saves.
-- [Defensive control boundaries](defensive-control-boundaries.md) — fully CPU-controlled defense; no selected defenders or manual movement; retain original ACTION and three-second pressure checks.
+- [Defensive control boundaries](defensive-control-boundaries.md) — CPU defense with human ACTION hold/release panic positioning; no arrow steering, automatic tackles or pressure-timing changes.
 - [Browser touch verification](browser-touch-verification.md) — isolate saves, release the correct CDP contacts, and resume the host after visibility tests.
 - [Interactive field goals](interactive-field-goals.md) — Kick View owns aiming through verdict; projected posts, meter and real crossing must agree.
 - [Presentation lifecycle](presentation-lifecycle.md) — use stable animation owners across cloned snapshots; a stalled headless audio clock is not proof of a silent effect.

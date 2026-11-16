@@ -5,10 +5,10 @@ import { stepOpenFieldCoverage } from './kick-open-field';
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 /** Full Game adapter only. New returns share observed-motion pursuit for every
  * coverage player; historical returns retain their saved lane/reaction rules. */
-export function stepFullCoverage(a: KickAttempt, d: KickDefender, dt: number): KickDefender {
+export function stepFullCoverage(a: KickAttempt, d: KickDefender, dt: number, position?: { x: number; y: number }): KickDefender {
   const elite = a.fullCoverage!.elite.includes(d.id);
   const gain = openFieldGain(d, [a.player], dt, !d.dive);
-  if (a.pursuitVersion) return stepOpenFieldCoverage(a, d, dt, d.speed * gain, d.lateralSpeed * gain);
+  if (a.pursuitVersion) return stepOpenFieldCoverage(a, d, dt, d.speed * gain, d.lateralSpeed * gain, position);
   const m = d.motion ?? { vx: 0, vy: 0, targetX: d.x, targetY: d.y,
     reactionLeft: 0, stride: 0, facing: -1 as const };
   let left = m.reactionLeft - dt, tx = m.targetX, ty = m.targetY;
@@ -29,9 +29,10 @@ export function stepFullCoverage(a: KickAttempt, d: KickDefender, dt: number): K
     const dx = d.x - b.x, dy = d.y - b.y, n = Math.hypot(dx, dy);
     if (n > .01 && n < 21) { sx += dx / n * (21 - n) * 2; sy += dy / n * (21 - n) * 2; }
   }
-  const arrival = Math.max(dt, Math.abs(tx - d.x) / (d.speed * gain), Math.abs(ty - d.y) / (d.lateralSpeed * gain));
-  const desiredX = clamp((tx - d.x) / arrival + sx, -d.speed * gain, d.speed * gain);
-  const desiredY = clamp((ty - d.y) / arrival + sy, -d.lateralSpeed * gain, d.lateralSpeed * gain);
+  const steerX = position?.x ?? tx, steerY = position?.y ?? ty;
+  const arrival = Math.max(dt, Math.abs(steerX - d.x) / (d.speed * gain), Math.abs(steerY - d.y) / (d.lateralSpeed * gain));
+  const desiredX = clamp((steerX - d.x) / arrival + sx, -d.speed * gain, d.speed * gain);
+  const desiredY = clamp((steerY - d.y) / arrival + sy, -d.lateralSpeed * gain, d.lateralSpeed * gain);
   const changeX = desiredX - m.vx, changeY = desiredY - m.vy, change = Math.hypot(changeX, changeY);
   const fraction = Math.min(1, (elite ? 380 : 280) * (gain > 1 ? OPEN_FIELD.acceleration : 1) * dt / Math.max(.001, change));
   const vx = m.vx + changeX * fraction, vy = m.vy + changeY * fraction;

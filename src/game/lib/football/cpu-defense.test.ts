@@ -29,22 +29,24 @@ test('every defensive call ignores directional input, including stale experiment
     }
   }
 });
-test('defensive ACTION fires once on press and never pursues, waits for hold, repeats or fires on release', () => {
+test('defensive ACTION distinguishes one tap from a hold without repeat actions', () => {
   for (const duration of [1, 199, 200, 1000, 5000]) {
     const c = createFootballControls(), g = fixture();
     c.enter('action', 'juke', 0, g);
-    assert(c.sample(0, false).action); assert(c.sample(0).action);
+    assert(!c.sample(0, false).action); assert(!c.sample(0).action);
     c.enter('action', 'juke', duration, g);
     const held = c.sample(duration);
     assert.equal(held.action, false);
-    assert(!('defenseDirection' in held)); assert(!('defenseHold' in held));
-    c.release('action', duration); assert.equal(c.sample(duration).action, false);
+    assert(!('defenseDirection' in held)); assert.equal(held.defenseHold, duration >= 180);
+    c.release('action', duration); assert.equal(c.sample(duration).action, duration < 180);
+    assert.equal(c.sample(duration).action, false);
+    assert.equal(c.sample(duration).defenseHold, false);
   }
 });
 test('arrows, accessible taps and cancellation never create a defensive movement channel', () => {
   const g = fixture(), c = createFootballControls();
   c.enter('up', 'up', 0, g); c.enter('down', 'down', 10, g);
-  c.enter('action', 'juke', 20, g); assert(c.sample(20).action);
+  c.enter('action', 'juke', 20, g); assert(!c.sample(20).action);
   c.release('down', 30); c.release('up', 40, true); c.release('action', 50);
   c.tapDirection(1, 60);
   assert(!('defenseDirection' in c.sample(60)));
