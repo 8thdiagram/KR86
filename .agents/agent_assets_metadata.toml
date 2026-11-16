@@ -526,3 +526,17 @@ mtime_ms = 1794866914537
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/6c279d7b-d68a-4096-aa66-a42348cc1cbe/4e50c05b-ca0e-412d-bd99-ea9ca69c5cb9"
 storage_version_token = "1794866938939976"
 content_type = "text/plain"
+
+[[outputs]]
+id = "xUn9AY2CSXjyme_vPA1um"
+uri = "file://src/platform/assets/kick-return-intro.mp4"
+type = "video"
+title = "Shortened intro runner clip"
+description = "The runner segment now lasts 1.75 seconds. The separate opening ’86 display and app sound effects are unchanged."
+logical_id = "87d85958-02ab-438b-b56d-a3d76f37f1ee"
+content_hash = "sha256:015e735e4b358fca3d7cfa17cbd34d8ba027ce61df0a66a699248feda7cd63eb"
+size = 815909
+mtime_ms = 1794867878861
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/87d85958-02ab-438b-b56d-a3d76f37f1ee/7a4106bd-24be-4d6f-bec7-98c0a5b9c81b"
+storage_version_token = "1794867948363898"
+content_type = "video/mp4"

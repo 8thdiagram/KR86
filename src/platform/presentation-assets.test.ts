@@ -2,16 +2,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { inflateSync } from 'node:zlib';
+import { execFileSync } from 'node:child_process';
 const read = (path: string) => fs.readFileSync(new URL(path, import.meta.url));
 
-test('intro is natively low resolution, H.264 video-only, with the original 138 frames and 5.75-second timing', () => {
+test('intro runner clip removes four seconds while preserving native pixels, silent H.264 and the opening mark', () => {
   const video = read('./assets/kick-return-intro.mp4');
   const entry = video.lastIndexOf(Buffer.from('avc1')), header = video.indexOf(Buffer.from('mvhd'));
   assert(entry > 0 && header > 0);
   assert.equal(video.readUInt16BE(entry + 28), 192);
   assert.equal(video.readUInt16BE(entry + 30), 192);
-  assert.equal(video.readUInt32BE(header + 20) / video.readUInt32BE(header + 16), 5.75);
+  assert.equal(video.readUInt32BE(header + 20) / video.readUInt32BE(header + 16), 1.75);
+  // H.264 preroll stays encoded for lossless seeking but is not displayed.
   assert.equal(video.readUInt32BE(video.indexOf(Buffer.from('stsz')) + 12), 138);
+  const probe = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-count_frames',
+    '-select_streams', 'v:0', '-show_entries', 'stream=nb_read_frames,start_time',
+    '-of', 'json', new URL('./assets/kick-return-intro.mp4', import.meta.url).pathname], { encoding: 'utf8' }));
+  assert.equal(probe.streams[0].nb_read_frames, '42');
+  assert.equal(Number(probe.streams[0].start_time), 0);
+  const title = read('./TitleExperience.tsx').toString();
+  assert.match(title, /setStage\('mark'\)/);
+  assert.match(title, /}, 650\)/);
   assert.equal(video.includes(Buffer.from('soun')), false, 'no embedded video soundtrack or hut');
   const processor = read('../../scripts/pixelate-intro.mjs').toString();
   assert.equal([...processor.matchAll(/#[0-9a-f]{6}/g)].length, 32);

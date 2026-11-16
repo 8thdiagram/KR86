@@ -16,7 +16,8 @@ test('menu uses the exact KR ’86 frame from the existing intro', () => {
   assert.equal(png.readUInt32BE(20), 192);
   const pixels = execFileSync('ffmpeg', ['-v', 'error', '-i', file.pathname,
     '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1']);
-  const intro = execFileSync('ffmpeg', ['-v', 'error', '-ss', '4.5', '-i',
+  // The original 4.5-second frame is now 0.5 seconds into the shortened clip.
+  const intro = execFileSync('ffmpeg', ['-v', 'error', '-ss', '0.5', '-i',
     new URL('./assets/kick-return-intro.mp4', import.meta.url).pathname,
     '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1']);
   assert.deepEqual(pixels, intro, 'menu artwork is the actual intro screenshot, not a recreation');
