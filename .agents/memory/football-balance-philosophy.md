@@ -14,3 +14,9 @@ When diagnosing breakaways, isolate the first secondary engagement from later re
 **Why:** Controlled diagnostics showed that conspicuous late re-blocking can occur after the initial hold has already made the runner uncatchable. Removing only those later holds did not change the observed outcomes.
 
 **How to apply:** Use matched first-hold/re-hold interventions and same-state secondary checkpoints to distinguish causes from visible symptoms. Revalidate the finding after engine changes rather than assuming it applies to every roster or starting position.
+
+Validate spatial diagnostics independently of unchanged game outcomes.
+
+**Why:** An observer can reproduce every score and random-state result while measuring positions in the wrong attacking direction. That can silently invalidate goal-side and recovery counts.
+
+**How to apply:** Normalize attacking direction before interpreting milestones. Check milestone times and defender-side counts against independent traces for both field orientations, in addition to complete-state outcome replays.

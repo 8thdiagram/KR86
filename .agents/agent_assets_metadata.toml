@@ -330,3 +330,45 @@ mtime_ms = 1794854796536
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/8f8533f6-27fb-4739-81ef-6d63f9862749/770049f0-4aba-498f-b46a-9e89cddc5031"
 storage_version_token = "1794854839614509"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "UB-GZ0ZnArJMP4i6w0qZY"
+uri = "file://generated-artifacts/football-corrections/Kick-Return-86-Targeted-Balance-Comparison.txt"
+type = "text"
+title = "Complete experimental balance comparison"
+description = "Copyable A–J report: 126,000 plays, all tested variants, confidence intervals, ratings, controls, and recommendations."
+logical_id = "5d2eaa03-7f38-4cc3-a055-1fe8a6db1c00"
+content_hash = "sha256:2e290e79835aa667cb91148e61e9163782b7f455c6f05c152c7ac5cf800e8e36"
+size = 86884
+mtime_ms = 1794857985034
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/5d2eaa03-7f38-4cc3-a055-1fe8a6db1c00/6d7c7779-4309-4d62-b6a6-1772759a78c2"
+storage_version_token = "1794858024974574"
+content_type = "text/plain"
+
+[[outputs]]
+id = "PnHU5sVI1lMwZ4UFoR00l"
+uri = "file://generated-artifacts/football-corrections/distributions.csv"
+type = "table"
+title = "Complete rushing distributions"
+description = "All 188 experimental cells with every requested yardage bin, touchdown rate, median, and success rate."
+logical_id = "b4c40a27-6616-4b51-ae89-c3520376718c"
+content_hash = "sha256:65ba0e41c332d9550c46543d1865059a9e160eb21ae0f617d3a609293d30a383"
+size = 28607
+mtime_ms = 1794857718985
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/b4c40a27-6616-4b51-ae89-c3520376718c/6442119a-ea32-4ebb-84b7-cc1cfb91d558"
+storage_version_token = "1794858025524235"
+content_type = "text/csv"
+
+[[outputs]]
+id = "k9VzQ90Q734jGg7zJPH87"
+uri = "file://generated-artifacts/football-corrections/Kick-Return-86-Targeted-Balance-Evidence.zip"
+type = "unspecified"
+title = "Experimental evidence and reproduction scripts"
+description = "Raw paired trials, engagement records, causal fork results, isolated prototype, and validation. Approximately 26 MB."
+logical_id = "32c4a89d-d087-4535-a687-451ab4bcac3a"
+content_hash = "sha256:235e38ab1eecf7891ab1a58dc3597bfa5e762cea3e8d85fbf69545932240d925"
+size = 26364423
+mtime_ms = 1794858006256
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/32c4a89d-d087-4535-a687-451ab4bcac3a/a282f5e5-aa1d-4827-bdbd-117e41aa4d73"
+storage_version_token = "1794858026353708"
+content_type = "application/octet-stream"
