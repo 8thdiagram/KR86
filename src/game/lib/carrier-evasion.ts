@@ -4,13 +4,16 @@ import { playerSpeed } from './player-pace';
 import { CARRIER_BODY_WIDTH } from './player-dimensions';
 
 export const EVADE = Object.freeze({
-  spin: .44,
+  spin: .26,
   boost: .42,
   cooldown: .45,
   boostRatio: 1.18,
   bodyWidth: CARRIER_BODY_WIDTH,
   threatRadius: 42,
 } as const);
+/** Untagged timing belongs to pre-correction saves; finish those moves at
+ * their original rate instead of invalidating or snapping a restored runner. */
+export const carrierSpinDuration = (active: { duration?: number }) => active.duration ?? .44;
 export type EvasionObstacle = { x: number; y: number; vx?: number; vy?: number };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 const ease = (p: number) => p * p * (3 - 2 * p);
@@ -44,7 +47,7 @@ export function chooseCarrierEvasion(a: KickAttempt, bounds: CarrierBounds, obst
     let nearest = 100, danger = 0;
     for (let i = 1; i <= 16; i++) {
       const p = i / 16, t = p * EVADE.spin;
-      const x = a.player.x + forward * .9 * t, y = a.player.y + side * EVADE.bodyWidth * ease(p);
+      const x = a.player.x + forward * t, y = a.player.y + side * EVADE.bodyWidth * ease(p);
       for (const d of [...coverage, ...obstacles]) {
         const v = 'id' in d ? velocity(a, d as KickDefender) : { vx: d.vx ?? 0, vy: d.vy ?? 0 };
         const clearance = gap(x - d.x - v.vx * t, y - d.y - v.vy * t);
@@ -99,18 +102,20 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
   let started = false;
   if (input.juke && !moves.active && a.returnTime + 1e-9 >= moves.readyAt) {
     const move = chooseCarrierEvasion(a, bounds, input.obstacles);
-    moves.active = { ...move, elapsed: 0, evasive: true };
+    moves.active = { ...move, elapsed: 0, evasive: true,
+      ...(move.kind === 'spin' ? { duration: EVADE.spin } : {}) };
     moves.sequence++; moves.readyAt = a.returnTime + EVADE[move.kind] + EVADE.cooldown; started = true;
   }
   const active = moves.active;
   let dx = forward * dt, dy = direction * lateral * dt;
   const spinStep = active?.kind === 'spin';
   if (active) {
-    const duration = active.kind === 'spin' ? EVADE.spin : EVADE.boost;
-    const used = Math.min(dt, duration - active.elapsed), rest = dt - used;
+    const duration = active.kind === 'spin' ? carrierSpinDuration(active) : EVADE.boost;
+    const used = Math.min(dt, Math.max(0, duration - active.elapsed)), rest = dt - used;
     const p0 = active.elapsed / duration, p1 = Math.min(1, (active.elapsed + used) / duration);
     if (active.kind === 'spin') {
-      dx = forward * ((.82 + .18 * (p0 + p1) / 2) * used + rest);
+      // Keep moving forward at ordinary running speed while changing lanes.
+      dx = forward * dt;
       dy = active.side * EVADE.bodyWidth * (ease(p1) - ease(p0)) + direction * lateral * rest;
     } else {
       const p = (p0 + p1) / 2, gain = Math.max(0, Math.min(1, p / .12, (1 - p) / .2));

@@ -194,7 +194,7 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
   const m = a.moves;
   if (!m) return false;
   const v2 = m.version === 2;
-  const act = m.active as { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: number; evasive?: boolean } | undefined;
+  const act = m.active as { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: number; evasive?: boolean; duration?: number } | undefined;
   // Full Game reuses the carrier move record during eligible runs/scrambles;
   // only the explicitly tagged new moves may render outside Classic returns.
   if (a.phase !== 'returning' && !act?.evasive && !m.hesitating) return false;
@@ -223,7 +223,7 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
     return true;
   }
   if (act && act.kind === 'spin') {
-    const dur = act.evasive ? EVADE.spin : v2 ? .3 : .34, rot = act.side || 1;
+    const dur = act.evasive ? act.duration ?? .44 : v2 ? .3 : .34, rot = act.side || 1;
     const p = clamp(act.elapsed / dur, 0, 1);
     // A full directional orbit through authored silhouettes, then back to the
     // exact starting view. No canvas rotation or pixel scaling is involved.

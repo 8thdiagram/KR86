@@ -29,7 +29,7 @@ function evasiveAttempt(kind: 'spin' | 'boost', side: -1 | 0 | 1, elapsed: numbe
   attempt.player = { x: 100, y: 100 };
   attempt.moves = {
     ...attempt.moves!,
-    active: { kind, side, elapsed, evasive: true },
+    active: { kind, side, elapsed, evasive: true, ...(kind === 'spin' ? { duration: EVADE.spin } : {}) },
   } as unknown as NonNullable<typeof attempt.moves>;
   return attempt;
 }
@@ -107,7 +107,7 @@ test('Full Game presents an evasive QB scramble only while he is the ball carrie
   g.live.holdingPass = false;
   g.live.movement.moves = {
     ...g.live.movement.moves!,
-    active: { kind: 'spin', side: -1, elapsed: EVADE.spin * .42, evasive: true },
+    active: { kind: 'spin', side: -1, elapsed: EVADE.spin * .42, evasive: true, duration: EVADE.spin },
   } as unknown as NonNullable<typeof g.live.movement.moves>;
   const before = JSON.stringify(g);
   const frame = drawing();

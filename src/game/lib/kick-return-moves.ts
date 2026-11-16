@@ -1,7 +1,7 @@
 import type { KickAttempt, KickDefender, KickDirection } from './kick-return-engine';
 import { playerSpeed } from './player-pace';
 import { BURST, chooseKickBurst, kickBurstKind, kickBurstVelocity, kickDiveRules } from './kick-return-burst';
-import { EVADE, stepCarrierEvasion, type EvasionObstacle } from './carrier-evasion';
+import { EVADE, carrierSpinDuration, stepCarrierEvasion, type EvasionObstacle } from './carrier-evasion';
 
 export const JUKE = { holdMs: 200, spin: .34, stutter: .36, dive: .34, cooldown: 1, backwardRatio: .7 } as const;
 export type KickMoveInput = { backward?: boolean; hesitate?: boolean; juke?: boolean; evasion?: boolean; obstacles?: readonly EvasionObstacle[] };
@@ -9,7 +9,7 @@ export type CarrierBounds = { minY: number; maxY: number };
 export type KickMoves = {
   version: 1 | 2; sequence: number; readyAt: number; backward: boolean; vx: number; furthestX: number;
   hesitating?: boolean;
-  active?: { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: KickDirection; evasive?: true };
+  active?: { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: KickDirection; evasive?: true; duration?: number };
 };
 export type JukeRead = { until: number; targetY: number };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -17,9 +17,11 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 /** Real bounded displacement; no invulnerability, collision exemption or teleport. */
 export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: number, input: KickMoveInput,
   bounds: CarrierBounds = { minY: 24, maxY: 168 }): { player: { x: number; y: number }; started: boolean; moves: KickMoves | undefined; outAt?: number; spinStep?: boolean; evasiveStep?: boolean } {
-  // A sustained ACTION owns movement even if its initial press started an evade.
-  // The established hesitation path stops forward travel but preserves steering.
-  if (input.hesitate && a.moves?.version === 2)
+  // Complete the committed lateral juke first. The 200ms hold threshold used
+  // to cancel a 440ms spin mid-lane, leaving only an apparent in-place turn.
+  // Hold-to-halt takes over as soon as the short spin has finished.
+  if (input.hesitate && a.moves?.version === 2 &&
+    !(a.moves.active?.evasive && a.moves.active.kind === 'spin'))
     return stepBurst(a, direction, dt, input, bounds);
   if (a.moves?.active?.evasive || input.evasion && !a.moves?.active && !input.hesitate)
     return stepCarrierEvasion(a, direction, dt, input, bounds);
@@ -146,9 +148,10 @@ export function isKickMoves(value: KickMoves | undefined, a: KickAttempt): boole
     Number.isFinite(m.furthestX) && m.furthestX >= 0 && m.furthestX <= 1101 &&
     m.furthestX + .000001 >= a.player.x &&
     (active === undefined || !!active && (active.evasive === undefined || active.evasive === true) &&
+      (active.duration === undefined || active.evasive === true && active.kind === 'spin' && active.duration === EVADE.spin) &&
       (active.evasive ? m.version === 2 && ['spin', 'boost'].includes(active.kind) : (m.version === 2 ? ['spin', 'stutter', 'dive'] : ['spin', 'stutter']).includes(active.kind)) &&
       (active.side === -1 || active.side === 1 || m.version === 2 && active.side === 0) && Number.isFinite(active.elapsed) &&
        (!active.evasive || (active.kind === 'boost' ? active.side === 0 : active.side !== 0)) &&
-       active.elapsed >= 0 && active.elapsed <= (active.evasive ? active.kind === 'spin' ? EVADE.spin : EVADE.boost : m.version === 2
+       active.elapsed >= 0 && active.elapsed <= (active.evasive ? active.kind === 'spin' ? carrierSpinDuration(active) : EVADE.boost : m.version === 2
          ? active.kind === 'dive' ? kickDiveRules(a).duration : BURST.duration : active.kind === 'boost' ? 0 : JUKE[active.kind]));
 }

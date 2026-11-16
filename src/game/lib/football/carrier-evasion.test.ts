@@ -45,7 +45,8 @@ for (const [side, expected] of [[1, -1], [-1, 1]] as const) {
       assert(isKickMoves(a.moves, a), 'active and completed moves can be saved/restored');
     }
     assert(Math.abs(a.player.y - 96 - expected * EVADE.bodyWidth) < 1e-7);
-    assert(maxStep < 1, 'no teleportation');
+    assert(maxStep <= EVADE.bodyWidth * 1.5 / (EVADE.spin * 60) + 1e-6,
+      'each step stays within the smooth movement curve, never a one-frame lane teleport');
     assert(!a.moves?.active); assert(elapsed > EVADE.spin);
     const x = a.player.x; const m = stepKickMoves(a, 0, 1 / 60, { evasion: true });
     assert(m.player.x > x, 'running resumes immediately');
@@ -113,8 +114,8 @@ test('immediate touch down fires once; sustained hold hesitates without repeatin
   c.release('steer', 1002); c.enter('new', 'juke', 1003);
   assert(c.sample(1003).juke);
 });
-test('holding ACTION cancels either evade, halts forward progress and retains both steering directions', () => {
-  for (const kind of ['spin', 'boost'] as const) for (const direction of [-1, 0, 1] as const) {
+test('holding ACTION cancels a boost, halts forward progress and retains both steering directions', () => {
+  for (const kind of ['boost'] as const) for (const direction of [-1, 0, 1] as const) {
     const a = attempt();
     a.moves!.active = { kind, side: kind === 'spin' ? 1 : 0, elapsed: .21, evasive: true };
     const held = stepKickMoves(a, direction, 1 / 60, { evasion: true, hesitate: true });

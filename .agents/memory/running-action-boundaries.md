@@ -3,11 +3,11 @@ name: Running ACTION boundaries
 description: User-requested intelligent ball-carrier actions without changing passing, CPU defense or approved presentation.
 ---
 
-Eligible human running ball carriers use ACTION immediately on press, not on release. The game chooses spin left, spin right or a short boost from the nearest actual threat's position and approach, other players and legal sideline space. Holding ACTION must still halt forward progress, with legs running in place and up/down steering available; releasing resumes forward running without another evade. This applies across Classic, kick returns, catches and turnover returns.
+Eligible human running ball carriers use ACTION immediately on press, not on release. The game chooses spin left, spin right or a short boost from the nearest actual threat's position and approach, other players and legal sideline space. Holding ACTION must still halt forward progress, with legs running in place and up/down steering available; releasing resumes forward running without another evade. A committed quick lateral spin must finish before hold-to-halt takes over, rather than being canceled mid-lane. This applies across Classic, kick returns, catches and turnover returns.
 
-**Why:** The user specifically requested intelligent running actions, then explicitly clarified that the original hold-to-halt behavior must remain, including moving legs and lateral steering.
+**Why:** The user specifically requested intelligent running actions, then explicitly clarified that hold-to-halt must remain. They subsequently rejected apparent stationary spins and required a complete 0.20–0.30-second physical lateral juke; the hold threshold must not truncate it.
 
-**How to apply:** Keep spins physical and progressive, approximately one rendered body width in world coordinates, with an authored full turn and tucked ball. Keep boosts temporary, about 15–20% for 0.35–0.5 seconds, with a short cooldown and natural cadence. Never add tackle immunity, teleport through bodies, enlarge collision boxes or change baseline ratings as a shortcut.
+**How to apply:** Keep spins physical and progressive, approximately one rendered body width in authoritative world coordinates over 0.20–0.30 seconds, preserving forward momentum and the new lane afterward, with an authored full turn and tucked ball. Verify sustained touchscreen presses as well as quick taps through the real gameplay engine. Keep boosts temporary, about 15–20% for 0.35–0.5 seconds, with a short cooldown and natural cadence. Never add tackle immunity, teleport through bodies, enlarge collision boxes or change baseline ratings as a shortcut.
 
 Quarterback pass taps, pass holds and deliberate one-second scramble activation own their entire gesture. That gesture's release must never become an evade. A fresh running ACTION becomes eligible after the quarterback commits beyond the line of scrimmage; it must never permit an illegal forward pass.
 
