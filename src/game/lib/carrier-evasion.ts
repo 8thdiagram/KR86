@@ -16,7 +16,12 @@ export const EVADE = Object.freeze({
 export const carrierSpinDuration = (active: { duration?: number }) => active.duration ?? .44;
 export type EvasionObstacle = { x: number; y: number; vx?: number; vy?: number };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
-const ease = (p: number) => p * p * (3 - 2 * p);
+function runningVector(a: KickAttempt, direction: -1 | 0 | 1) {
+  const x = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
+  const y = direction * playerSpeed(a.difficulty === 'hard' ? 86 : 78);
+  const speed = Math.hypot(x, y);
+  return { x, y, normalX: -y / speed, normalY: x / speed };
+}
 const eligible = (d: KickDefender) => d.dive?.phase !== 'grounded' && d.dive?.phase !== 'recovering';
 function velocity(a: KickAttempt, d: KickDefender) {
   const real = d as KickDefender & EvasionObstacle;
@@ -29,25 +34,30 @@ function velocity(a: KickAttempt, d: KickDefender) {
 const gap = (x: number, y: number) => Math.max(Math.abs(x) / 9, Math.abs(y) / 10);
 
 /** Forecast actual approach and both escape corridors, never a random move. */
-export function chooseCarrierEvasion(a: KickAttempt, bounds: CarrierBounds, obstacles: readonly EvasionObstacle[] = []) {
-  const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
+export function chooseCarrierEvasion(a: KickAttempt, bounds: CarrierBounds, obstacles: readonly EvasionObstacle[] = [],
+  direction: -1 | 0 | 1 = 0) {
+  const travel = runningVector(a, direction);
   const coverage = a.defenders.filter(eligible);
   const threat = coverage.filter(d => {
     const dx = d.x - a.player.x, dy = d.y - a.player.y, v = velocity(a, d);
     if (Math.hypot(dx, dy) > EVADE.threatRadius) return false;
-    if (dx < -5 && ![0, .15, .3].some(t => gap(dx + (v.vx - forward) * t, dy + v.vy * t) < 1.5)) return false;
-    return [0, .15, .3].some(t => gap(dx + (v.vx - forward) * t, dy + v.vy * t) < 4.2);
+    const behind = (dx * travel.x + dy * travel.y) / Math.hypot(travel.x, travel.y) < -5;
+    if (behind && ![0, .15, .3].some(t => gap(dx + (v.vx - travel.x) * t, dy + (v.vy - travel.y) * t) < 1.5)) return false;
+    return [0, .15, .3].some(t => gap(dx + (v.vx - travel.x) * t, dy + (v.vy - travel.y) * t) < 4.2);
   }).sort((d, e) => Math.hypot(d.x - a.player.x, d.y - a.player.y) - Math.hypot(e.x - a.player.x, e.y - a.player.y))[0];
   if (!threat) return { kind: 'boost' as const, side: 0 as const };
-  const approach = threat.y - a.player.y + velocity(a, threat).vy * .12;
+  const threatVelocity = velocity(a, threat);
+  const approach = (threat.x - a.player.x + threatVelocity.vx * .12) * travel.normalX
+    + (threat.y - a.player.y + threatVelocity.vy * .12) * travel.normalY;
   let best: -1 | 1 | undefined, bestScore = -Infinity;
   for (const side of [-1, 1] as const) {
-    const endY = a.player.y + side * EVADE.bodyWidth;
+    const endY = a.player.y + travel.y * EVADE.spin + side * EVADE.bodyWidth * travel.normalY;
     if (endY <= bounds.minY || endY >= bounds.maxY) continue;
     let nearest = 100, danger = 0;
     for (let i = 1; i <= 16; i++) {
       const p = i / 16, t = p * EVADE.spin;
-      const x = a.player.x + forward * t, y = a.player.y + side * EVADE.bodyWidth * ease(p);
+      const x = a.player.x + travel.x * t + side * EVADE.bodyWidth * travel.normalX * p;
+      const y = a.player.y + travel.y * t + side * EVADE.bodyWidth * travel.normalY * p;
       for (const d of [...coverage, ...obstacles]) {
         const v = 'id' in d ? velocity(a, d as KickDefender) : { vx: d.vx ?? 0, vy: d.vy ?? 0 };
         const clearance = gap(x - d.x - v.vx * t, y - d.y - v.vy * t);
@@ -101,9 +111,9 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
     : { version: 2, backward: false, sequence: 0, readyAt: 0, vx: forward, furthestX: a.player.x };
   let started = false;
   if (input.juke && !moves.active && a.returnTime + 1e-9 >= moves.readyAt) {
-    const move = chooseCarrierEvasion(a, bounds, input.obstacles);
+    const move = chooseCarrierEvasion(a, bounds, input.obstacles, direction);
     moves.active = { ...move, elapsed: 0, evasive: true,
-      ...(move.kind === 'spin' ? { duration: EVADE.spin } : {}) };
+      ...(move.kind === 'spin' ? { duration: EVADE.spin, spinDirection: direction } : {}) };
     moves.sequence++; moves.readyAt = a.returnTime + EVADE[move.kind] + EVADE.cooldown; started = true;
   }
   const active = moves.active;
@@ -114,9 +124,15 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
     const used = Math.min(dt, Math.max(0, duration - active.elapsed)), rest = dt - used;
     const p0 = active.elapsed / duration, p1 = Math.min(1, (active.elapsed + used) / duration);
     if (active.kind === 'spin') {
-      // Keep moving forward at ordinary running speed while changing lanes.
-      dx = forward * dt;
-      dy = active.side * EVADE.bodyWidth * (ease(p1) - ease(p0)) + direction * lateral * rest;
+      // Freeze the approach heading for this short committed juke, then resume
+      // current steering. Displace real coordinates perpendicular to travel,
+      // starting at full lateral rate on the first frame, not a visual offset.
+      // Older saves without heading metadata retain their existing world-Y move.
+      const travel = runningVector(a, active.spinDirection ?? 0);
+      const progress = (p: number) => active.spinDirection === undefined ? p * p * (3 - 2 * p) : p;
+      const shift = active.side * EVADE.bodyWidth * (progress(p1) - progress(p0));
+      dx = forward * dt + travel.normalX * shift;
+      dy = travel.y * used + travel.normalY * shift + direction * lateral * rest;
     } else {
       const p = (p0 + p1) / 2, gain = Math.max(0, Math.min(1, p / .12, (1 - p) / .2));
       dx = forward * ((1 + (EVADE.boostRatio - 1) * gain) * used + rest);

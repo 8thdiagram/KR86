@@ -133,10 +133,15 @@ test('the replacement atlas contains bounded immutable connected frames for ever
       for (const phase of [0, 2, 5]) {
         const frame = selectFootballPlayerFrame(action, view, phase, true, role);
         assert(Object.isFrozen(frame) && Object.isFrozen(frame.runs));
+        const horizontalProne = (view === 0 || view === 4)
+          && (action === 'ground' || ((action === 'dive' || action === 'fall') && phase >= 2));
+        assert.equal(frame.width, horizontalProne ? 44 : PLAYER_FRAME_WIDTH,
+          'full-length horizontal bodies use a wider sheet; upright frames stay unchanged');
+        assert.equal(frame.anchorX, frame.width / 2, 'each sheet is centered on its own player anchor');
         assert(frame.runs.length > 20 && frame.runs.length < 400, 'bounded authored raster complexity');
         assert.strictEqual(frame, selectFootballPlayerFrame(action, view, phase, true, role), 'reuse cached immutable art');
         for (const r of frame.runs)
-          assert(r.row >= 0 && r.row < 44 && r.x >= 0 && r.length > 0 && r.x + r.length <= 32);
+          assert(r.row >= 0 && r.row < frame.height && r.x >= 0 && r.length > 0 && r.x + r.length <= frame.width);
         assert(connectedShare(frame) >= .95, `${role}/${action}/${view}/${phase}: connected athlete with no detached limbs`);
       }
     }

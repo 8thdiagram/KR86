@@ -25,7 +25,7 @@ Keep dive silhouettes consistent with the athlete's upright size rather than vis
 
 **Why:** The user reported a defender appearing to shrink when diving and explicitly requested both size consistency and a modest game-wide player reduction.
 
-**How to apply:** Preserve directional anatomy, proportions, team identity and held-ball registration across standing, diving, grounded and recovery poses.
+**How to apply:** Preserve directional anatomy, proportions, team identity and held-ball registration across standing, diving, grounded and recovery poses. Compare visible body length, volume and helmet size, not merely a shared render scale; a horizontal pose needs enough canvas width to avoid compressing an upright athlete's full length.
 
 Further flow refinements must preserve the existing speed and difficulty balance, not add another player-speed increase. The user confirmed the improved designs look significantly better; refine natural bent arm pumps and event-specific reaches without replacing those designs.
 

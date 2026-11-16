@@ -9,7 +9,7 @@ export type CarrierBounds = { minY: number; maxY: number };
 export type KickMoves = {
   version: 1 | 2; sequence: number; readyAt: number; backward: boolean; vx: number; furthestX: number;
   hesitating?: boolean;
-  active?: { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: KickDirection; evasive?: true; duration?: number };
+  active?: { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: KickDirection; evasive?: true; duration?: number; spinDirection?: KickDirection };
 };
 export type JukeRead = { until: number; targetY: number };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -144,11 +144,16 @@ export function isKickMoves(value: KickMoves | undefined, a: KickAttempt): boole
   return [1, 2].includes(m.version) && (m.hesitating === undefined || m.version === 2 && typeof m.hesitating === 'boolean') &&
     Number.isSafeInteger(m.sequence) && m.sequence >= 0 &&
      Number.isFinite(m.readyAt) && m.readyAt >= 0 && m.readyAt <= a.returnTime + (a.returnUpgrade === 1 ? 1.5 : 1.4) &&
-    typeof m.backward === 'boolean' && (m.version !== 2 || !m.backward) && Number.isFinite(m.vx) && Math.abs(m.vx) <= playerSpeed(m.version === 2 ? 100 : 86) &&
+    // A diagonal juke has a world-X component in addition to normal running.
+    // Its final frame can still carry that velocity after active is cleared.
+    typeof m.backward === 'boolean' && (m.version !== 2 || !m.backward) && Number.isFinite(m.vx) &&
+    Math.abs(m.vx) <= playerSpeed(m.version === 2 ? 100 : 86) + (m.version === 2 ? EVADE.bodyWidth / EVADE.spin : 0) &&
     Number.isFinite(m.furthestX) && m.furthestX >= 0 && m.furthestX <= 1101 &&
     m.furthestX + .000001 >= a.player.x &&
     (active === undefined || !!active && (active.evasive === undefined || active.evasive === true) &&
       (active.duration === undefined || active.evasive === true && active.kind === 'spin' && active.duration === EVADE.spin) &&
+      (active.spinDirection === undefined || active.evasive === true && active.kind === 'spin'
+        && active.duration === EVADE.spin && [-1, 0, 1].includes(active.spinDirection)) &&
       (active.evasive ? m.version === 2 && ['spin', 'boost'].includes(active.kind) : (m.version === 2 ? ['spin', 'stutter', 'dive'] : ['spin', 'stutter']).includes(active.kind)) &&
       (active.side === -1 || active.side === 1 || m.version === 2 && active.side === 0) && Number.isFinite(active.elapsed) &&
        (!active.evasive || (active.kind === 'boost' ? active.side === 0 : active.side !== 0)) &&

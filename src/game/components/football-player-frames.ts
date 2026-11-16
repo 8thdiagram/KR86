@@ -3,7 +3,8 @@
  *
  * Every frame is authored as overlapping, hard-edged pixel clusters on a
  * 16x22 design grid. Each design cell expands to 2x2 atlas pixels: frames are
- * exactly 32x44 pixels, rendered at the shared player raster scale.
+ * 32x44 pixels upright or 44x44 for full-length horizontal prone bodies,
+ * rendered at the same shared player raster scale.
  * The 16x22 design grid expands 2x; the foot anchor is native atlas pixel
  * (16,42), so cleat pixels 40-41 meet the shared turf line at y+5. Each
  * directional sheet changes the anatomy/silhouette; none is a rotated
@@ -46,8 +47,10 @@ type Glyph = FootballPlayerGlyph;
 type Grid = readonly string[];
 type FrameRun = Readonly<{ row: number; x: number; length: number; color: Glyph }>;
 export type FootballPlayerFrame = Readonly<{
-  width: 32;
+  width: number;
   height: 44;
+  /** Atlas-pixel anchor; wide prone sheets keep their center on the player. */
+  anchorX?: number;
   view: FootballPlayerView;
   action: FootballPlayerAction;
   phase: number;
@@ -60,13 +63,13 @@ export type FootballPlayerFrame = Readonly<{
 
 const blank = (rows: number): string[] => Array.from({ length: rows }, () => '................');
 const overlay = (target: string[], source: Grid, x = 0, y = 0, mirror = false) => {
+  const targetWidth = target[0]?.length ?? 16;
   source.forEach((line, sy) => {
     const dy = y + sy;
     [...line].forEach((glyph, sx) => {
       if (glyph === '.') return;
       const dx = x + (mirror ? line.length - 1 - sx : sx);
-      if (line.length > 16) throw new Error(`Player sheet row ${sy} is ${line.length} cells wide (expected <=16).`);
-      if (dx < 0 || dx >= 16 || dy < 0 || dy >= target.length)
+      if (dx < 0 || dx >= targetWidth || dy < 0 || dy >= target.length)
         throw new Error(`Player sheet pixel (${dx},${dy}) is outside the authored frame.`);
       const row = [...target[dy]!];
       row[dx] = glyph;
@@ -234,10 +237,11 @@ function buildGlyphGrid(
     overlay(raised, out, 0, -1);
     return withBall(raised, view, action, ball);
   }
-  if ((action === 'fall' || action === 'dive') && phase < 2) return withBall(out, view, action, ball);
+  if ((action === 'fall' || action === 'dive') && phase < 2)
+    return withBall(out, view, action, ball);
   if (action === 'dive' || action === 'fall' || action === 'ground') {
     const prone = composeProne(view);
-    if (ball) addBall(prone, view, action);
+    if (ball) addBall(prone, view, action, true);
     return prone;
   }
   return withBall(out, view, action, ball);
@@ -245,26 +249,29 @@ function buildGlyphGrid(
 
 const PRONE_PARTS = {
   horizontal: [
-    '........KKKKKK..','......KMMMMMMK..','.....KMTMMMMK...',
-    '......KMMMMMMK..','........KSSFFK..','....KKKKKKKKKK..',
-    '...KJJJJJJJJJKK.','..KJJjJJJJJJJKK.','..KJJJJJJJJJKK..',
-    'KWWWWKKJJJJJKK..','KKWWWWKKKKKK....','KKWWWWKKKKKK....',
+    '..............KKKKKK..','.............KMMMMMMK.','.............KMTMMMMK.',
+    '.............KMMMMMMK.','..............KSSFFK..',
+    '.............KKKKKKK..',
+    '............KJJJJJJJK.','.........KJJJJjJJJJKK.','.........KJJJJJJJJJKK.',
+    '.......KJJJJJJJJJJJKK.','....KWWWWKJJJJJJJJKK..','...KKWWWWKKJJJJJJJKK..',
+    '...KKKWWWWKKKKKKKKKK..','KKKKWWWWKKKK..........',
+    'KKKKWWWWKKKK..........','...KKWWWWKK...........',
+    '....KKWWKK............',
   ],
   verticalDown: [
-    '................','................','.....KKKKKK.....','....KMMMMMMK....',
-    '....KMTMMMMK....','....KMMMMMMK....','.....KSSFFK.....',
-    '......KKKK......','....KKKKKKKK....','...KJJJJJJJKK...',
-    '..KJJJJJJJJJKK..','..KJJjJJJJJJKK..','...KJJJJJJJKK...',
-    '....KKWWKK......','....KWWWWK......','....KWWwWK......',
-    '....KWWWWK......','...KKWWKK.......',
+    '.....KKKKKK.....','....KMMMMMMK....','....KMTMMMMK....','....KMMMMMMK....','.....KSSFFK.....',
+    '......KKKK......','....KKKKKKKK....','...KJJJJJJJKK...','..KJJJJJJJJJKK..',
+    '..KJJjJJJJJJKK..','...KJJJJJJJKK...','...KJJJJJJJKK...','....KJJJJJKK....',
+    '....KKWWKK......','....KWWWWK......','....KWWwWK......','....KWWWWK......',
+    '....KWWWWK......','...KKWWKK.......','................',
   ],
   verticalUp: [
-    '...KKWWKK.......','....KWWWWK......','....KWWwWK......',
-    '....KWWWWK......','...KKWWKK.......','....KJJJJJKK....',
-    '...KJJJJJJKK....','..KJJJJjJJJJKK..','..KJJJJJJJJJKK..',
-    '...KJJJJJJJKK...','....KKKKKK......','.....KKKK.......',
-    '......KSSFFK....','.....KMMMMMMK...','.....KMTMMMMK...',
-    '.....KMMMMMMK...','......KKKKKK....','................',
+    '................','...KKWWKK.......','....KWWWWK......','....KWWwWK......',
+    '....KWWWWK......','...KKWWKK.......','...KKWWKK.......','....KJJJJJKK....',
+    '...KJJJJJJKK....','..KJJJJjJJJJKK..','..KJJJJJJJJJKK..','...KJJJJJJJKK...',
+    '....KKKKKK......','.....KKKK.......','......KSSFFK....',
+    '.....KMMMMMMK...','.....KMTMMMMK...','.....KMMMMMMK...',
+    '......KKKKKK....','................',
   ],
   diagonalDown: [
     '........KKKKKK..','......KMMMMMMK..','.....KMTMMMMK...',
@@ -272,6 +279,7 @@ const PRONE_PARTS = {
     '....KJJJJJJJKK..','...KJJJJjJJJJKK.','...KJJJJJJJJJKK.',
     '..KWWWWKJJJJKK..','.KWWWWKKJJJKK...','KKWWWWKKKK......',
     'KKWWWWKKKK......','KKWWWWKKKK......','KKKKKKKK........',
+    '...KKWWKK.......','....KKKK........','................',
   ],
   diagonalUp: [
     '..KKKKKK........','..KMMMMMMK......','..KMTMMMMK......',
@@ -279,11 +287,13 @@ const PRONE_PARTS = {
     '...KJJJJJJJKK...','..KJJJJjJJJJKK..','..KJJJJJJJJJKK..',
     '...KJJJJJJJKK...','....KKJJJKKWWWWK','.....KKJJKKWWWWK',
     '......KKKKKWWWWK','........KKWWWWKK','.........KKWWKK.',
+    '.........KKKK...','..........KK....','................',
   ],
 };
 for (const [name, rows] of Object.entries(PRONE_PARTS)) {
   rows.forEach((row, index) => {
-    if (row.length !== 16) throw new Error(`prone:${name} row ${index} has ${row.length} cells; expected 16.`);
+    const expected = name === 'horizontal' ? 22 : 16;
+    if (row.length !== expected) throw new Error(`prone:${name} row ${index} has ${row.length} cells; expected ${expected}.`);
   });
 }
 const PRONE_VIEW: Readonly<Record<FootballPlayerView, Readonly<{ part: keyof typeof PRONE_PARTS; mirror: boolean }>>> =
@@ -295,26 +305,26 @@ const PRONE_VIEW: Readonly<Record<FootballPlayerView, Readonly<{ part: keyof typ
     8: { part: 'diagonalDown', mirror: true },
   });
 const HELD_BALL_GRID: Grid = ['..OO....','OBBBO...','OBLbO...','..OO....'];
+const MIRRORED_HELD_BALL_GRID: Grid = HELD_BALL_GRID.map(row =>
+  [...row.slice(0, 5)].reverse().join(''),
+);
 const POSSESSION_GLYPHS: ReadonlySet<Glyph> = new Set(['G', 'O', 'B', 'b', 'L']);
 validateSheet('held-ball', HELD_BALL_GRID, 8, 4);
+validateSheet('mirrored-held-ball', MIRRORED_HELD_BALL_GRID, 5, 4);
 const PRONE_LAYOUT: Readonly<Record<keyof typeof PRONE_PARTS, Readonly<{
-  rows: number; headRows: number; headAtEnd?: boolean; start: number;
+  rows: number; headRows: number; headAtEnd?: boolean; start: number; width?: number;
 }>>> = Object.freeze({
-  horizontal: { rows: 12, headRows: 5, start: 8 },
-  // Lengthen the trunk/legs toward the far end while leaving each helmet mask
-  // at native proportions and on the same directional end of its sheet.
-  verticalDown: { rows: 18, headRows: 5, start: 3 },
-  verticalUp: { rows: 18, headRows: 5, headAtEnd: true, start: 3 },
-  // Diagonal poses need a modest extension, not the tall treatment used by
-  // end-on views; their original oblique silhouette remains easy to read.
-  diagonalDown: { rows: 15, headRows: 5, start: 6 },
-  diagonalUp: { rows: 15, headRows: 5, start: 6 },
+  horizontal: { rows: 17, headRows: 5, start: 2, width: 22 },
+  verticalDown: { rows: 20, headRows: 5, start: 1 },
+  verticalUp: { rows: 20, headRows: 5, headAtEnd: true, start: 1 },
+  diagonalDown: { rows: 18, headRows: 5, start: 2 },
+  diagonalUp: { rows: 18, headRows: 5, start: 2 },
 });
 function composeProne(view: FootballPlayerView): string[] {
-  const frame = blank(22);
   const selected = PRONE_VIEW[view];
   const rows = PRONE_PARTS[selected.part];
   const layout = PRONE_LAYOUT[selected.part];
+  const frame = Array.from({ length: 22 }, () => '.'.repeat(layout.width ?? 16));
   const preservedHead = layout.headAtEnd
     ? rows.slice(rows.length - layout.headRows)
     : rows.slice(0, layout.headRows);
@@ -333,19 +343,37 @@ function composeProne(view: FootballPlayerView): string[] {
 }
 
 function withBall(grid: string[], view: FootballPlayerView, action: FootballPlayerAction, ball: boolean): Grid {
-  if (ball) addBall(grid, view, action);
+  if (ball) addBall(grid, view, action, false);
   return grid;
 }
-function addBall(grid: string[], view: FootballPlayerView, action: FootballPlayerAction) {
+function ballPlacement(view: FootballPlayerView, action: FootballPlayerAction, phase: number) {
+  const prone = action === 'ground' || ((action === 'dive' || action === 'fall') && phase >= 2);
+  const selected = PRONE_VIEW[view];
+  const right = prone ? !selected.mirror : !VIEW_MIRROR[view];
+  const horizontalProne = prone && selected.part === 'horizontal';
+  // Reflect the five painted ball cells inside the 22-cell prone frame.
+  // Launch art intentionally retains its established upright placement.
+  const bx = horizontalProne
+    ? selected.mirror ? 22 - 8 - 5 : 8
+    : right ? 8 : 0;
+  const by = horizontalProne ? 8 : prone ? 14 : 10;
+  return { bx, by, right, prone, mirrorBall: horizontalProne && selected.mirror };
+}
+function addBall(
+  grid: string[], view: FootballPlayerView, action: FootballPlayerAction, prone: boolean,
+) {
   // Ball stays secured to the same tucked arm through every run phase and the
   // throw pose. Only the parent possession flag controls whether it exists.
-  const right = action === 'dive' || action === 'fall' || action === 'ground'
-    ? !PRONE_VIEW[view].mirror
-    : !VIEW_MIRROR[view];
-  const bx = right ? 8 : 0;
-  const by = action === 'dive' || action === 'fall' || action === 'ground' ? 14 : 10;
-  overlay(grid, HELD_BALL_GRID, bx, by);
-  const handX = right ? bx - 1 : bx + 8;
+  const placement = ballPlacement(view, action, prone ? 3 : 0);
+  const { right, bx, by } = placement;
+  overlay(
+    grid,
+    placement.mirrorBall ? MIRRORED_HELD_BALL_GRID : HELD_BALL_GRID,
+    bx,
+    by,
+  );
+  // The mirrored hand touches the far edge of the five-cell football mask.
+  const handX = right ? bx - 1 : bx + (prone ? 5 : 8);
   const handY = by + 2;
   if (handY < 22 && handX >= 0 && handX < 16) {
     const row = [...grid[handY]!];
@@ -359,10 +387,17 @@ function flatten(
   build: Build, locomotionPhase?: number,
 ): FootballPlayerFrame {
   const grid = buildGlyphGrid(view, action, phase, ball, build, locomotionPhase);
-  validateSheet('complete-player-frame', grid);
-  if (grid[21] !== '................')
+  validateSheet('complete-player-frame', grid, grid[0]!.length, 22);
+  if (grid[21] !== '.'.repeat(grid[0]!.length))
     throw new Error('Player sheet paints below native foot anchor row 42.');
-  const pixels: Glyph[][] = Array.from({ length: PLAYER_FRAME_HEIGHT }, () => Array<Glyph>(PLAYER_FRAME_WIDTH).fill('.'));
+  const gridWidth = grid[0]!.length;
+  const frameWidth = gridWidth * 2;
+  const isProne = action === 'ground'
+    || ((action === 'dive' || action === 'fall') && phase >= 2);
+  const anchorX = isProne && PRONE_VIEW[view].part === 'horizontal'
+    ? frameWidth / 2
+    : PLAYER_FRAME_ANCHOR.x;
+  const pixels: Glyph[][] = Array.from({ length: PLAYER_FRAME_HEIGHT }, () => Array<Glyph>(frameWidth).fill('.'));
   grid.forEach((line, y) => [...line].forEach((glyph, x) => {
     if (glyph === '.') return;
     for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
@@ -370,7 +405,7 @@ function flatten(
       pixels[pixelY]![x * 2 + dx] = glyph as Glyph;
     }
   }));
-  refineFootballHelmetWidth(pixels);
+  refineFootballHelmetWidth(pixels, isProne && PRONE_VIEW[view].mirror);
   const runs: FrameRun[] = [];
   pixels.forEach((row, y) => {
     let x = 0;
@@ -382,14 +417,13 @@ function flatten(
       runs.push(Object.freeze({ row: y, x: start, length: x - start, color }));
     }
   });
-  const isProne = action === 'dive' || action === 'fall' || action === 'ground';
-  const right = isProne ? !PRONE_VIEW[view].mirror : !VIEW_MIRROR[view];
+  const placement = ballPlacement(view, action, phase);
   const grip = ball ? Object.freeze({
-    x: right ? 24 : 8,
-    y: isProne ? 32 : 24,
+    x: isProne ? placement.bx * 2 + 5 : placement.right ? 24 : 8,
+    y: isProne ? placement.by * 2 + 4 : 24,
   }) : null;
   return Object.freeze({
-    width: 32, height: 44, view, action, phase,
+    width: frameWidth, height: 44, anchorX, view, action, phase,
     ...(locomotionPhase === undefined ? {} : { locomotionPhase }),
     ball, build, grip,
     runs: Object.freeze(runs),
@@ -403,7 +437,7 @@ function flatten(
  * adjustment to a 5–8% width reduction without scaling or softening the art.
  * The material glyphs also identify the helmet in turned and prone sheets.
  */
-export function refineFootballHelmetWidth(pixels: string[][]) {
+export function refineFootballHelmetWidth(pixels: string[][], mirror = false) {
   for (let y = 0; y < pixels.length; y++) {
     const row = pixels[y]!;
     const helmetXs = row.flatMap((glyph, x) => glyph === 'M' || glyph === 'm' || glyph === 'T' ? [x] : []);
@@ -417,7 +451,7 @@ export function refineFootballHelmetWidth(pixels: string[][]) {
     if (right - left + 1 >= 12) {
       // Atlas pixels are expanded in vertical pairs from one authored cell;
       // keep each pair aligned, alternating only between authored rows.
-      const trimLeft = Math.floor(y / 2) % 2 === 0;
+      const trimLeft = (Math.floor(y / 2) % 2 === 0) !== mirror;
       const edge = trimLeft ? left : right;
       if (row[edge] === 'K') row[edge] = '.';
     }
@@ -521,9 +555,10 @@ export function paintFootballPlayerFrame(
   for (const run of frame.runs) {
     if (possessionOnly && !POSSESSION_GLYPHS.has(run.color)) continue;
     ctx.fillStyle = palette[run.color];
-    const runX = direction < 0 ? PLAYER_FRAME_WIDTH - run.x - run.length : run.x;
-    const left = anchorX + edge((runX - PLAYER_FRAME_ANCHOR.x) * PLAYER_FRAME_SCALE);
-    const right = anchorX + edge((runX + run.length - PLAYER_FRAME_ANCHOR.x) * PLAYER_FRAME_SCALE);
+    const frameAnchorX = frame.anchorX ?? PLAYER_FRAME_ANCHOR.x;
+    const runX = direction < 0 ? frameAnchorX * 2 - run.x - run.length : run.x;
+    const left = anchorX + edge((runX - frameAnchorX) * PLAYER_FRAME_SCALE);
+    const right = anchorX + edge((runX + run.length - frameAnchorX) * PLAYER_FRAME_SCALE);
     const top = anchorY + edge((run.row - PLAYER_FRAME_ANCHOR.y) * PLAYER_FRAME_SCALE);
     const bottom = anchorY + edge((run.row + 1 - PLAYER_FRAME_ANCHOR.y) * PLAYER_FRAME_SCALE);
     if (right > left && bottom > top) ctx.fillRect(left, top, right - left, bottom - top);
@@ -542,6 +577,7 @@ export function paintFootballPlayerPossessionFrame(
 /** Grip in world-scaled atlas units relative to the fixed top-left frame origin. */
 export function footballPlayerGrip(frame: FootballPlayerFrame, direction: 1 | -1 = 1) {
   if (!frame.grip) return null;
-  const x = direction < 0 ? PLAYER_FRAME_WIDTH - frame.grip.x : frame.grip.x;
+  const frameAnchorX = frame.anchorX ?? PLAYER_FRAME_ANCHOR.x;
+  const x = direction < 0 ? frameAnchorX * 2 - frame.grip.x : frame.grip.x;
   return Object.freeze({ x: x * PLAYER_FRAME_SCALE, y: frame.grip.y * PLAYER_FRAME_SCALE });
 }
