@@ -23,7 +23,7 @@ function drawing() {
   return { ctx, paints };
 }
 
-function evasiveAttempt(kind: 'spin' | 'boost', side: -1 | 0 | 1, elapsed: number) {
+function evasiveAttempt(kind: 'spin' | 'juke' | 'boost', side: -1 | 0 | 1, elapsed: number) {
   const attempt = createKickAttempt(86, 1);
   attempt.phase = 'returning';
   attempt.player = { x: 100, y: 100 };
@@ -95,6 +95,26 @@ test('boost has distinct coordinated stride frames and draws in the complete Cla
   assert(composite.paints.some(p => p.color === BALL_ART.leather), 'full kick-return composition paints the held football');
   assert(composite.paints.some(p => p.color === compositeKit.body), 'full composition paints the unchanged carrier uniform');
   assert.equal(JSON.stringify(compositeAttempt), gameBefore, 'the full renderer does not change game state');
+});
+
+test('juke uses authored plants, a partial shoulder turn and cutback, not a full orbit or detached football', () => {
+  const kit = uniformKit({ body: '#b42635', trim: '#d9e2f0' }, 1);
+  for (const side of [-1, 1] as const) {
+    const signatures = [];
+    for (const elapsed of [0, .08, .16, .24, .33]) {
+      const a = evasiveAttempt('juke', side, elapsed), before = JSON.stringify(a), frame = drawing();
+      assert(kickFootballArt.moveSprite(frame.ctx, 100, 100, kit, elapsed * 4, a));
+      assert.equal(JSON.stringify(a), before);
+      for (const color of [BALL_ART.leather, UNIFORM.pants, kit.body])
+        assert(frame.paints.some(p => p.color === color));
+      signatures.push(JSON.stringify(frame.paints));
+    }
+    assert(new Set(signatures).size >= 3, 'plant, step and cutback are visibly distinct');
+    const juke = drawing(), spin = drawing();
+    kickFootballArt.moveSprite(juke.ctx, 100, 100, kit, 1, evasiveAttempt('juke', side, .17));
+    kickFootballArt.moveSprite(spin.ctx, 100, 100, kit, 1, evasiveAttempt('spin', side, .17));
+    assert.notDeepEqual(juke.paints, spin.paints, 'juke never uses the spin’s back-facing half turn');
+  }
 });
 
 test('Full Game presents an evasive QB scramble only while he is the ball carrier', () => {

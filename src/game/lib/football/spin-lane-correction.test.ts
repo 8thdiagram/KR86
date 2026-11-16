@@ -38,9 +38,9 @@ test('CPU decision waits for a credible threat and uses the same move physics', 
   a.moves = { version: 2, sequence: 0, readyAt: 0, backward: false, vx: 60, furthestX: 500 };
   a.defenders = [];
   const open = cpuCarrierAction(a, 0, { minY: 24, maxY: 168 });
-  assert.equal(open.juke, true);
+  assert(!open.juke, 'CPU does not perform purposeless open-field actions');
   let m = stepKickMoves(a, 0, 1 / 60, open);
-  assert.equal(m.moves?.active?.kind, 'boost');
+  assert.equal(m.moves?.active, undefined);
   a.defenders = [{ id: 0, x: 525, y: 77, vx: -30, vy: 0,
     homeX: 525, minY: 24, maxY: 168, speed: 30, lateralSpeed: 30, active: true }];
   a.moves = { ...a.moves, readyAt: 0, sequence: 0 };
@@ -70,14 +70,14 @@ test('CPU Full Game ball carrier commits a real juke through the live running pa
   assert.equal(runner.y, l.movement.player.y);
 });
 
-test('CPU Full Game runner accelerates in open field without repeating ACTION', () => {
+test('CPU Full Game runner runs normally in open field without purposeless ACTION', () => {
   const { g, l, runner } = field(-1);
   g.possession = 'away'; l.movement.returnTime = 1;
   l.athletes.filter(a => a.side === 'defense').forEach(a => {
     a.x = a.startX = 1000; a.y = a.startY = 150; a.engaged = 100;
   });
   stepField(g, {}, 1 / 60);
-  assert.equal(l.movement.moves?.active?.kind, 'boost');
+  assert.equal(l.movement.moves?.active, undefined);
   const first = l.movement.moves!.sequence;
   for (let i = 0; i < 35; i++) stepField(g, {}, 1 / 60);
   assert.equal(l.movement.moves!.sequence, first, 'CPU does not press ACTION every frame');
@@ -136,7 +136,7 @@ for (const threatSide of [-1, 1] as const) for (const hold of [false, true]) {
     assert(Math.abs(end.y - start.y + threatSide * EVADE.spinDistance) < 1e-7);
     assert(end.x > start.x + 10, 'forward momentum persists through the diagonal escape');
     assert(quarter > EVADE.spinDistance * .15);
-    assert(half > EVADE.spinDistance * .45 && half < EVADE.spinDistance * .6);
+    assert(Math.abs(half - EVADE.spinDistance * (8 / 60) / EVADE.outward) < 1e-7);
     assert.equal(l.movement.moves!.active, undefined);
     for (let frame = spinFrames; frame < 25; frame++)
       stepField(g, controls.sample(frame * 1000 / 60), 1 / 60);
@@ -180,6 +180,7 @@ test('short and pre-correction spins both survive save validation without snappi
     stepField(g, { action: true }, 1 / 60);
     if (legacy) {
       delete l.movement.moves!.active!.duration;
+      delete l.movement.moves!.active!.travelDuration;
       l.movement.moves!.active!.elapsed = .32;
       l.movement.moves!.readyAt = l.movement.returnTime + .6;
     }

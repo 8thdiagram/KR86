@@ -20,3 +20,9 @@ Headless Chromium can list built-in extension background pages before its actual
 **Why:** A background page accepts a debugger connection but can stall ordinary navigation and screenshot requests.
 
 **How to apply:** Select the explicitly created target by its returned ID, or filter for `type === 'page'`; never assume the first debugger target is the app.
+
+Generate natural gameplay replay fixtures through the public game step at the same time scale as the browser, not by stepping the local field solver alone.
+
+**Why:** The public engine reflects and stabilizes world coordinates and applies the live time scale. A local-solver snapshot near a handoff or move threshold can produce a different next action when replayed through the full browser engine, despite identical-looking geometry.
+
+**How to apply:** Use the public engine for end-to-end replay provenance, preserve its field-frame metadata, and select an already-running encounter that remains live long enough to inspect. Keep local solver tests for isolated deterministic physics comparisons.

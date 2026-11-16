@@ -194,7 +194,7 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
   const m = a.moves;
   if (!m) return false;
   const v2 = m.version === 2;
-  const act = m.active as { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: number; evasive?: boolean; duration?: number } | undefined;
+  const act = m.active;
   // Full Game reuses the carrier move record during eligible runs/scrambles;
   // only the explicitly tagged new moves may render outside Classic returns.
   if (a.phase !== 'returning' && !act?.evasive && !m.hesitating) return false;
@@ -220,6 +220,16 @@ function moveSpriteAtAnchor(ctx: CanvasRenderingContext2D, x: number, y: number,
   }
   if (v2 && !act && m.hesitating) {
     sprite(ctx, x, y, kit, t, true, 0, 0, undefined, { action: 'run', progress: (a.returnTime * 2) % 1 });
+    return true;
+  }
+  if (act && act.kind === 'juke' && act.evasive) {
+    // Authored foot plants and a partial shoulder turn only. The ball stays
+    // tucked; all lateral movement comes from authoritative world coordinates.
+    const outward = act.elapsed < EVADE.outward;
+    const planting = act.elapsed < .035 || Math.abs(act.elapsed - EVADE.outward) < .025;
+    const view: BodyView = outward ? (act.side > 0 ? 1 : 5) : 0;
+    sprite(ctx, x, y, kit, t, true, 0, (outward ? 1 : -1) * act.side * 1.5, view,
+      { action: planting ? 'stance' : 'run', progress: planting ? undefined : runProgress });
     return true;
   }
   if (act && act.kind === 'spin') {

@@ -6,6 +6,10 @@ import { CARRIER_BODY_WIDTH } from './player-dimensions';
 export const EVADE = Object.freeze({
   spin: .34,
   spinTravel: .26,
+  // New spins and jukes share this entire outward leg. The saved travel
+  // duration distinguishes existing .26-travel spins, which finish unchanged.
+  outward: .16,
+  juke: .34,
   boost: .42,
   cooldown: .45,
   boostRatio: 1.24,
@@ -16,11 +20,17 @@ export const EVADE = Object.freeze({
 /** Untagged timing belongs to pre-correction saves; finish those moves at
  * their original rate instead of invalidating or snapping a restored runner. */
 export const carrierSpinDuration = (active: { duration?: number }) => active.duration ?? .44;
-/** New turns finish their larger escape in the old travel window, then finish
- * the rotation while running in the new lane. Restored turns keep their curve. */
-export function carrierSpinProgress(active: { duration?: number; spinDirection?: number }, p: number) {
+/** New turns share the juke's outward leg, then finish rotating in the new
+ * lane. Restored turns without travelDuration retain their original curve. */
+export function carrierSpinProgress(active: { duration?: number; spinDirection?: number; travelDuration?: number }, p: number) {
   if (active.spinDirection === undefined) return p * p * (3 - 2 * p);
-  return active.duration === EVADE.spin ? Math.min(1, p * EVADE.spin / EVADE.spinTravel) : p;
+  return active.duration === EVADE.spin ? Math.min(1, p * EVADE.spin / (active.travelDuration ?? EVADE.spinTravel)) : p;
+}
+/** Jukes have the same observable outward leg as a spin, then return without
+ * undoing any forward travel. Nothing in defensive pursuit reads this curve. */
+export function carrierJukeProgress(elapsed: number) {
+  return elapsed <= EVADE.outward ? elapsed / EVADE.outward
+    : Math.max(0, (EVADE.juke - elapsed) / (EVADE.juke - EVADE.outward));
 }
 export type EvasionObstacle = { x: number; y: number; vx?: number; vy?: number };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -44,18 +54,21 @@ const gap = (x: number, y: number) => Math.max(Math.abs(x) / 9, Math.abs(y) / 10
 /** Minimum clearance along a diagonal, including the defender's committed
  * approach. Reused by lane selection and CPU decisions; no tackle immunity. */
 function corridorClearance(a: KickAttempt, bounds: CarrierBounds, obstacles: readonly EvasionObstacle[],
-  direction: -1 | 0 | 1, side: -1 | 0 | 1) {
+  direction: -1 | 0 | 1, side: -1 | 0 | 1, kind: 'spin' | 'juke' = 'spin') {
   const travel = runningVector(a, direction);
   const endY = a.player.y + travel.y * EVADE.spin + side * EVADE.spinDistance * travel.normalY;
-  if (endY <= bounds.minY || endY >= bounds.maxY) return { nearest: 0, danger: Infinity, endY };
+  const finalY = a.player.y + travel.y * EVADE.spin + (kind === 'juke' ? 0 : side * EVADE.spinDistance * travel.normalY);
+  const peakY = a.player.y + travel.y * EVADE.outward + side * EVADE.spinDistance * travel.normalY;
+  if ([finalY, peakY].some(y => y <= bounds.minY || y >= bounds.maxY))
+    return { nearest: 0, danger: Infinity, endY };
   let nearest = 100, danger = 0;
+  const bodies = [...a.defenders.filter(eligible), ...obstacles];
   for (let i = 1; i <= 16; i++) {
-    // Keep the established short tackle-approach forecast: the larger escape
-    // still completes within .26s even though the authored turn lasts .34s.
-    const p = i / 16, t = p * EVADE.spinTravel;
+    const t = i / 16 * (kind === 'juke' ? EVADE.juke : EVADE.outward);
+    const p = kind === 'juke' ? carrierJukeProgress(t) : t / EVADE.outward;
     const x = a.player.x + travel.x * t + side * EVADE.spinDistance * travel.normalX * p;
     const y = a.player.y + travel.y * t + side * EVADE.spinDistance * travel.normalY * p;
-    for (const d of [...a.defenders.filter(eligible), ...obstacles]) {
+    for (const d of bodies) {
       const v = 'id' in d ? velocity(a, d as KickDefender) : { vx: d.vx ?? 0, vy: d.vy ?? 0 };
       const clearance = gap(x - d.x - v.vx * t, y - d.y - v.vy * t);
       nearest = Math.min(nearest, clearance);
@@ -65,59 +78,76 @@ function corridorClearance(a: KickAttempt, bounds: CarrierBounds, obstacles: rea
   return { nearest, danger, endY };
 }
 
-/** CPU runners share human physics/cooldowns. Evaluate the deliberate escape
- * before ordinary lane steering; otherwise a tentative cut suppresses ACTION
- * every frame without ever committing to a complete evasive move. */
+/** CPU runners share human physics/cooldowns. Forecast a committed escape
+ * along the current travel heading, including its real collision corridor. */
 export function cpuCarrierAction(a: KickAttempt, direction: -1 | 0 | 1, bounds: CarrierBounds,
   obstacles: readonly EvasionObstacle[] = []): KickMoveInput {
   const idle: KickMoveInput = { evasion: true, obstacles };
   const boosting = a.moves?.active?.evasive && a.moves.active.kind === 'boost';
   if (a.moves?.active && !boosting) return idle;
   if (!boosting && a.returnTime < (a.moves?.readyAt ?? 0)) return idle;
-  const move = chooseCarrierEvasion(a, bounds, obstacles, 0);
-  if (move.kind === 'spin') {
-    const exit = corridorClearance(a, bounds, obstacles, 0, move.side);
-    const straight = corridorClearance(a, bounds, obstacles, 0, 0);
-    return { ...idle, evasionDirection: 0,
+  // Commit the same heading used by this movement step, including diagonal
+  // and normalized opposite-field returns.
+  const move = chooseCarrierEvasion(a, bounds, obstacles, direction);
+  if (move.kind !== 'boost') {
+    // CPU does not spin without purpose in open space.
+    if (!carrierThreats(a, direction).length) return idle;
+    const exit = corridorClearance(a, bounds, obstacles, direction, move.side, move.kind);
+    const straight = corridorClearance(a, bounds, obstacles, direction, 0);
+    return { ...idle, evasionDirection: direction,
       juke: exit.nearest > 1.05 && exit.nearest > straight.nearest + .12 };
   }
-  // Accelerate through a genuinely clear forward corridor, not merely because
-  // an unsafe spin has no legal lane. CPU never boosts into nearby contact.
+  // Only an imminent rear pursuer can request a burst. Do not accelerate into
+  // another body just because the selected rear threat has priority.
   const travel = runningVector(a, direction);
   const open = [...a.defenders.filter(eligible), ...obstacles].every(d => {
     const dx = d.x - a.player.x, dy = d.y - a.player.y;
-    return dx * travel.x + dy * travel.y < 0 || Math.hypot(dx, dy) > 70;
+    return dx * travel.x + dy * travel.y < 0 || Math.hypot(dx, dy) > 30;
   });
-  return { ...idle, juke: !boosting && open };
+  return { ...idle, evasionDirection: direction, juke: !boosting && open };
 }
 
-/** Forecast actual approach and both escape corridors, never a random move. */
+/** Observable geometry only; no selected move, future destination or timer. */
+function carrierThreats(a: KickAttempt, direction: -1 | 0 | 1) {
+  const travel = runningVector(a, direction);
+  const speed = Math.hypot(travel.x, travel.y);
+  return a.defenders.filter(eligible).flatMap(d => {
+    const dx = d.x - a.player.x, dy = d.y - a.player.y, v = velocity(a, d);
+    if (Math.hypot(dx, dy) > EVADE.threatRadius) return [];
+    const along = (dx * travel.x + dy * travel.y) / speed;
+    const across = dx * travel.normalX + dy * travel.normalY;
+    const rvx = v.vx - travel.x, rvy = v.vy - travel.y;
+    const t = clamp(-(dx * rvx + dy * rvy) / Math.max(1, rvx * rvx + rvy * rvy), 0, .35);
+    const closest = gap(dx + rvx * t, dy + rvy * t);
+    const rear = along < -5;
+    if (rear ? t === 0 || closest >= 1.5 : closest >= 4.2) return [];
+    return [{ d, along, across, rear, t, closest }];
+  }).sort((d, e) => d.t - e.t || d.closest - e.closest);
+}
+
+/** Shared human/CPU selection. Rear imminent contact has first priority;
+ * otherwise choose the most imminent threat, not merely the closest body. */
 export function chooseCarrierEvasion(a: KickAttempt, bounds: CarrierBounds, obstacles: readonly EvasionObstacle[] = [],
   direction: -1 | 0 | 1 = 0) {
-  const travel = runningVector(a, direction);
-  const coverage = a.defenders.filter(eligible);
-  const threat = coverage.filter(d => {
-    const dx = d.x - a.player.x, dy = d.y - a.player.y, v = velocity(a, d);
-    if (Math.hypot(dx, dy) > EVADE.threatRadius) return false;
-    const behind = (dx * travel.x + dy * travel.y) / Math.hypot(travel.x, travel.y) < -5;
-    if (behind && ![0, .15, .3].some(t => gap(dx + (v.vx - travel.x) * t, dy + (v.vy - travel.y) * t) < 1.5)) return false;
-    return [0, .15, .3].some(t => gap(dx + (v.vx - travel.x) * t, dy + (v.vy - travel.y) * t) < 4.2);
-  }).sort((d, e) => Math.hypot(d.x - a.player.x, d.y - a.player.y) - Math.hypot(e.x - a.player.x, e.y - a.player.y))[0];
-  if (!threat) return { kind: 'boost' as const, side: 0 as const };
-  const threatVelocity = velocity(a, threat);
-  const approach = (threat.x - a.player.x + threatVelocity.vx * .12) * travel.normalX
-    + (threat.y - a.player.y + threatVelocity.vy * .12) * travel.normalY;
+  const threats = carrierThreats(a, direction);
+  if (threats.some(t => t.rear)) return { kind: 'boost' as const, side: 0 as const };
+  const threat = threats[0];
+  const kind = threat && threat.along > 0 && Math.abs(threat.across) <= Math.max(6, threat.along * .3)
+    ? 'juke' as const : 'spin' as const;
+  const approach = threat?.across ?? 0;
   let best: -1 | 1 | undefined, bestScore = -Infinity;
   for (const side of [-1, 1] as const) {
-    const { endY, nearest, danger } = corridorClearance(a, bounds, obstacles, direction, side);
-    if (endY <= bounds.minY || endY >= bounds.maxY) continue;
+    const { endY, nearest, danger } = corridorClearance(a, bounds, obstacles, direction, side, kind);
+    if (!Number.isFinite(danger)) continue;
     const preferred = Math.abs(approach) > 1 && side * approach < 0 ? 8 : 0;
     const score = Math.min(nearest, 4) * 20 - danger * 10 + preferred
       + Math.min(endY - bounds.minY, bounds.maxY - endY) * .01;
     if (score > bestScore) { bestScore = score; best = side; }
   }
-  return best === undefined ? { kind: 'boost' as const, side: 0 as const }
-    : { kind: 'spin' as const, side: best };
+  // If both full corridors are obstructed, choose the side with more sideline
+  // room and let ordinary swept collisions stop contact. Never fall back to an
+  // illegal open-field burst, or grant immunity to force the move to complete.
+  return { kind, side: best ?? (a.player.y < (bounds.minY + bounds.maxY) / 2 ? 1 : -1) as -1 | 1 };
 }
 
 /** Sweep the existing contact box; stop just inside contact, not outside as a shield. */
@@ -166,33 +196,37 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
   const requested = input.juke ? chooseCarrierEvasion(a, bounds, input.obstacles, heading) : undefined;
   // A burst is acceleration, not a commitment to run into a newly arriving
   // defender. It may yield to a genuine escape, never to another burst.
-  const interruptBoost = moves.active?.evasive && moves.active.kind === 'boost' && requested?.kind === 'spin';
+  const interruptBoost = moves.active?.evasive && moves.active.kind === 'boost' && requested && requested.kind !== 'boost';
   if (requested && ((!moves.active && a.returnTime + 1e-9 >= moves.readyAt) || interruptBoost)) {
     const move = requested;
     moves.active = { ...move, elapsed: 0, evasive: true,
-      ...(move.kind === 'spin' ? { duration: EVADE.spin, spinDirection: heading, lateralDistance: EVADE.spinDistance } : {}) };
+      ...(move.kind !== 'boost' ? { duration: EVADE.spin, spinDirection: heading,
+        travelDuration: EVADE.outward, lateralDistance: EVADE.spinDistance } : {}) };
     moves.sequence++; moves.readyAt = a.returnTime + EVADE[move.kind] + EVADE.cooldown; started = true;
   }
   const active = moves.active;
   let dx = forward * dt, dy = direction * lateral * dt;
-  const spinStep = active?.kind === 'spin';
+  const spinStep = active?.kind === 'spin' || active?.kind === 'juke';
   if (active) {
-    const duration = active.kind === 'spin' ? carrierSpinDuration(active) : EVADE.boost;
+    const duration = spinStep ? carrierSpinDuration(active) : EVADE.boost;
     const used = Math.min(dt, Math.max(0, duration - active.elapsed)), rest = dt - used;
     const p0 = active.elapsed / duration, p1 = Math.min(1, (active.elapsed + used) / duration);
-    if (active.kind === 'spin') {
+    if (spinStep) {
       // Freeze the approach heading for this short committed juke, then resume
       // current steering. Displace real coordinates perpendicular to travel,
       // starting at full lateral rate on the first frame, not a visual offset.
       // Older saves without heading metadata retain their existing world-Y move.
       const travel = runningVector(a, active.spinDirection ?? 0);
-      const shift = active.side * (active.lateralDistance ?? EVADE.bodyWidth) *
-        (carrierSpinProgress(active, p1) - carrierSpinProgress(active, p0));
+      const progress = active.kind === 'juke'
+        ? (p: number) => carrierJukeProgress(p * duration)
+        : (p: number) => carrierSpinProgress(active, p);
+      const shift = active.side * (active.lateralDistance ?? EVADE.bodyWidth) * (progress(p1) - progress(p0));
       dx = forward * dt + travel.normalX * shift;
       dy = travel.y * used + travel.normalY * shift + direction * lateral * rest;
     } else {
       const p = (p0 + p1) / 2, gain = Math.max(0, Math.min(1, p / .12, (1 - p) / .2));
       dx = forward * ((1 + (EVADE.boostRatio - 1) * gain) * used + rest);
+      dy = direction * lateral * ((1 + (EVADE.boostRatio - 1) * gain) * used + rest);
     }
     moves.active = p1 >= 1 - 1e-9 ? undefined : { ...active, elapsed: active.elapsed + used };
   }

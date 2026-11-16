@@ -44,7 +44,7 @@ test('human and CPU spins travel exactly 20% farther immediately, then finish th
       const m = stepKickMoves(a, 0, .01, input, bounds);
       a.player = m.player; a.moves = m.moves; a.returnTime += .01;
       assert(isKickMoves(a.moves, a));
-      if (i === 0) assert(a.player.y - 96 >= EVADE.spinDistance * .01 / EVADE.spinTravel - 1e-8);
+      if (i === 0) assert(a.player.y - 96 >= EVADE.spinDistance * .01 / EVADE.outward - 1e-8);
       if (i === 25) {
         atTravelEnd = a.player.y;
         assert(Math.abs(atTravelEnd - 96 - EVADE.spinDistance) < 1e-8);
@@ -82,20 +82,20 @@ for (const [side, expected] of [[1, -1], [-1, 1]] as const) {
       assert(isKickMoves(a.moves, a), 'active and completed moves can be saved/restored');
     }
     assert(Math.abs(a.player.y - 96 - expected * EVADE.spinDistance) < 1e-7);
-    assert(maxStep <= EVADE.spinDistance * 1.5 / (EVADE.spin * 60) + 1e-6,
+    assert(maxStep <= EVADE.spinDistance / (EVADE.outward * 60) + 1e-6,
       'each step stays within the smooth movement curve, never a one-frame lane teleport');
     assert(!a.moves?.active); assert(elapsed > EVADE.spin);
     const x = a.player.x; const m = stepKickMoves(a, 0, 1 / 60, { evasion: true });
     assert(m.player.x > x, 'running resumes immediately');
   });
 }
-test('open field, distant coverage and non-closing trailing defenders select boost', () => {
+test('open field, distant coverage and non-closing trailing defenders select spin', () => {
   for (const pos of [undefined, [100, 0], [-20, 0]] as const) {
     const a = attempt(); if (pos) defender(a, ...pos);
-    assert.equal(chooseCarrierEvasion(a, bounds).kind, 'boost');
+    assert.equal(chooseCarrierEvasion(a, bounds).kind, 'spin');
   }
   const closing = attempt(); defender(closing, -12, 17, 120, -20);
-  assert.equal(chooseCarrierEvasion(closing, bounds).kind, 'spin', 'dangerous trailing diagonal is a genuine threat');
+  assert.equal(chooseCarrierEvasion(closing, bounds).kind, 'boost', 'dangerous trailing diagonal is a genuine rear threat');
 });
 test('head-on pressure chooses the open corridor, including other players and sidelines', () => {
   const a = attempt(); defender(a, 35, 0);
@@ -107,7 +107,7 @@ test('head-on pressure chooses the open corridor, including other players and si
   assert.equal(chooseCarrierEvasion(a, bounds).side, -1);
 });
 test('defender trajectory influences corridor choice without mutating coverage', () => {
-  const a = attempt(); defender(a, 28, 18, -20, -100);
+  const a = attempt(); defender(a, 15, 0, -20, -100);
   const before = JSON.stringify(a);
   const first = chooseCarrierEvasion(a, bounds);
   assert.equal(JSON.stringify(a), before);
@@ -116,7 +116,8 @@ test('defender trajectory influences corridor choice without mutating coverage',
   assert.notDeepEqual(first, second, 'crossing trajectory changes the safest exit');
 });
 test('boost is a 24-percent capped, time-bounded acceleration, never a permanent rating change', () => {
-  const a = attempt(); const initial = JSON.stringify(a);
+  const a = attempt(); defender(a, -18, 0, 140, 0);
+  const initial = JSON.stringify(a);
   const base = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
   let peak = 0, activeFrames = 0, last = a.player.x;
   for (let i = 0; i < 60; i++) {

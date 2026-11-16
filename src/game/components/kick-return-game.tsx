@@ -22,7 +22,7 @@ import { readSound, writeSound } from '../../platform/local-save';
 // Invisible copies participate in layout but are excluded from accessibility.
 const statusSpaceMessages = [
   'First Down is next. You run forward automatically. Use UP and DOWN to dodge.',
-  'Slide UP/DOWN. Press ACTION to spin or boost; hold to halt forward movement.',
+  'Slide UP/DOWN. Press ACTION to juke, spin or escape rear pursuit with a burst; hold to halt.',
   'RETURN TIME: 99:59.99 · NEW FASTEST TOUCHDOWN!',
   'Good game! All four downs are played. Your best return was 106 yards.',
   'TOUCHDOWN! You found a way through!',
@@ -380,7 +380,7 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
     : phase === 'returning' && (progress.current?.returnTime ?? 0) < .8 ? 'CAUGHT! The return is on.'
     : phase === 'returning' ? `${kickDownName(progress.attempts)} — Find the opening. Keep moving.`
     : phase === 'tackled' ? founderSession ? `RETURN COMPLETE! ${yards} yards returned.` : `TACKLED! ${yards} yards returned. Next up: ${kickDownName(progress.attempts + 1)}.`
-     : 'Slide UP/DOWN. Press ACTION to spin or boost; hold to halt forward movement.';
+     : 'Slide UP/DOWN. Press ACTION to juke, spin or escape rear pursuit with a burst; hold to halt.';
   const primaryAction = founderSession ? (phase === 'ready' ? { label: 'START', run: begin, testId: 'kick-return-start' } : null) : progress.outcome ? { label: 'Play again', run: restart, testId: 'kick-return-restart' }
     : phase === 'ready' ? { label: 'START', run: begin, testId: 'kick-return-start' }
     : phase === 'tackled' ? { label: `PLAY ${kickDownName(progress.attempts + 1).toUpperCase()}`, run: begin, testId: 'kick-return-retry' }
@@ -419,7 +419,7 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
     <header className="kr-heading"><p className="kr-kicker">{activity === 'optional' ? 'Optional Founder Signal game' : 'Final Founder Signal activity'} · you can skip playing</p>
       <h2 className="kr-title">KICK RETURN ’86</h2>
       <p className="kr-subtitle">One ball. Eleven defenders. Find your way to the end zone.</p>
-       <p className="kr-note">Slide UP/DOWN to steer. Press ACTION for an automatic spin or speed boost.</p>
+       <p className="kr-note">Slide UP/DOWN to steer. ACTION: juke head-on, spin away from side pressure, burst from close rear pursuit. Open field: spin.</p>
        <p className="kr-note kr-rules" data-testid="kick-return-rules">
         {founderSession ? 'One kickoff return. A touchdown, tackle or out-of-bounds ends this session, then you return to Founder Signal.' : 'You get four downs: First Down, Second Down, Third Down, Fourth Down. Score a touchdown before they run out. A touchdown or your fourth tackle ends the game.'}</p>
     </header>
@@ -471,7 +471,7 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
       <div className="kr-juke-column">
         <button type="button" className="kr-direction kr-juke" data-game-pointer-input
           data-testid="kick-return-juke" disabled={!controlsEnabled || !progress.current?.moves}
-          data-pressed={pressed.juke} aria-label="Action: press to spin or boost; hold to halt forward movement"
+          data-pressed={pressed.juke} aria-label="Action: press to juke, spin or burst from rear pursuit; hold to halt forward movement"
           onPointerDown={e => press('juke', e)} onPointerUp={e => release(e)}
           onPointerCancel={e => release(e, true)} onLostPointerCapture={e => release(e, true)}
           onClick={e => { if (e.detail === 0 && controlsEnabled) input.current.tapJuke(); }}>ACTION</button>
@@ -480,7 +480,7 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
             : progress.current?.moves?.hesitating ? 'STEER TO REPOSITION'
             : progress.current?.moves?.active ? activeActionKind === 'spin' ? 'SPIN LEFT / RIGHT' : activeActionKind === 'boost' ? 'SPEED BOOST' : activeActionKind === 'dive' ? 'GOAL-LINE DIVE' : 'DIRECTIONAL JUKE'
             : progress.current?.moves && progress.current.returnTime < progress.current.moves.readyAt ? 'Recovering'
-            : 'Press: spin / boost · Hold: halt'}
+            : 'Press: juke / spin / burst · Hold: halt'}
         </small>
       </div>
       <div className="kr-steering">
@@ -528,7 +528,7 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
       onClick={skip} data-testid="kick-return-skip" disabled={!!progress.outcome} aria-hidden={!!progress.outcome}
       tabIndex={progress.outcome ? -1 : 0} style={{ visibility: progress.outcome ? 'hidden' : 'visible' }}>Skip Game</button>
       <p className="kr-note">{founderSession?'One return, then back to Founder Signal.':'Four downs per game. Play again starts a fresh game.'}<br />
-        Slide UP/DOWN to steer. Press ACTION for an automatic spin or speed boost.<br />
+        Slide UP/DOWN to steer. ACTION: head-on juke, side-pressure spin, rear-pursuit burst. Open field: spin.<br />
         Desktop: arrows steer; press Space, J or ← for ACTION.</p>
     </footer>
     <button type="button" className="kr-skip" data-testid="kick-return-sound" aria-pressed={soundOn}

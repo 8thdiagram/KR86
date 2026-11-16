@@ -379,16 +379,16 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
   const jukeHint = running
     ? defenseActive ? `Tap: ${defensiveActionKind(g) === 'intercept' ? 'intercept / break up pass' : defensiveActionKind(g) === 'recover' ? 'dive for loose ball' : 'nearest defender tackles'}`
     : !controlsActive ? 'Watch the play'
-    : g.special?.stage === 'return' || live?.mode === 'return' ? 'Press: spin / boost · Hold: halt · UP/DOWN: steer'
+    : g.special?.stage === 'return' || live?.mode === 'return' ? 'Press: juke / spin / burst · Hold: halt · UP/DOWN: steer'
     : live && canForwardPass(live) ? live.mode === 'scramble'
       ? 'Release, then press ACTION to pass · Run only beyond the line'
       : 'Tap: Standard Pass · Long Press: Bullet Pass · Hold: Scramble'
     : live?.option?.phase === 'read' ? 'ACTION pitches · otherwise keep'
     : live?.option?.phase === 'pitch' ? 'Pitch airborne'
-    : live?.mode === 'scramble' ? 'Press: spin / boost · Hold: halt · UP/DOWN: steer'
+    : live?.mode === 'scramble' ? 'Press: juke / spin / burst · Hold: halt · UP/DOWN: steer'
     : live?.mode === 'kick' ? live.play === 'field-goal' ? 'Stop the marker between the uprights' : 'Tap to punt'
     : g.possession === 'away' && g.phase === 'live' ? 'Defense plays itself'
-    : 'Press: spin / boost · Hold: halt · UP/DOWN: steer'
+    : 'Press: juke / spin / burst · Hold: halt · UP/DOWN: steer'
     : g.phase === 'pre-snap' ? g.possession === 'home' ? 'Press ACTION to snap' : 'Watch the snap'
     : ctxAction ? 'Tap to continue' : g.phase === 'play-call' ? 'Pick a call on the field' : '';
   const quarter = g.overtime ? 'OT' : `Q${g.quarter}`;

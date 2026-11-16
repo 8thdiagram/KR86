@@ -11,7 +11,7 @@ export type CarrierBounds = { minY: number; maxY: number };
 export type KickMoves = {
   version: 1 | 2; sequence: number; readyAt: number; backward: boolean; vx: number; furthestX: number;
   hesitating?: boolean;
-  active?: { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: KickDirection; evasive?: true; duration?: number; spinDirection?: KickDirection; lateralDistance?: number };
+  active?: { kind: 'spin' | 'juke' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: KickDirection; evasive?: true; duration?: number; spinDirection?: KickDirection; lateralDistance?: number; travelDuration?: number };
 };
 export type JukeRead = { until: number; targetY: number };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -23,7 +23,7 @@ export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: numb
   // to cancel a 440ms spin mid-lane, leaving only an apparent in-place turn.
   // Hold-to-halt takes over as soon as the short spin has finished.
   if (input.hesitate && a.moves?.version === 2 &&
-    !(a.moves.active?.evasive && a.moves.active.kind === 'spin'))
+    !(a.moves.active?.evasive && ['spin', 'juke'].includes(a.moves.active.kind)))
     return stepBurst(a, direction, dt, input, bounds);
   if (a.moves?.active?.evasive || input.evasion && !a.moves?.active && !input.hesitate)
     return stepCarrierEvasion(a, direction, dt, input, bounds);
@@ -62,7 +62,7 @@ export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: numb
       if (active.elapsed < .08) vy = -active.side * lateral * .55;
       else if (active.elapsed < .3) vy = active.side * lateral;
     }
-    const duration = active.kind === 'boost' ? EVADE.boost : JUKE[active.kind];
+    const duration = active.kind === 'boost' ? EVADE.boost : active.kind === 'juke' ? EVADE.juke : JUKE[active.kind];
     const elapsed = Math.min(duration, active.elapsed + dt);
     moves.active = elapsed + 1e-9 >= duration ? undefined : { ...active, elapsed };
   }
@@ -149,19 +149,24 @@ export function isKickMoves(value: KickMoves | undefined, a: KickAttempt): boole
     // A diagonal juke has a world-X component in addition to normal running.
     // Its final frame can still carry that velocity after active is cleared.
     typeof m.backward === 'boolean' && (m.version !== 2 || !m.backward) && Number.isFinite(m.vx) &&
-    Math.abs(m.vx) <= playerSpeed(m.version === 2 ? 100 : 86) + (m.version === 2 ? EVADE.spinDistance / EVADE.spinTravel : 0) &&
+    Math.abs(m.vx) <= playerSpeed(m.version === 2 ? 100 : 86) + (m.version === 2 ? EVADE.spinDistance / EVADE.outward : 0) &&
     Number.isFinite(m.furthestX) && m.furthestX >= 0 && m.furthestX <= 1101 &&
     m.furthestX + .000001 >= a.player.x &&
     (active === undefined || !!active && (active.evasive === undefined || active.evasive === true) &&
-      (active.duration === undefined || active.evasive === true && active.kind === 'spin' && [EVADE.spin, .26].includes(active.duration)) &&
-      (active.lateralDistance === undefined || active.evasive === true && active.kind === 'spin' &&
+      (active.travelDuration === undefined || active.evasive === true && ['spin', 'juke'].includes(active.kind) &&
+        active.duration === EVADE.spin && active.travelDuration === EVADE.outward &&
+        active.spinDirection !== undefined && active.lateralDistance === EVADE.spinDistance) &&
+      (active.kind !== 'juke' || active.evasive === true && active.duration === EVADE.juke &&
+        active.travelDuration === EVADE.outward && active.spinDirection !== undefined && active.lateralDistance === EVADE.spinDistance) &&
+      (active.duration === undefined || active.evasive === true && ['spin', 'juke'].includes(active.kind) && [EVADE.spin, .26].includes(active.duration)) &&
+      (active.lateralDistance === undefined || active.evasive === true && ['spin', 'juke'].includes(active.kind) &&
         (active.duration === EVADE.spin && active.lateralDistance === EVADE.spinDistance ||
           active.duration === .26 && active.lateralDistance === EVADE.bodyWidth * 1.45)) &&
-      (active.spinDirection === undefined || active.evasive === true && active.kind === 'spin'
+      (active.spinDirection === undefined || active.evasive === true && ['spin', 'juke'].includes(active.kind)
         && [EVADE.spin, .26].includes(active.duration ?? 0) && [-1, 0, 1].includes(active.spinDirection)) &&
-      (active.evasive ? m.version === 2 && ['spin', 'boost'].includes(active.kind) : (m.version === 2 ? ['spin', 'stutter', 'dive'] : ['spin', 'stutter']).includes(active.kind)) &&
+      (active.evasive ? m.version === 2 && ['spin', 'juke', 'boost'].includes(active.kind) : (m.version === 2 ? ['spin', 'stutter', 'dive'] : ['spin', 'stutter']).includes(active.kind)) &&
       (active.side === -1 || active.side === 1 || m.version === 2 && active.side === 0) && Number.isFinite(active.elapsed) &&
        (!active.evasive || (active.kind === 'boost' ? active.side === 0 : active.side !== 0)) &&
-       active.elapsed >= 0 && active.elapsed <= (active.evasive ? active.kind === 'spin' ? carrierSpinDuration(active) : EVADE.boost : m.version === 2
-         ? active.kind === 'dive' ? kickDiveRules(a).duration : BURST.duration : active.kind === 'boost' ? 0 : JUKE[active.kind]));
+       active.elapsed >= 0 && active.elapsed <= (active.evasive ? ['spin', 'juke'].includes(active.kind) ? carrierSpinDuration(active) : EVADE.boost : m.version === 2
+         ? active.kind === 'dive' ? kickDiveRules(a).duration : BURST.duration : active.kind === 'boost' || active.kind === 'juke' ? 0 : JUKE[active.kind]));
 }

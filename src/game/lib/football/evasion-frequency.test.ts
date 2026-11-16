@@ -21,7 +21,7 @@ test('an existing blocking overlap does not pin an outward escape at sweep time 
 });
 
 test('normal CPU offensive plays regularly produce deliberate evasive movement', t => {
-  let plays = 0, completed = 0, runningPlays = 0, opportunities = 0, attempts = 0, spins = 0, boosts = 0, catches = 0, receiverSpins = 0;
+  let plays = 0, completed = 0, runningPlays = 0, opportunities = 0, attempts = 0, spins = 0, jukes = 0, boosts = 0, catches = 0, receiverSpins = 0;
   for (let seed = 1; seed <= 12; seed++) for (const play of ['power', 'sweep', 'counter', 'draw', 'slant', 'screen'] as PlayId[]) {
     const g = createFootball(seed * 1986, teams);
     g.possession = 'away'; g.phase = 'live'; g.spot = 35;
@@ -36,6 +36,7 @@ test('normal CPU offensive plays regularly produce deliberate evasive movement',
       const runner = l.athletes[l.carrier]!;
       const began = (l.movement.moves?.sequence ?? 0) > sequence;
       const spin = began && l.movement.moves?.active?.kind === 'spin';
+      const juke = began && l.movement.moves?.active?.kind === 'juke';
       const bodies = l.athletes.filter(a => a.id !== runner.id);
       const favorable = l.mode === 'run' && bodies.some(d => d.side !== runner.side &&
         d.engaged <= l.time && !d.dive && d.x - runner.x > 0 && d.x - runner.x < 42 && Math.abs(d.y - runner.y) < 24) &&
@@ -46,10 +47,11 @@ test('normal CPU offensive plays regularly produce deliberate evasive movement',
         });
       if (favorable && !window) { opportunities++; attempted = false; }
       if (spin) { spins++; if (l.passCaught) receiverSpins++; }
-      if (favorable && !attempted && (spin || l.movement.moves?.active?.kind === 'spin')) {
+      if (juke) jukes++;
+      if (favorable && !attempted && (spin || juke || ['spin', 'juke'].includes(l.movement.moves?.active?.kind ?? ''))) {
         attempts++; attempted = true;
       }
-      if (began && !spin) boosts++;
+      if (began && l.movement.moves?.active?.kind === 'boost') boosts++;
       window = favorable;
       sequence = l.movement.moves?.sequence ?? 0;
       if (result || l.mode === 'return' || l.mode === 'fumble') { completed++; break; }
@@ -57,18 +59,21 @@ test('normal CPU offensive plays regularly produce deliberate evasive movement',
     if (ran) runningPlays++;
     if (caught) catches++;
   }
-  t.diagnostic(JSON.stringify({ plays, completed, runningPlays, catches, receiverSpins, opportunities, attempts, spins, boosts }));
+  t.diagnostic(JSON.stringify({ plays, completed, runningPlays, catches, receiverSpins, opportunities, attempts, spins, jukes, boosts }));
   assert.equal(completed, plays, 'simulate complete plays, not isolated coordinate steps');
   assert(spins >= 12, 'moves should be recognizable across normal plays, not a rare fixture');
   assert(attempts > 0, 'geometric encounters include crowded and cooldown-blocked lanes, not just safe opportunities');
   assert(boosts > 0);
+  assert(jukes > 0, 'genuine head-on jukes occur in complete normal CPU plays');
   assert(catches > 0);
   assert(receiverSpins > 0, 'real CPU completions flow into the same automatic evasion system');
 });
 
-test('an open-field burst yields immediately to a new credible threat', () => {
+test('a rear-pursuit burst yields immediately to a new credible side threat', () => {
   const a = createKickAttempt(1986, 1);
-  a.phase = 'returning'; a.player = { x: 500, y: 96 }; a.returnTime = 1; a.defenders = [];
+  a.phase = 'returning'; a.player = { x: 500, y: 96 }; a.returnTime = 1;
+  a.defenders = [{ id: 0, x: 482, y: 96, vx: 140, vy: 0,
+    homeX: 482, minY: 24, maxY: 168, speed: 140, lateralSpeed: 30, active: true }];
   let m = stepKickMoves(a, 0, 1 / 60, cpuCarrierAction(a, 0, FOOTBALL_SIDELINES));
   assert.equal(m.moves?.active?.kind, 'boost');
   a.player = m.player; a.moves = m.moves; a.returnTime += 1 / 60;
@@ -76,13 +81,13 @@ test('an open-field burst yields immediately to a new credible threat', () => {
     homeX: 525, minY: 24, maxY: 168, speed: 30, lateralSpeed: 30, active: true }];
   m = stepKickMoves(a, 1, 1 / 60, cpuCarrierAction(a, 1, FOOTBALL_SIDELINES));
   assert.equal(m.moves?.active?.kind, 'spin');
-  assert.equal(m.moves.active.spinDirection, 0, 'deliberate cut owns the heading instead of ordinary CPU steering');
-  assert(m.player.y > a.player.y);
+  assert.equal(m.moves.active.spinDirection, 1, 'escape is relative to the actual diagonal heading');
+  assert(m.player.x !== a.player.x && m.player.y !== a.player.y);
   assert.equal(m.moves.active.lateralDistance, EVADE.spinDistance);
 });
 
 test('normal CPU kickoff returns automatically evade and accelerate', t => {
-  let returns = 0, spins = 0, boosts = 0, finished = 0;
+  let returns = 0, spins = 0, jukes = 0, boosts = 0, finished = 0;
   for (let seed = 1; seed <= 16; seed++) {
     const g = createFootball(seed * 1986, teams);
     g.phase = 'kickoff'; g.kickReceiver = 'away'; g.possession = 'away';
@@ -95,7 +100,8 @@ test('normal CPU kickoff returns automatically evade and accelerate', t => {
         returning = true;
         if ((a.moves?.sequence ?? 0) > sequence) {
           if (a.moves?.active?.kind === 'spin') spins++;
-          else boosts++;
+          else if (a.moves?.active?.kind === 'juke') jukes++;
+          else if (a.moves?.active?.kind === 'boost') boosts++;
         }
         sequence = a.moves?.sequence ?? 0;
       }
@@ -103,9 +109,11 @@ test('normal CPU kickoff returns automatically evade and accelerate', t => {
     }
     if (returning) returns++;
   }
-  t.diagnostic(JSON.stringify({ kickoffs: 16, returns, finished, spins, boosts }));
+  t.diagnostic(JSON.stringify({ kickoffs: 16, returns, finished, spins, jukes, boosts }));
   assert.equal(finished, 16);
-  assert(returns >= 12); assert(spins >= 4); assert(boosts >= 4);
+  assert(returns >= 12); assert(spins >= 4);
+  // Bursts are no longer automatic open-field accelerations. A rear threat
+  // is verified separately; a normal return need not create one.
 });
 
 for (const kind of ['interception', 'fumble'] as const) {
@@ -122,9 +130,13 @@ for (const kind of ['interception', 'fumble'] as const) {
     Object.assign(d, { x: 522, y: 80, startX: 522, startY: 80, engaged: 0 });
     l.movement.player = { x: 650, y: 96 }; l.movement.returnTime = 1;
     l.movement.moves = { version: 2, sequence: 0, readyAt: 0, backward: false, vx: 60, furthestX: 650 };
-    for (let i = 0; i < 8; i++) assert.equal(stepInterception(g, {}, 1 / 60), undefined);
-    assert.equal(l.movement.moves?.active?.kind, 'spin');
-    assert(runner.x < 550); assert(runner.y > 100);
+    let spun = false;
+    for (let i = 0; i < Math.ceil(EVADE.spin * 60); i++) {
+      assert.equal(stepInterception(g, {}, 1 / 60), undefined);
+      spun ||= l.movement.moves?.active?.kind === 'spin';
+    }
+    assert(spun);
+    assert(runner.x < 550); assert(Math.abs(runner.y - 96) > 1, 'the diagonal return uses real lateral coordinates');
     assert.equal(runner.x, 1200 - l.movement.player.x);
     assert.equal(runner.y, l.movement.player.y);
   });

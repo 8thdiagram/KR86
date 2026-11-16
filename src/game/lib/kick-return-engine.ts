@@ -10,7 +10,7 @@ import { stepOpenFieldCoverage } from './kick-open-field';
 import { stepFullCoverage } from './kick-full-coverage';
 import { openFieldGain } from './football/athleticism';
 import { playerSpeed } from './player-pace';
-import { constrainEvasionStep } from './carrier-evasion';
+import { constrainEvasionStep, EVADE } from './carrier-evasion';
 
 /** Original, deterministic miniature football physics. No assessment scoring. */
 export const KR = {
@@ -359,7 +359,11 @@ export function isKickReturnProgress(value: unknown): value is KickReturnProgres
     (a.diveRead !== undefined && (a.diveVersion !== 1 ||
       !finite(a.diveRead.y, a.diveRead.vy, a.diveRead.steadyFor) ||
       a.diveRead.y < KR.minY || a.diveRead.y > KR.maxY ||
-      Math.abs(a.diveRead.vy) > playerSpeed(KR.lateralSpeed) * (a.moves?.version === 2 ? 1.25 : 1) + .000001 ||
+      // A real diagonal fake adds its lateral escape to ordinary steering.
+      // This is validation of observed motion only, not a defensive speed buff.
+      Math.abs(a.diveRead.vy) > (a.moves?.version === 2
+        ? playerSpeed(KR.lateralSpeed) + EVADE.spinDistance / EVADE.outward
+        : playerSpeed(KR.lateralSpeed)) + .000001 ||
       a.diveRead.steadyFor < 0 || a.diveRead.steadyFor > 10)) ||
     !['kickoff', 'returning', 'tackled', 'touchdown'].includes(a.phase) ||
     !finite(a.time, a.returnTime, a.player?.x, a.player?.y, a.landing?.x, a.landing?.y) ||
