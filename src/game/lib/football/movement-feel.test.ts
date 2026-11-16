@@ -16,9 +16,9 @@ test('position-only movement animates feet and chooses a real strafing direction
         now: n / 60, x: 500 + vx! * n / 60, y: 96 + vy! * n / 60,
         vx: 0, vy: 0, facing: 1,
       });
-      if (frame.moving) phases.add(Math.floor(frame.phase * 8));
+      if (frame.moving) phases.add(Math.floor(frame.phase * 4));
     }
-    assert(phases.size >= 5, `${vx},${vy}: visible stepping throughout movement`);
+    assert(phases.size >= 3, `${vx},${vy}: four deliberate poses are traversed`);
     if (vx === 0) {
       assert.equal(frame!.shuffling, true);
       assert.equal(frame!.view, vy! > 0 ? 0 : 4, 'actual lateral travel selects a directional body');
@@ -55,7 +55,7 @@ test('real QB hold and charged-throw poses keep stepping legs in either strafe d
         }
         assert.equal(JSON.stringify(live), before, 'rendering never changes quarterback physics or throw timing');
       }
-      assert(phases.size >= 7 && legs.size >= 7, `${offense}/${vy}/${charging}: distinct stepping legs`);
+      assert(phases.size >= 3 && legs.size >= 3, `${offense}/${vy}/${charging}: distinct stepping legs`);
       for (let n = 61; n <= 80; n++) {
         live.time = n / 60; qb.vx = qb.vy = 0;
         const planted = footballAthletePose(live, qb, {

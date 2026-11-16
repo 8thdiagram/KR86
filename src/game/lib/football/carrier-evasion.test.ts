@@ -76,6 +76,28 @@ test('the quicker turn still forecasts a second defender beyond the spin exit', 
   assert.deepEqual(chooseCarrierEvasion(a, bounds), { kind: 'spin', side: 1 },
     'do not escape the nearest defender into another tackle just after the turn ends');
 });
+test('a resumed legacy kickoff routes human ACTION into the physical juke instead of a zero-lateral legacy spin', () => {
+  for (const side of [-1, 1] as const) {
+    const g = game(), a = attempt();
+    g.phase = 'kickoff'; g.live = undefined; g.special = undefined;
+    g.homeOddDirection = 1; g.fieldFrame = 1; g.quarter = 1;
+    g.kickReceiver = 'home'; g.returnAttempt = a;
+    defender(a, 8, -side * 30);
+    const start = { ...a.player };
+    const controls = createFootballControls();
+    assert(canRunningAction(g), 'resumed human returns are eligible in the actual input gate');
+    controls.enter('touch', 'juke', 0, g);
+    stepFootball(g, controls.sample(0));
+    assert.equal(g.returnAttempt!.moves!.active!.evasive, true, 'the actual saved-kickoff input path must opt into physical evasion');
+    assert.equal(g.returnAttempt!.moves!.active!.side, side);
+    controls.release('touch', 50);
+    for (let i = 1; i < 16; i++) stepFootball(g, controls.sample(i * 1000 / 60));
+    assert(Math.abs(g.returnAttempt!.player.y - start.y - side * EVADE.bodyWidth) < .001);
+    const y = g.returnAttempt!.player.y;
+    for (let i = 0; i < 10; i++) stepFootball(g);
+    assert.equal(g.returnAttempt!.player.y, y, 'normal return movement must keep the resulting lane');
+  }
+});
 test('defender trajectory influences corridor choice without mutating coverage', () => {
   const a = attempt(); defender(a, 28, 18, -20, -100);
   const before = JSON.stringify(a);

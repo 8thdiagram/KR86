@@ -113,7 +113,9 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
   let started = false;
   if (input.juke && !input.hesitate && !moves.active && a.returnTime + 1e-9 >= moves.readyAt) {
     const move = chooseCarrierEvasion(a, bounds, input.obstacles);
-    moves.active = { ...move, elapsed: 0, evasive: true };
+    moves.active = { ...move, elapsed: 0, evasive: true,
+      ...(move.kind === 'spin' ? { startY: a.player.y,
+        targetY: clamp(a.player.y + move.side * EVADE.bodyWidth, bounds.minY, bounds.maxY) } : {}) };
     moves.sequence++; moves.readyAt = a.returnTime + EVADE[move.kind] + EVADE.cooldown; started = true;
   }
   const active = moves.active;
@@ -125,15 +127,24 @@ export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: nu
     const p0 = clamp(active.elapsed / duration, 0, 1), p1 = clamp((active.elapsed + used) / duration, 0, 1);
     if (active.kind === 'spin') {
       dx = forward * ((.82 + .18 * (p0 + p1) / 2) * used + rest);
-      dy = active.side * EVADE.bodyWidth * (spinTravel(p1) - spinTravel(p0)) + direction * lateral * rest;
-      // Retain the original hold's independent UP/DOWN steering. With neutral
-      // steering the full committed body-width move still finishes exactly.
-      if (input.hesitate) dy += direction * lateral * used;
+      // The movement owns an explicit world-space destination for the whole
+      // juke. Reconcile actual position with that lane, rather than discarding
+      // independent little offsets when another movement/contact step clips.
+      const startY = active.startY ?? a.player.y - active.side * EVADE.bodyWidth * p0;
+      const targetY = active.targetY ?? clamp(startY + active.side * EVADE.bodyWidth, bounds.minY, bounds.maxY);
+      const goal = startY + (targetY - startY) * p1;
+      const budget = EVADE.bodyWidth / duration * used;
+      dy = clamp(goal - a.player.y, -budget, budget) + direction * lateral * rest;
+      // Preserve held UP/DOWN steering as a shift of the entire intended lane.
+      const steering = input.hesitate ? direction * lateral * used : 0;
+      dy += steering;
+      moves.active = { ...active, startY: clamp(startY + steering, bounds.minY, bounds.maxY),
+        targetY: clamp(targetY + steering, bounds.minY, bounds.maxY) };
     } else {
       const p = (p0 + p1) / 2, gain = Math.max(0, Math.min(1, p / .12, (1 - p) / .2));
       dx = forward * ((1 + (EVADE.boostRatio - 1) * gain) * used + rest);
     }
-    moves.active = p1 >= 1 - 1e-9 ? undefined : { ...active, elapsed: active.elapsed + used };
+    moves.active = p1 >= 1 - 1e-9 ? undefined : { ...moves.active!, elapsed: active.elapsed + used };
   }
   if (input.hesitate) dx = 0;
   let player = { x: clamp(a.player.x + dx, 8, 1101), y: clamp(a.player.y + dy, bounds.minY, bounds.maxY) };

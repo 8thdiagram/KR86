@@ -9,7 +9,9 @@ export type CarrierBounds = { minY: number; maxY: number };
 export type KickMoves = {
   version: 1 | 2; sequence: number; readyAt: number; backward: boolean; vx: number; furthestX: number;
   hesitating?: boolean;
-  active?: { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: KickDirection; evasive?: true };
+  active?: { kind: 'spin' | 'stutter' | 'dive' | 'boost'; elapsed: number; side: KickDirection; evasive?: true;
+    /** Authoritative spin lane, not a render offset. Optional for older saves. */
+    startY?: number; targetY?: number };
 };
 export type JukeRead = { until: number; targetY: number };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -18,7 +20,7 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: number, input: KickMoveInput,
   bounds: CarrierBounds = { minY: 24, maxY: 168 }): { player: { x: number; y: number }; started: boolean; moves: KickMoves | undefined; outAt?: number; spinStep?: boolean; evasiveStep?: boolean } {
   // Holding stops forward travel, not the already-committed spin's lateral
-  // displacement. Otherwise an ordinary 200ms press cuts a 440ms spin in half.
+  // displacement. A hold must not cancel an already-committed lateral juke.
   if (a.moves?.active?.evasive && a.moves.active.kind === 'spin')
     return stepCarrierEvasion(a, direction, dt, input, bounds);
   // A held boost yields to the established stationary, steerable hesitation.
@@ -151,6 +153,9 @@ export function isKickMoves(value: KickMoves | undefined, a: KickAttempt): boole
     (active === undefined || !!active && (active.evasive === undefined || active.evasive === true) &&
       (active.evasive ? m.version === 2 && ['spin', 'boost'].includes(active.kind) : (m.version === 2 ? ['spin', 'stutter', 'dive'] : ['spin', 'stutter']).includes(active.kind)) &&
       (active.side === -1 || active.side === 1 || m.version === 2 && active.side === 0) && Number.isFinite(active.elapsed) &&
+       (active.startY === undefined && active.targetY === undefined ||
+         active.evasive === true && active.kind === 'spin' && Number.isFinite(active.startY) && Number.isFinite(active.targetY) &&
+         active.startY! >= 0 && active.startY! <= 192 && active.targetY! >= 0 && active.targetY! <= 192) &&
        (!active.evasive || (active.kind === 'boost' ? active.side === 0 : active.side !== 0)) &&
        // Older saved spins lasted .44s. Accept those snapshots; the movement
        // step safely finishes an elapsed legacy spin without moving it back.

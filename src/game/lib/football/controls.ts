@@ -7,6 +7,7 @@ export function canRunningAction(g: FootballGame): boolean {
   if (g.tackleScene) return false;
   if (g.special) return (g.phase === 'kickoff' || g.phase === 'live') &&
     g.special.stage === 'return' && (g.special.returnSide ?? g.special.receiver) === 'home';
+  if (g.phase === 'kickoff') return g.kickReceiver === 'home' && g.returnAttempt?.phase === 'returning';
   if (g.phase !== 'live') return false;
   const l = g.live;
   if (!l || g.possession !== 'home' || l.flight || l.loose) return false;

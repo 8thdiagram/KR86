@@ -21,6 +21,12 @@ A spin-juke should complete its full body-width lane change and full rotation to
 
 **How to apply:** Measure quarter-cycle world displacement and both full directions, test real pursuing defenders, and preserve contact on genuinely occupied side paths. A clear lateral plant may precede forward drive within a simulation step, but both segments must retain ordinary collision checks.
 
+Human returns resumed from older kickoff saves must use the same running ACTION eligibility and physical-juke routing as current return modes.
+
+**Why:** The older kickoff path was omitted from the eligibility check and physical-evasion flag; its legacy spin selector permits zero lateral velocity. Testing only current Full Game runs missed that path.
+
+**How to apply:** Verify the actual input handler as well as the solver for each return state. Store a spin's intended lane in movement state, not drawing state, and record start, intended/actual displacement, finish and resumed world positions.
+
 Quarterback pass taps, pass holds and deliberate one-second scramble activation own their entire gesture. That gesture's release must never become an evade. A fresh running ACTION becomes eligible after the quarterback commits beyond the line of scrimmage; it must never permit an illegal forward pass.
 
 Kicking meters retain their own ACTION commands. A runner-only eligibility restriction must not suppress a valid field-goal timing press.

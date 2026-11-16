@@ -420,7 +420,8 @@ function stepFootballLocal(g: FootballGame, input: FootballInput = {}, dt = KR.d
     if (a.phase === 'returning') { consumeClock(g, dt); g.clockRunning = true; delete g.clockStoppage; }
     const direction = g.kickReceiver === 'home' ? input.direction ?? 0 : kickWitnessDirection(a);
     g.returnAttempt = stepKickAttempt(a, direction, dt * worldSpeed, g.kickReceiver === 'home'
-      ? { juke: !!input.juke || !!input.action, hesitate: input.hesitate } : {}, FOOTBALL_SIDELINES);
+      ? { juke: !!input.juke || !!input.action, evasion: true,
+          hesitate: !input.juke && !input.action && input.hesitate } : {}, FOOTBALL_SIDELINES);
     const next = g.returnAttempt;
     if (next.phase === 'touchdown') { g.possession = g.kickReceiver; remember(g, 'Kick return', 'TOUCHDOWN', 100); scoreTouchdown(g); }
     else if (next.phase === 'tackled') {

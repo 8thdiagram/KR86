@@ -29,20 +29,21 @@ test('Classic retains its stride clock across immutable simulation and interpola
   assert(cadence.phase > .05, 'the renderer actually advanced the stable canvas-owned stride clock');
 });
 
-test('integrated cadence keeps the authored eight-pose cycle within the readable timing target', () => {
-  assert(Math.abs(footballStridePeriod(18) - .4796) < 1e-12);
-  assert(Math.abs(footballStridePeriod(60) - .4004) < 1e-12);
-  assert(Math.abs(footballStridePeriod(2) - .55) < 1e-12);
+test('integrated cadence keeps the four-pose cycle between .56 and .68 seconds', () => {
+  assert(Math.abs(footballStridePeriod(18) - (.68 - .12 * (15.5 / 57.5))) < 1e-12);
+  assert(Math.abs(footballStridePeriod(60) - .56) < 1e-12);
+  assert(Math.abs(footballStridePeriod(2) - .68) < 1e-12);
   assert(footballStridePeriod(8) > footballStridePeriod(18));
-  assert(footballStridePeriod(90) >= .4004);
+  assert(footballStridePeriod(90) >= .56);
 
   const owner = {};
   let frame = updateFootballAnimation(owner, 'athlete', sample(0, 0));
   assert.equal(frame.phase, 0);
   for (let n = 1; n <= 6; n++)
     frame = updateFootballAnimation(owner, 'athlete', sample(n / 10, n * 2));
-  assert(frame.phase > .15 && frame.phase < .4, `expected a stable phase after a 0.6s stride cycle, got ${frame.phase}`);
-  assert(Math.floor(frame.phase * 8) >= 1, 'the eight authored running poses are traversed');
+  assert(frame.phase > .7 && frame.phase < 1,
+    `expected a stable phase near the end of the 0.6s stride cycle, got ${frame.phase}`);
+  assert(Math.floor(frame.phase * 4) >= 1, 'the four authored running poses are traversed');
 });
 
 test('velocity changes integrate smoothly and repeated renders at one clock are idempotent', () => {
@@ -103,7 +104,7 @@ test('helmet refinement trims one native contour pixel and leaves markings, mask
   assert.equal(pixels[3]!.filter(glyph => glyph === 'K').length, 1, 'alternating trim keeps the shell centered');
 });
 
-test('faster travel stays on a deliberate six-pose cadence without frame twitching', () => {
+test('faster travel stays on the same deliberate four-pose cadence without frame twitching', () => {
   const owner = {};
   let phase = updateFootballAnimation(owner, 'runner', sample(0, 0)).phase;
   let prior = phase;
@@ -114,6 +115,6 @@ test('faster travel stays on a deliberate six-pose cadence without frame twitchi
     assert(delta < .055, `one display frame cannot jump across poses (${delta})`);
     prior = phase;
   }
-  assert(phase > .35, 'the deliberate eight-pose stride continues at faster travel speeds');
+  assert(phase > .35, 'the deliberate four-pose stride continues at faster travel speeds');
 });
 

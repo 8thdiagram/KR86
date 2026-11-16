@@ -2,7 +2,7 @@
  * Independent anatomy studies for the iPhone-size CURRENT | A | B | C review.
  * Each concept owns its own head/torso/arm sheets and lower-body constructions;
  * none is derived from the production atlas. A/B retain six concept strides;
- * C follows the eight-frame production locomotion cycle.
+ * C follows the four-pose production locomotion cycle.
  */
 import type { FootballKit } from './football-art';
 import {
@@ -44,7 +44,7 @@ export const FOOTBALL_PLAYER_CONCEPTS = Object.freeze({
   C: Object.freeze({
     name: 'Elite 1988 NES Character',
     anatomy: 'Balanced adult silhouette, carved quarter-view torso, distinct knees, shaded helmet and separated calves.',
-    movement: 'Eight articulated production phases retain weight while shoulders and hips counter-rotate.',
+    movement: 'Four held production poses alternate the lead cleat beneath a steady upper body.',
   }),
 } as const);
 
@@ -204,9 +204,7 @@ const B_LEGS: readonly (readonly Grid[])[] = [
 
 type ArmPose = 'pumpA' | 'pumpB' | 'guard';
 const ARM_PHASE: readonly ArmPose[] = ['pumpA', 'pumpB', 'pumpA', 'pumpB', 'pumpA', 'pumpB'];
-const ELITE_C_ARM_PHASE: readonly ArmPose[] = [
-  'pumpA', 'pumpA', 'pumpA', 'pumpB', 'pumpB', 'pumpB', 'pumpA', 'pumpA',
-];
+const ELITE_C_ARM_PHASE: readonly ArmPose[] = ['pumpA', 'pumpA', 'pumpB', 'pumpB'];
 const TOPS = {
   A: fitViews(A_TOPS), B: fitViews(B_TOPS), C: ELITE_C_COMPARISON_TOPS,
 } as const;
@@ -259,9 +257,9 @@ function validateAuthoredSheets() {
         throw new Error(`${concept} ${pose} arms must be an authored 16x22 sheet.`);
     }
   }
-  if (ELITE_C_PLANTED_LEGS.length !== 8 || ELITE_C_RUN_LEGS.length !== 8
+  if (ELITE_C_PLANTED_LEGS.length !== 8 || ELITE_C_RUN_LEGS.length !== 4
     || ELITE_C_RUN_LEGS.some(sheet => sheet.length !== 8 || sheet.some(row => row.length !== 16))) {
-    throw new Error('Elite C needs one planted and eight validated 16x8 stride sheets.');
+    throw new Error('Elite C needs one planted and four validated 16x8 stride sheets.');
   }
 }
 validateAuthoredSheets();

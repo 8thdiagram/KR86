@@ -9,7 +9,7 @@ Kick Return ’86 uses exceptional late-1980s NES character art: deliberately au
 
 **How to apply:** Judge independent character concepts at actual phone gameplay size on the same field before selecting a direction. Do not claim original Double Ninjas source or ring-girl art was inspected when only the supplied screenshot was available. Preserve physics, timing, AI, probabilities, controls, Franchise saves, camera and audio; art must follow existing state without delaying actions.
 
-Use six or more clearly distinct running poses with knee drive, plant, push-off, recovery and opposite arm pump. Stationary players must stay planted. Author directional anatomy and the full football action family, including grounded and special-team poses; never rotate a flat standing character. Different positions need cohesive bulky, balanced, compact and lean builds.
+Use four clearly distinct running poses: left reach, legs pass, right reach, legs pass. Stationary players must stay planted. Author directional anatomy and the full football action family, including grounded and special-team poses; never rotate a flat standing character. Different positions need cohesive bulky, balanced, compact and lean builds.
 
 **Why:** The user rejected thin procedural limbs and requested complete readable characters and natural action-specific animation.
 
@@ -39,11 +39,11 @@ Moving players must visibly step in every direction, including strafing, pocket 
 
 **How to apply:** Preserve the approved bodies and game systems. Let actual movement animate the lower body independently of holding/throwing arms. Check default guards as well as action reaches and all directions. Keep players modestly smaller and the airborne football shorter and more compact, with readable white lace spiral motion, without changing flight physics or adding another speed increase.
 
-The user confirmed the smoother gameplay works well. They then explicitly required eight deliberate running poses, equally thick athletic legs (approximately 15–20% thicker without scaling the whole player), black cleats with readable toe/heel positions, and approximately 0.40–0.55 seconds per normal running cycle. Preserve white socks and existing uniforms.
+The user rejected the eight-frame animation as vibration. Use four deliberate, unmistakably alternating poses and approximately 0.55–0.70 seconds per full cycle. Keep thick, equal legs, simple white pants with minimal shade, black cleats, existing uniforms and the current overall sprite size.
 
-**Why:** The user repeatedly reported that cadence-only adjustments left the legs thin and their alternating strides unclear. Six poses do not meet their requested eight-frame sequence.
+**Why:** The user repeatedly reported that the legs vibrated instead of showing readable strides, and explicitly superseded the eight-frame request with a simpler four-pose loop.
 
-**How to apply:** Keep animation timing separate from simulation speed, retain stable torsos and opposite-arm/leg coordination, and check every selector and moving-upper-body adapter rather than only authoring extra frames. Verify lateral/backward/diagonal stepping and planted idle at gameplay scale. The explicit ACTION hold remains an intentional running-in-place exception.
+**How to apply:** Keep animation timing separate from simulation speed, retain stable torsos and opposite-arm/leg coordination, and check every selector and moving-upper-body adapter. Validate authored limb rows before padding/cropping; silent atlas-edge truncation can make the rear leg change thickness. Show an isolated actual-renderer preview, then verify lateral/backward/diagonal stepping and planted idle in gameplay. The explicit ACTION hold remains an intentional running-in-place exception.
 
 Prioritize clear individual sprites: white pants, primary-team-color jerseys, secondary-team-color helmets, and white facemasks. Discrete highlight/shadow and cuff pixels are allowed by the complete redesign, but team identity must remain obvious. Use dark definition for silhouettes and limb separation, not black face panels. Do not add decorative lines around downed players.
 

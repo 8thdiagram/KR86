@@ -5,6 +5,9 @@ import {
   footballPlayerPalette, paintFootballPlayerFrame, PLAYER_FRAME_SCALE, selectFootballPlayerFrame,
 } from './football-player-frames';
 import { CARRIER_BODY_WIDTH } from '../lib/player-dimensions';
+import {
+  ELITE_C_RUN_LEGS, ELITE_C_STRAFE_LEGS, ELITE_C_BACKPEDAL_LEGS, validatePlayerLowerGrid,
+} from './football-player-sheets';
 
 const roles = ['QB', 'RB', 'OL', 'LB', 'DB', 'DL', 'KR', 'WR', 'K'] as const;
 const locomotionActions = [
@@ -37,7 +40,7 @@ function horizontalGroups(
 
 function cleatComponents(frame: ReturnType<typeof selectFootballPlayerFrame>) {
   const remaining = new Set(glyphPixels(frame, 'C')
-    .filter(pixel => pixel.y >= 38 && pixel.y <= 41)
+    .filter(pixel => pixel.y >= 32 && pixel.y <= 41)
     .map(pixel => `${pixel.x},${pixel.y}`));
   const components: { minX: number; maxX: number; minY: number; maxY: number; size: number }[] = [];
   while (remaining.size) {
@@ -110,27 +113,23 @@ test('black cleats stay attached to every locomotion footprint across views, rol
   }
 });
 
-test('eight authored stride poses visibly alternate their shoe positions in all travel directions', () => {
+test('four authored stride poses hold a clear alternating shoe position in every view', () => {
   for (let view = 0; view < 9; view++) {
-      const centers = Array.from({ length: 8 }, (_, phase) => {
-      const cleats = glyphPixels(
+      const centers = Array.from({ length: 4 }, (_, phase) => {
+      const shoes = cleatComponents(
         selectFootballPlayerFrame('run', view as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, phase, false, 'RB'),
-        'C',
-      ).filter(pixel => pixel.y >= 38 && pixel.y <= 41);
-      assert(cleats.length > 0, `direction ${view}, phase ${phase} has visible shoe material`);
-      return [
-        (cleats.reduce((sum, pixel) => sum + pixel.x, 0) / cleats.length).toFixed(2),
-        (cleats.reduce((sum, pixel) => sum + pixel.y, 0) / cleats.length).toFixed(2),
-      ].join(':');
+      ).sort((a, b) => a.minX - b.minX);
+      assert.equal(shoes.length, 2, `direction ${view}, phase ${phase} has two distinct shoes`);
+      return shoes.map(shoe => `${shoe.minX},${shoe.minY},${shoe.maxX},${shoe.maxY}`).join(':');
     });
-    assert(new Set(centers).size >= 4,
-      `direction ${view} cycles through distinct alternating foot placements`);
+    assert(new Set(centers).size === 4,
+      `direction ${view} holds four distinct authored foot placements`);
   }
 });
 
-test('frame 1 and frame 4 exchange the lead leg, knee bend, and raised trailing heel', () => {
+test('left and right reach poses exchange the lead leg and cleat', () => {
   const leftLead = selectFootballPlayerFrame('run', 0, 0, false, 'RB');
-  const rightLead = selectFootballPlayerFrame('run', 0, 3, false, 'RB');
+  const rightLead = selectFootballPlayerFrame('run', 0, 2, false, 'RB');
   assert.notEqual(
     JSON.stringify(leftLead.runs.filter(run => run.row >= 26)),
     JSON.stringify(rightLead.runs.filter(run => run.row >= 26)),
@@ -146,17 +145,17 @@ test('frame 1 and frame 4 exchange the lead leg, knee bend, and raised trailing 
     'mirrored right lead lifts the left rear cleat');
 });
 
-test('run, lateral strafe, and backpedal selectors expose eight distinct balanced legs', () => {
+test('run, lateral strafe, and backpedal selectors expose four distinct balanced leg poses', () => {
   for (const [action, view] of [
     ['run', 0], ['run', 4], ['run', 1], ['run', 3], ['run', 5], ['run', 7],
     ['run', 2], ['run', 6], ['backpedal', 0], ['backpedal', 4],
   ] as const) {
-    const frames = Array.from({ length: 8 }, (_, phase) =>
+    const frames = Array.from({ length: 4 }, (_, phase) =>
       selectFootballPlayerFrame(action, view, phase, false, 'RB'));
     const lowerSignature = (frame: typeof frames[number]) =>
       JSON.stringify(frame.runs.filter(run => run.row >= 26));
-    assert.equal(new Set(frames.map(lowerSignature)).size, 8,
-      `${action} view ${view} has eight explicitly authored poses`);
+    assert.equal(new Set(frames.map(lowerSignature)).size, 4,
+      `${action} view ${view} has four explicitly authored poses`);
 
     for (const [phase, frame] of frames.entries()) {
       const twoThighs = Array.from({ length: 6 }, (_, offset) => horizontalGroups(frame, 26 + offset)
@@ -175,20 +174,58 @@ test('run, lateral strafe, and backpedal selectors expose eight distinct balance
   }
 });
 
+test('all authored gait rasters are strictly 16 columns and keep equal full-width legs and cleats', () => {
+  const sheets = [ELITE_C_RUN_LEGS, ELITE_C_STRAFE_LEGS, ELITE_C_BACKPEDAL_LEGS];
+  for (const [family, frames] of sheets.entries()) {
+    assert.equal(frames.length, 4, `gait family ${family} has exactly four poses`);
+    for (const [phase, rows] of frames.entries()) {
+      assert.equal(rows.length, 8);
+      assert(rows.every(row => row.length === 16),
+        `family ${family}/${phase} stores exactly eight raw 16-column rows`);
+    }
+  }
+  assert.throws(
+    () => validatePlayerLowerGrid('deliberately-wide-limb', [
+      '................', '.................', '................', '................',
+      '................', '................', '................', '................',
+    ]),
+    /exactly 16/,
+    'raw limb art must reject overlong rows instead of trimming or shifting them',
+  );
+
+  for (const [action, gait] of [
+    ['run', 'run'], ['run', 'strafe'], ['backpedal', 'run'],
+  ] as const) for (let phase = 0; phase < 4; phase++) {
+    const frame = selectFootballPlayerFrame(action, 0, phase, false, 'QB', phase, gait);
+    const thighs = Array.from({ length: 6 }, (_, offset) =>
+      horizontalGroups(frame, 26 + offset, true).filter(group => group.length >= 6),
+    ).find(groups => groups.length === 2);
+    assert(thighs, `${action}/${gait}/${phase} keeps two whole thigh masses`);
+    assert.equal(thighs[0]!.length, thighs[1]!.length,
+      `${action}/${gait}/${phase} keeps both thigh widths equal`);
+    const shoes = cleatComponents(frame).sort((a, b) => a.minX - b.minX);
+    assert.equal(shoes.length, 2, `${action}/${gait}/${phase} keeps both cleats separate`);
+    assert.equal(shoes[0]!.maxX - shoes[0]!.minX, shoes[1]!.maxX - shoes[1]!.minX,
+      `${action}/${gait}/${phase} keeps cleat width equal`);
+    assert.equal(shoes[0]!.size, shoes[1]!.size,
+      `${action}/${gait}/${phase} keeps complete cleat areas equal`);
+  }
+});
+
 test('explicit strafe gait selects lateral art independent of body orientation', () => {
   for (const view of [0, 4] as const) {
-    const signatures = Array.from({ length: 8 }, (_, phase) => JSON.stringify(
+    const signatures = Array.from({ length: 4 }, (_, phase) => JSON.stringify(
       selectFootballPlayerFrame('hold', view, phase, true, 'RB', phase, 'strafe')
         .runs.filter(run => run.row >= 26),
     ));
-    assert.equal(new Set(signatures).size, 8, `pure vertical view ${view} animates all eight strafe poses`);
+    assert.equal(new Set(signatures).size, 4, `pure vertical view ${view} animates all four strafe poses`);
     const running = selectFootballPlayerFrame('hold', view, 0, true, 'RB', 0, 'run');
     const strafe = selectFootballPlayerFrame('hold', view, 0, true, 'RB', 0, 'strafe');
     assert.notStrictEqual(running, strafe, 'frame cache keeps run and strafe gait variants separate');
     assert.notDeepEqual(
       running.runs.filter(run => run.row >= 26),
       strafe.runs.filter(run => run.row >= 26),
-      'explicit strafe gait selects its own authored atlas family independent of facing',
+      'explicit strafe gait selects its own authored four-pose atlas independent of facing',
     );
   }
   const standingA = selectFootballPlayerFrame('idle', 2, 0, false, 'RB');

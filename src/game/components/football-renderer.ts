@@ -11,6 +11,7 @@ import { drawKickReturn, kickFootballArt } from './kick-return-renderer';
 import { stepRenderCamera, type RenderCamera } from '../lib/football/render-camera';
 import { slim, carrierMark, airBall, landingMark, goalPosts, R, type Kit } from './football-sprites';
 import { updateFootballAnimation } from './football-animation-clock';
+import { PLAYER_LOCOMOTION_PHASE_COUNT } from './football-player-frames';
 import { footballAthletePose } from './football-player-state';
 import { uniformKit, positionKit, specialSkinPosition, classicSkinPosition } from './football-art';
 import { FOOTBALL_ART_STAGES } from './football-deluxe-art';
@@ -368,7 +369,7 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
       const action = fielding ? 'catch' : a.engaged > sp.age ? 'block' : moving ? 'run' : 'stance';
       slim(ctx, a.x, a.y, { ...kit, dir: actualFacing }, {
         step: cadence.step, hold: fielding, action,
-        locomotionStep: moving ? Math.floor(cadence.phase * 8) % 8 : undefined,
+        locomotionStep: moving ? Math.floor(cadence.phase * PLAYER_LOCOMOTION_PHASE_COUNT) % PLAYER_LOCOMOTION_PHASE_COUNT : undefined,
         locomotionGait: moving ? cadence.shuffling ? 'strafe' : 'run' : undefined,
         progress: fielding ? clamp(1 - Math.hypot(a.x - sp.ball.x, a.y - sp.ball.y) / 26, 0, .55)
           : action === 'run' ? cadence.phase : action === 'block' ? .5 : undefined,
