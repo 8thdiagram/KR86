@@ -1,7 +1,8 @@
 import { clamp, isBlitz, isPassCoverage, other, type Athlete, type FootballGame } from './types';
 import { stepAthleteDive } from './defensive-action';
 import { EXECUTION } from './execution';
-import { franchiseAthleteFactor } from './franchise-upgrades';
+import { effectiveAthleteFactor as franchiseAthleteFactor } from './franchise-upgrades';
+import { legendaryAthleteFactor } from './legendary';
 import { ELITE, eliteSlots } from './secondary';
 import { penetrationTarget } from './penetration';
 import { openFieldGain, OPEN_FIELD } from './athleticism';
@@ -193,7 +194,7 @@ export function stepDefense(g: FootballGame, dt: number, panic?: DefensivePositi
       d.pursuit = { x: clamp(x, 8, 1180), y: clamp(y, openField ? FOOTBALL_SIDELINES.minY : 25, openField ? FOOTBALL_SIDELINES.maxY : 167),
         until: l.time + (runPursuit ? .08 : elite ? ELITE.reaction : .12 + (1 - (coverage ? profile.coverage : profile.rush)) * .15 + d.id % 3 * .018) *
           (passCoverage ? .72 : wonBlitz ? .65 : 1) *
-          (exceptionalCoverage ? MOMENTS.coverReaction : exceptionalFit ? .88 : 1) * coached.variation,
+          (exceptionalCoverage ? MOMENTS.coverReaction : exceptionalFit ? .88 : 1) * coached.variation / legendaryAthleteFactor(g, d),
         role, seenX: observed.x, seenY: observed.y, seenVx: observed.vx, seenVy: observed.vy };
     }
     let tx = d.pursuit.x, ty = d.pursuit.y;
@@ -245,7 +246,7 @@ export function stepDefense(g: FootballGame, dt: number, panic?: DefensivePositi
     // Bounded acceleration remains physical; top-speed ratings are unchanged.
     const maxTurn = (runPursuit ? Math.max(650, acceleration) : acceleration) * dt *
         (openGain > 1 ? OPEN_FIELD.acceleration : 1) * (passCoverage || wonBlitz ? 1.12 : 1) *
-        (exceptionalCoverage ? MOMENTS.coverAcceleration : exceptionalFit ? 1.06 : 1);
+        (exceptionalCoverage ? MOMENTS.coverAcceleration : exceptionalFit ? 1.06 : 1) * legendaryAthleteFactor(g, d);
     const changeX = wantedX - d.vx, changeY = wantedY - d.vy, change = Math.hypot(changeX, changeY);
     const fraction = change > maxTurn ? maxTurn / change : 1;
     d.vx += changeX * fraction; d.vy += changeY * fraction;

@@ -2,6 +2,7 @@ import { clamp, random, type Athlete, type FootballGame, type LooseBall, type Si
 import { chaosOpportunity } from './clutch';
 import { turnoverSkill } from './franchise-upgrades';
 import { playerSpeed } from '../player-pace';
+import { legendaryAthleteFactor } from './legendary';
 
 /** Per ELIGIBLE contact/catch/kick only. Never consume score, clock, prior
  * drought or event counters. These conservative constants are calibration knobs. */
@@ -21,7 +22,8 @@ export function fumbleChance(g: FootballGame, owner: Side, carrier: Pick<Athlete
     (.8 + g.profiles[owner === 'home' ? 'away' : 'home'].rush * .35), .003, .016);
 }
 export function tryFumble(g: FootballGame, owner: Side, carrier: Athlete, defender: Athlete) {
-  if (random(g) >= Math.min(.12, chaosOpportunity(g, fumbleChance(g, owner, carrier, defender)) * turnoverSkill(g, defender))) return false;
+  if (random(g) >= Math.min(.12, chaosOpportunity(g, fumbleChance(g, owner, carrier, defender)) * turnoverSkill(g, defender) /
+    legendaryAthleteFactor(g, carrier))) return false;
   noteRare(g, 'fumbles'); return true;
 }
 /** Lock the nearest ELIGIBLE athlete at loss, as in historical recoveries.

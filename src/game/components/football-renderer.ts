@@ -23,6 +23,8 @@ import { drawFieldGoalFlight } from './football-field-goal';
 import { withBroadcastAnchor, withBroadcastWorld, broadcastFieldContext, broadcastVisibleRange, broadcastViewportFrame } from './football-broadcast';
 import { drawBroadcastGoalPosts } from './football-broadcast-posts';
 import { refereeRenderY, REFEREE_WORLD_Y } from './football-referee-layout';
+import { legendaryAthlete } from '../lib/football/legendary';
+import { drawLegendaryUnit } from './legendary-indicators';
 
 /** Presentation only. Reads the engine state; never mutates it and never samples randomness. */
 const { field, moveSprite, prone, referee, football, crowd } = kickFootballArt;
@@ -276,14 +278,16 @@ function drawScrimmage(ctx: CanvasRenderingContext2D, g: FootballGame, home: Omi
       playerTarget(ctx, a.x, a.y, live.holdingPass ? PLAYER_TARGET_YELLOW : PLAYER_TARGET_WHITE);
     }
     // Small ground tick links the primary diagram to the opening assignment,
-    // then disappears. No live labels, arrows, halos or permanent HUD additions.
+    // then disappears. Legend numbers are drawn separately at the existing anchors.
     if (g.phase === 'live' && !ic && !snap && a.id === primary && a.id !== read &&
         live.time < PLAYBOOK[live.play].develop + .55)
       withBroadcastAnchor(ctx, a.x, a.y, () => R(ctx, LACE, a.x - 3, a.y + 7, 6, 1));
     ctx.restore();
     if (hasBall) carrierAt = holding && ic ? { x: ic.catchX, y: ic.catchY } : a;
   }
-  if (carrierAt && g.phase === 'live') carrierMark(ctx, carrierAt.x, carrierAt.y, seconds);
+  if (carrierAt && g.phase === 'live' && !legendaryAthlete(g, live.athletes[live.carrier]!))
+    carrierMark(ctx, carrierAt.x, carrierAt.y, seconds);
+  drawLegendaryUnit(ctx, g, live.athletes, seconds);
   if (snap && g.phase !== 'final') { const b = snapBall(live); airBall(ctx, b.x, b.y + 2, b.z + 2, 0); }
   if (live.flight) { const f = live.flight; landingMark(ctx, f.toX, f.toY, seconds); airBall(ctx, f.x, f.y, f.z, f.age, false); }
   if(live.option?.ball) {const b=live.option.ball;airBall(ctx,b.x,b.y,b.z,b.age,false);}
@@ -326,7 +330,7 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
           view: cadence.view,
           ball: true,
         });
-      ctx.restore(); carrierMark(ctx, a.x, a.y, seconds); continue;
+      ctx.restore(); if (!legendaryAthlete(g, a)) carrierMark(ctx, a.x, a.y, seconds); continue;
     }
     const moving = cadence.moving;
     ctx.save();
@@ -375,6 +379,7 @@ function drawSpecial(ctx: CanvasRenderingContext2D, g: FootballGame, sp: Special
     }
     ctx.restore();
   }
+  drawLegendaryUnit(ctx, g, sp.athletes, seconds);
   if (ret) return;
   const b = sp.ball;
   const recovered = sp.recovery !== undefined && (st === 'recovery' && age >= .32 || st === 'resolved');

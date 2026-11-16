@@ -11,6 +11,7 @@ import { stepFullCoverage } from './kick-full-coverage';
 import { openFieldGain } from './football/athleticism';
 import { playerSpeed } from './player-pace';
 import { constrainEvasionStep, EVADE } from './carrier-evasion';
+import { classicLegendaryPlayer, legendaryRoleFactor } from './football/legendary-roster';
 
 /** Original, deterministic miniature football physics. No assessment scoring. */
 export const KR = {
@@ -50,6 +51,8 @@ export type KickAttempt = {
   /** New kickoff downs only; absent on historical saves and scrimmage/punt adapters. */
   kickoffBoost?: 1.04;
   teams?: KickMatchup;
+  /** Derived only on a temporary movement view, never written to saved attempts. */
+  athleticFactor?: number;
   /** Only Full Game's physical kick/punt coverage uses this adapter. */
   fullCoverage?: { elite: number[]; openFieldAge?: number; speedMatch?: number; extraSpeedMatch?: number;
     returnSpeed?: number; executionSpeed?: number; defenderSpeed?: { id: number; factor: number } };
@@ -161,9 +164,10 @@ export function isKickContact(player: { x: number; y: number }, defender: { x: n
   // Sprite-centred, tight hitboxes: no tackling at a distance.
   return Math.abs(player.x - defender.x) < 9 && Math.abs(player.y - defender.y) < 10;
 }
+export type KickPerformance = { carrier: number; defender: (id: number) => number };
 export function stepKickAttempt(a: KickAttempt, direction: KickDirection, dt = KR.dt, input: KickMoveInput = {},
-  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }, position?: { id: number; x: number; y: number }): KickAttempt {
-  return advanceKickAttempt(a, direction, dt, true, input, bounds, position);
+  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }, position?: { id: number; x: number; y: number }, performance?: KickPerformance): KickAttempt {
+  return advanceKickAttempt(a, direction, dt, true, input, bounds, position, performance);
 }
 
 /** Conservative admission check: offer at least one immediate, real-physics escape.
@@ -179,7 +183,7 @@ export function canEvadeKickDive(a: KickAttempt, diver: KickDefender): boolean {
 }
 
 function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number, allowDiveStarts: boolean, input: KickMoveInput = {},
-  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }, position?: { id: number; x: number; y: number }): KickAttempt {
+  bounds: CarrierBounds = { minY: KR.minY, maxY: KR.maxY }, position?: { id: number; x: number; y: number }, performance?: KickPerformance): KickAttempt {
   if (a.phase === 'touchdown' || a.phase === 'tackled') return a;
   if (!Number.isFinite(dt) || dt <= 0 || dt > KR.dt + .000001)
     throw new Error('Kick Return requires fixed, bounded physics steps');
@@ -194,7 +198,8 @@ function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number
   let diveStarted = false;
    // Existing in-progress saves keep their original controls and coverage.
    const hard=a.difficulty==='hard';
-  const movement = stepKickMoves(a, direction, dt, input, bounds);
+  const movement = stepKickMoves(a, direction, dt, input, bounds,
+    performance?.carrier ?? (a.teams ? legendaryRoleFactor(a.teams.player, 'KR') : 1));
   if (a.fullCoverage) {
     const boost = (a.fullCoverage.returnSpeed ?? 1) * (a.fullCoverage.executionSpeed ?? 1);
     if (boost !== 1) {
@@ -219,8 +224,10 @@ function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number
        if (a.diveVersion === 1 && d.dive) return stepCommittedDive(d, dt, a.mechanicsVersion === 2);
       // Full-game human defense only supplies this temporary destination.
       // Keep all ordinary movement/collision rules; never start an automatic dive on hold.
-      if (position?.id === d.id) return a.fullCoverage ? stepFullCoverage(a, d, dt, position)
-        : stepOpenFieldCoverage(a, d, dt, d.speed, d.lateralSpeed, position);
+      const skill = performance?.defender(d.id) ?? (!a.fullCoverage && a.teams
+        ? 1 + (classicLegendaryPlayer(a.teams.opponent, d.id)?.boost ?? 0) / 100 : 1);
+      if (position?.id === d.id) return a.fullCoverage ? stepFullCoverage(a, d, dt, position, skill)
+        : stepOpenFieldCoverage(a, d, dt, d.speed * skill, d.lateralSpeed * skill, position, skill);
       if (!a.pursuitVersion && !a.fullCoverage && a.safetyVersion === 1 && d.id === 10) return d;
      const active = d.active || player.x >= d.homeX - (a.pursuitVersion && d.id === 10 ? 350 : hard?215:180);
     if (!active) return d;
@@ -231,8 +238,8 @@ function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number
         return diving.dive.approach ? stepCommittedDive(diving, dt, true) : diving;
       }
     }
-     if (a.fullCoverage) return stepFullCoverage(a, d, dt);
-     if (a.pursuitVersion) return stepOpenFieldCoverage(a, d, dt, d.speed, d.lateralSpeed);
+     if (a.fullCoverage) return stepFullCoverage(a, d, dt, undefined, skill);
+     if (a.pursuitVersion) return stepOpenFieldCoverage(a, d, dt, d.speed * skill, d.lateralSpeed * skill, undefined, skill);
     // Predictable pursuit within each clearly separated patrol band.
     const target = clamp(d.jukeRead && d.jukeRead.until > a.returnTime ? d.jukeRead.targetY
       : player.y + direction * 10, d.minY, d.maxY);

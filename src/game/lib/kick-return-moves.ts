@@ -18,7 +18,8 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 
 /** Real bounded displacement; no invulnerability, collision exemption or teleport. */
 export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: number, input: KickMoveInput,
-  bounds: CarrierBounds = { minY: 24, maxY: 168 }): { player: { x: number; y: number }; started: boolean; moves: KickMoves | undefined; outAt?: number; spinStep?: boolean; evasiveStep?: boolean } {
+  bounds: CarrierBounds = { minY: 24, maxY: 168 }, performance = 1): { player: { x: number; y: number }; started: boolean; moves: KickMoves | undefined; outAt?: number; spinStep?: boolean; evasiveStep?: boolean } {
+  if (performance !== 1) a = { ...a, athleticFactor: performance };
   // Complete the committed lateral juke first. The 200ms hold threshold used
   // to cancel a 440ms spin mid-lane, leaving only an apparent in-place turn.
   // Hold-to-halt takes over as soon as the short spin has finished.
@@ -28,8 +29,8 @@ export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: numb
   if (a.moves?.active?.evasive || input.evasion && !a.moves?.active && !input.hesitate)
     return stepCarrierEvasion(a, direction, dt, input, bounds);
   if (a.moves?.version === 2) return stepBurst(a, direction, dt, input, bounds);
-   const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
-   const lateral = playerSpeed(a.difficulty === 'hard' ? 86 : 78);
+   const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1)) * (a.athleticFactor ?? 1);
+   const lateral = playerSpeed(a.difficulty === 'hard' ? 86 : 78) * (a.athleticFactor ?? 1);
   if (!a.moves) return { player: { x: a.player.x + forward * dt,
     y: clamp(a.player.y + direction * lateral * dt, bounds.minY, bounds.maxY) }, started: false, moves: undefined };
   let moves: KickMoves = { ...a.moves, backward: !!input.backward };
@@ -74,7 +75,8 @@ export function stepKickMoves(a: KickAttempt, direction: KickDirection, dt: numb
 }
 
 function stepBurst(a: KickAttempt, direction: KickDirection, dt: number, input: KickMoveInput, bounds: CarrierBounds) {
-  const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1)), lateral = playerSpeed(a.difficulty === 'hard' ? 86 : 78);
+  const factor = a.athleticFactor ?? 1;
+  const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1)) * factor, lateral = playerSpeed(a.difficulty === 'hard' ? 86 : 78) * factor;
   const diveRules = kickDiveRules(a);
   const held = !!(input.hesitate ?? input.backward);
   let moves: KickMoves = { ...a.moves!, backward: false, hesitating: held };

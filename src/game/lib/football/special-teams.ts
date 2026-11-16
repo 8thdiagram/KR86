@@ -8,7 +8,8 @@ import { FIELD_GOAL_FLIGHT_SCALE } from './celebration-timing';
 import { canDefensiveAction, startNearestDive } from './defensive-action';
 import { defensivePanicTarget } from './defensive-panic';
 import { ELITE, eliteSlots } from './secondary';
-import { franchiseFactor, franchiseKickControl } from './franchise-upgrades';
+import { franchiseFactor, effectiveKickControl as franchiseKickControl } from './franchise-upgrades';
+import { legendaryAthleteFactor, legendaryKickingFactor } from './legendary';
 import { chaosOpportunity, SPECIAL_EXECUTION_SPEED } from './clutch';
 import { advanceKickLoose, advanceKickRush, contactKickBlock, receptionMuff } from './kick-events';
 import { looseBall, tryFumble } from './rare-events';
@@ -55,8 +56,9 @@ export function setReturnCoverageZones(g: FootballGame) {
 
 export function kickoffSequence(g: FootballGame, kind: 'full' | 'squib' | 'onside'): SpecialTeams {
   const receiver = g.kickReceiver, kicking = other(receiver), fromX = 750;
-  const toX = kind === 'onside' ? 630 : kind === 'squib' ? 300 + random(g) * 100 : 60 + random(g) * 130;
-  const toY = 40 + random(g) * 112, athletes: Athlete[] = [];
+  const baseToX = kind === 'onside' ? 630 : kind === 'squib' ? 300 + random(g) * 100 : 60 + random(g) * 130;
+  const toX = kind === 'onside' ? baseToX : Math.max(35, fromX - (fromX - baseToX) * legendaryKickingFactor(g, kicking));
+  const toY = 96 + (random(g) - .5) * 112 / legendaryKickingFactor(g, kicking), athletes: Athlete[] = [];
   for (let i = 0; i < 7; i++) athletes.push(actor(i, 'offense', fromX + (i === 6 ? 25 : 8), i === 6 ? 96 : 29 + i * 25.2));
   for (let i = 0; i < 7; i++) athletes.push(actor(7 + i, 'defense', i === 6 ? toX - 16 : kind === 'onside' ? 590 : 440 - i * 13,
     i === 6 ? toY : 29 + i * 25.2));
@@ -68,14 +70,14 @@ export function kickoffSequence(g: FootballGame, kind: 'full' | 'squib' | 'onsid
 
 /** Punt and fake punt share startField's identical punt formation and backfield snap. */
 export function puntSequence(g: FootballGame): SpecialTeams {
-  const l = g.live!, travel = 33 + random(g) * 18;
+  const l = g.live!, travel = (33 + random(g) * 18) * legendaryKickingFactor(g);
   const fromX = 1200 - l.athletes[5]!.x, toX = 1100 - (g.spot + travel) * 10;
   const athletes = l.athletes.map(a => ({ ...a, x: 1200 - a.x, startX: 1200 - a.startX, vx: 0, vy: 0 }));
   // A dedicated deep returner is visible before the snap, not spawned on reception.
   const returner = athletes.length - 1;
   const ret = athletes[returner]!; ret.x = clamp(toX - 18, 36, 1080); ret.y = 96; ret.startX = ret.x; ret.startY = 96;
   return { kind: 'punt', stage: 'snap', age: 0, stageAge: 0, receiver: other(g.possession), kicking: g.possession,
-    fromX, fromY: 96, toX: Math.max(35, toX), toY: 40 + random(g) * 112, duration: 2.35,
+    fromX, fromY: 96, toX: Math.max(35, toX), toY: 96 + (random(g) - .5) * 112 / legendaryKickingFactor(g), duration: 2.35,
     ball: { x: 1200 - (100 + g.spot * 10), y: 96, z: 0 }, athletes, kicker: 5, returner,
     travel, touchback: toX <= 100 };
 }
@@ -320,7 +322,11 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
     const next = stepKickAttempt(a, direction, dt, returnSide === 'home' ? { juke: !!input.action || !!input.juke, evasion: true, hesitate: !input.action && !input.juke && input.hesitate }
       : cpuCarrierAction(a, direction, FOOTBALL_SIDELINES,
         s.athletes.filter(b => b.side === (s.returnGroup ?? 'defense') && b.id !== s.returner)
-          .map(b => ({ x: physicalX(b.x), y: b.y, vx: s.mirrored ? -b.vx : b.vx, vy: b.vy }))), FOOTBALL_SIDELINES, panic);
+          .map(b => ({ x: physicalX(b.x), y: b.y, vx: s.mirrored ? -b.vx : b.vx, vy: b.vy }))), FOOTBALL_SIDELINES, panic,
+      { carrier: legendaryAthleteFactor(g, ret), defender: id => {
+        const actor = s.athletes[id];
+        return actor ? legendaryAthleteFactor(g, actor) : 1;
+      } });
     g.returnAttempt = next;
     for (const d of next.defenders) { const actor = s.athletes[d.id]!, x = physicalX(d.x);
       actor.vx = (x - actor.x) / dt; actor.vy = (d.y - actor.y) / dt; actor.x = x; actor.y = d.y; }

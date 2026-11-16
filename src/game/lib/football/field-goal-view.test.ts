@@ -11,11 +11,14 @@ import { kickMatchupTeams } from '../kick-return-teams';
 import { isFootballGame } from './storage';
 import { FIELD_GOAL_FLIGHT_SCALE } from './celebration-timing';
 import { FIELD_GOAL_PADDING_COLORS } from '../../components/football-field-goal-padding';
+import { effectiveKickControl } from './franchise-upgrades';
 
 function kick(accuracy: number | undefined = undefined, distance = 35, hash = 96, side: 'home' | 'away' = 'home') {
   const g = createFootball(1986);
   g.spot = 117 - distance; g.possession = side; g.phase = 'live';
-  g.profiles[side].kickMax = 55;
+  // Isolate the original geometry at an EFFECTIVE 55-yard range. K power
+  // and accuracy bonuses have their own explicit legendary regression tests.
+  g.profiles[side].kickMax = 55 / 1.1;
   g.live = startField(g, 'field-goal', 'run');
   g.live.athletes[6]!.y = hash;
   g.live.kickAccuracy = accuracy; g.special = fieldGoalSequence(g);
@@ -164,7 +167,7 @@ test('human slider, left/right hashes, actual trajectory and scoring use the sam
       if (meter < 0 || meter > 1) continue; // A pointer cannot leave its fixed track.
       s.stage = 'hold';
       // Place the real sinusoidal meter precisely at the selected sample.
-      const speed = fieldGoalMeterSpeed(distance);
+      const speed = fieldGoalMeterSpeed(distance) * effectiveKickControl(g,g.possession);
       const dt = 1e-8;
       g.live!.time = Math.asin((meter - .5) * 2) / (speed * Math.PI * 2) - dt;
       stepSpecialTeams(g, { action: true }, dt);
@@ -180,7 +183,7 @@ test('human slider, left/right hashes, actual trajectory and scoring use the sam
     }
 });
 test('a centered but out-of-range historical attempt falls below the actual crossbar', () => {
-  const g = kick(.5, 55); g.profiles.home.kickMax = 50;
+  const g = kick(.5, 55); g.profiles.home.kickMax = 50 / 1.1;
   g.special = fieldGoalSequence(g); g.special.blockChecked = true;
   const s = g.special!;
   assert.equal(s.good, false);

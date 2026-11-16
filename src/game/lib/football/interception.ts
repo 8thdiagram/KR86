@@ -9,7 +9,8 @@ import { contactFumble } from './field';
 import { openFieldGain } from './athleticism';
 import { FOOTBALL_SIDELINES, outsideFootballSideline } from './sidelines';
 import { pursuitPoint } from '../open-field-pursuit';
-import { franchiseAthleteFactor } from './franchise-upgrades';
+import { effectiveAthleteFactor as franchiseAthleteFactor, franchiseAthleteFactor as awardAthleteFactor } from './franchise-upgrades';
+import { legendaryAthleteFactor } from './legendary';
 import { carrierMoment } from './execution-moments';
 import { playerSpeed } from '../player-pace';
 import { constrainEvasionStep, cpuCarrierAction } from '../carrier-evasion';
@@ -95,7 +96,8 @@ export function stepInterception(g: FootballGame, input: FootballInput, dt: numb
     hesitate: !!input.hesitate,
     obstacles: blockers.map(d => ({ x: 1200 - d.x, y: d.y, vx: -d.vx, vy: d.vy })) }
     : cpuCarrierAction(l.movement, direction, FOOTBALL_SIDELINES,
-      blockers.map(d => ({ x: 1200 - d.x, y: d.y, vx: -d.vx, vy: d.vy }))), FOOTBALL_SIDELINES);
+      blockers.map(d => ({ x: 1200 - d.x, y: d.y, vx: -d.vx, vy: d.vy }))), FOOTBALL_SIDELINES,
+      legendaryAthleteFactor(g, runner));
   const secondary = l.athletes.filter(a => a.side === 'defense' && a.role === 'DB');
   const elite = eliteSlots(g, other(l.offense ?? other(g.possession))).includes(secondary.indexOf(runner));
   const runningGains = !movement.spinStep && (!movement.moves?.active || movement.evasiveStep);
@@ -109,7 +111,7 @@ export function stepInterception(g: FootballGame, input: FootballInput, dt: numb
     movement.player = { x: before.x + (movement.player.x - before.x) * openGain,
       y: clamp(before.y + (movement.player.y - before.y) * openGain, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY) };
   }
-  const upgrade = franchiseAthleteFactor(g, runner) * carrierMoment(g, runner);
+  const upgrade = awardAthleteFactor(g, runner) * carrierMoment(g, runner);
   movement.player = { x: before.x + (movement.player.x - before.x) * upgrade,
     y: movement.spinStep ? movement.player.y : clamp(before.y + (movement.player.y - before.y) * upgrade, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY) };
   if (movement.evasiveStep) movement.player = constrainEvasionStep(before, movement.player, l.movement.defenders,

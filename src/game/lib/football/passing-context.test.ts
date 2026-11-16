@@ -14,6 +14,9 @@ import type { Defense, PassType, PlayId } from './types';
 
 function fixture(play: PlayId = 'slant', time = .8, defense: Defense = 'pass', open = true) {
   const g = createFootball(1234, { player: 'Big Blue', opponent: 'Redbirds' });
+  // Keep this delivery/context fixture's original baseline profiles and
+  // secondary while isolating it from the new individual roster bonuses.
+  g.teams = { player:'Crows', opponent:'Bulls' };
   g.phase = 'live'; g.spot = 40; g.clutchActive = false;
   g.live = startField(g, play, defense);
   g.live.penetration!.roll = .999;
@@ -111,6 +114,7 @@ test('14/15: original additive QB MVP baseline and clutch enhancement are applie
 test('16: equivalent CPU and human snapshots use identical accuracy, scatter, trajectory and random draws', () => {
   for (const type of ['normal', 'bullet'] as const) {
     const human = fixture(), cpu = structuredClone(human);
+    cpu.teams = {player:human.teams.opponent,opponent:human.teams.player};
     cpu.possession = 'away'; cpu.live!.offense = 'away'; cpu.profiles.away = structuredClone(human.profiles.home);
     assert.deepEqual(throwAccuracy(human, human.live!.athletes[3]!, type),
       throwAccuracy(cpu, cpu.live!.athletes[3]!, type));
@@ -145,6 +149,7 @@ test('controlled gameplay rewards a quick slant bullet before man coverage close
     let catches = 0;
     for (let seed = 1; seed <= 200; seed++) {
       const g = createFootball(seed * 617, { player: 'Big Blue', opponent: 'Redbirds' });
+      g.teams = {player:'Crows',opponent:'Bulls'}; // Original, unboosted delivery calibration.
       g.phase = 'live'; g.spot = 40; g.clutchActive = false; g.live = startField(g, 'slant', 'man');
       while (g.live.time < time) assert(!stepField(g, {}, 1 / 60));
       releasePass(g, type);

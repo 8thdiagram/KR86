@@ -1,5 +1,6 @@
 import type { FootballGame, SpecialTeams } from './types';
 import { fieldGoalDistance } from './playbook';
+import { effectiveKickRange } from './legendary';
 
 /** Existing field coordinates: the posts are at x1194, centered on y96. */
 export const FIELD_GOAL = { x: 1194, center: 96, half: 20, crossbar: 10, top: 46, near: 60, sensor: .44 } as const;
@@ -8,7 +9,7 @@ export function fieldGoalMeterSpeed(distance: number) {
   return .65 + Math.max(0, Math.min(1, (distance - 20) / 40)) * .7;
 }
 export function fieldGoalWindow(g: FootballGame) {
-  const distance = fieldGoalDistance(g), max = g.profiles[g.possession].kickMax;
+  const distance = fieldGoalDistance(g), max = effectiveKickRange(g);
   return Math.max(.025, Math.min(.26, .26 - Math.max(0, distance - 20) / Math.max(1, max - 20) * .235));
 }
 export function kickGeometry(fromX: number, fromY: number, toX: number = FIELD_GOAL.x) {
@@ -27,14 +28,14 @@ export function fieldGoalAim(g: FootballGame, accuracy: number) {
   // CPU's original timing lottery and success threshold are unchanged. Unlike
   // the old discontinuous good/miss endpoints, this is one continuous aim.
   const offset = (accuracy - .5) / fieldGoalWindow(g) * FIELD_GOAL.half;
-  const inRange = fieldGoalDistance(g) <= g.profiles[g.possession].kickMax;
+  const inRange = fieldGoalDistance(g) <= effectiveKickRange(g);
   return { good: Math.abs(accuracy - .5) <= fieldGoalWindow(g) && inRange,
     toY: FIELD_GOAL.center + offset };
 }
 export function fieldGoalHeight(g: FootballGame, t: number) {
   // There is no separate power button or wind model in the existing game.
   // kickMax remains the strength limit, including attempts resumed beyond range.
-  const shortage = Math.max(0, fieldGoalDistance(g) - g.profiles[g.possession].kickMax);
+  const shortage = Math.max(0, fieldGoalDistance(g) - effectiveKickRange(g));
   const terminal = shortage ? Math.max(0, FIELD_GOAL.crossbar - shortage * 2) : 23;
   return Math.sin(t * Math.PI) * 42 + t * terminal;
 }

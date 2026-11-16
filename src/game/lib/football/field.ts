@@ -13,7 +13,8 @@ import { eliteSlots } from './secondary';
 import { pressureTicket, stepPenetration } from './penetration';
 import { looseBall, stepLoose, tryFumble } from './rare-events';
 import { openFieldGain } from './athleticism';
-import { franchiseAthleteFactor, linebackerSkill } from './franchise-upgrades';
+import { effectiveAthleteFactor as franchiseAthleteFactor, franchiseAthleteFactor as awardAthleteFactor, linebackerSkill } from './franchise-upgrades';
+import { legendaryAthleteFactor } from './legendary';
 import { eligibleReceivers } from './coverage';
 import { cpuReadOpen, observeCoachingRun, prepareCoaching } from './coaching-execution';
 import { OPTION, stepSpeedOption } from './speed-option';
@@ -375,7 +376,8 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
       : g.possession === 'home'
        ? { juke: !optionInput&&(!!input.juke || !!input.action), evasion: true, hesitate: !input.juke && !input.action && input.hesitate,
            obstacles: l.athletes.filter(a => a.side === runner.side && a.id !== runner.id && !a.dive).map(a => ({ x: a.x, y: a.y, vx: a.vx, vy: a.vy })) }
-       : optionInput ? { evasion: true } : cpuCarrierAction(l.movement, direction, FOOTBALL_SIDELINES, obstacles), FOOTBALL_SIDELINES);
+       : optionInput ? { evasion: true } : cpuCarrierAction(l.movement, direction, FOOTBALL_SIDELINES, obstacles), FOOTBALL_SIDELINES,
+       legendaryAthleteFactor(g, runner));
     // Brief assignment execution gain, not a global speed increase. Never alter
     // evasion/hesitation, scramble restrictions, or return physics.
     const runningGains = !movement.spinStep && (!movement.moves?.active || movement.evasiveStep);
@@ -393,7 +395,7 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
       movement.player.x = previousMovement.player.x + (movement.player.x - previousMovement.player.x) * openGain;
       movement.player.y = clamp(previousMovement.player.y + (movement.player.y - previousMovement.player.y) * openGain, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);
     }
-    const upgrade = l.mode === 'run' ? franchiseAthleteFactor(g, runner) * carrierMoment(g, runner) : 1;
+    const upgrade = l.mode === 'run' ? awardAthleteFactor(g, runner) * carrierMoment(g, runner) : 1;
     if (upgrade !== 1) {
       movement.player.x = previousMovement.player.x + (movement.player.x - previousMovement.player.x) * upgrade;
       if (!movement.spinStep) movement.player.y = clamp(previousMovement.player.y + (movement.player.y - previousMovement.player.y) * upgrade, FOOTBALL_SIDELINES.minY, FOOTBALL_SIDELINES.maxY);

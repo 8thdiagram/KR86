@@ -13,7 +13,7 @@ import { defensivePanicTarget } from './defensive-panic';
 import { startNearestDive } from './defensive-action';
 import { FOOTBALL_SIDELINES } from './sidelines';
 import { lockClutch } from './clutch';
-import { franchiseKickControl } from './franchise-upgrades';
+import { effectiveKickControl as franchiseKickControl } from './franchise-upgrades';
 import { recordCoaching } from './coaching';
 import { creditRusher } from './rushing-credit';
 export * from './types';

@@ -8,7 +8,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
  * Lanes organize the approach, but never imprison a nearby or beaten tackler.
  */
 export function stepOpenFieldCoverage(a: KickAttempt, d: KickDefender, dt: number,
-  speed = d.speed, lateral = d.lateralSpeed, position?: { x: number; y: number }): KickDefender {
+  speed = d.speed, lateral = d.lateralSpeed, position?: { x: number; y: number }, skill = 1): KickDefender {
   speed = playerSpeed(speed); lateral = playerSpeed(lateral);
   const m = d.motion ?? { vx: 0, vy: 0, targetX: d.x, targetY: d.y,
     reactionLeft: 0, stride: 0, facing: -1 as const };
@@ -24,7 +24,7 @@ export function stepOpenFieldCoverage(a: KickAttempt, d: KickDefender, dt: numbe
       ty = clamp(ty, d.minY, d.maxY);
     }
     if (d.jukeRead && d.jukeRead.until > a.returnTime) ty = d.jukeRead.targetY;
-    left = .08;
+     left = .08 / skill;
   }
   let sx = 0, sy = 0;
   if (distance > 24) for (const mate of a.defenders) {
@@ -37,7 +37,7 @@ export function stepOpenFieldCoverage(a: KickAttempt, d: KickDefender, dt: numbe
   const wantedX = clamp((steerX - d.x) / arrival + sx, -speed, speed);
   const wantedY = clamp((steerY - d.y) / arrival + sy, -lateral, lateral);
   const dx = wantedX - m.vx, dy = wantedY - m.vy, change = Math.hypot(dx, dy);
-  const fraction = Math.min(1, 650 * dt / Math.max(.001, change));
+   const fraction = Math.min(1, 650 * skill * dt / Math.max(.001, change));
   const vx = m.vx + dx * fraction, vy = m.vy + dy * fraction;
   return { ...d, active: true, x: clamp(d.x + vx * dt, 8, 1180),
     y: clamp(d.y + vy * dt, minY, 168), motion: {

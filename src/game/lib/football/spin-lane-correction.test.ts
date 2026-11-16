@@ -99,7 +99,7 @@ test('Classic return collision and bounds still use the constrained spin positio
 });
 
 function field(threatSide: -1 | 1) {
-  const g = createFootball(1986);
+  const g = createFootball(1986, {player:'Crows',opponent:'Bulls'});
   g.possession = 'home'; g.phase = 'live'; g.spot = 40;
   const l = g.live = startField(g, 'power', 'pass');
   l.mode = 'run'; l.time = 3; l.carrier = 6; l.carrierCrossedLos = true;
@@ -259,7 +259,8 @@ for (const direction of [-1, 1] as const) for (const threatSide of [-1, 1] as co
 
 for (const direction of [-1, 0, 1] as const) for (const threatSide of [-1, 1] as const) {
   test(`opposite-field return direction ${direction} escapes threat side ${threatSide} by one perpendicular body width`, t => {
-    const g = createFootball(1986); g.phase = 'live'; g.possession = 'away'; g.spot = 40;
+    // Isolate authored evasion geometry from individual roster speed bonuses.
+    const g = createFootball(1986,{player:'Bulls',opponent:'Crows'}); g.phase = 'live'; g.possession = 'away'; g.spot = 40;
     const l = g.live = startField(g, 'power', 'pass');
     l.offense = 'away'; g.possession = 'home';
     l.mode = 'return'; l.returnKind = 'interception'; l.time = 3; l.flight = undefined;

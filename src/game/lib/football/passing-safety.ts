@@ -1,9 +1,9 @@
 import { clamp, type Athlete, type LivePlay, type PassType } from './types';
 
 /** Same travel time and unperturbed lead as releasePass; no changes to flight physics. */
-export function passProjection(l: LivePlay, a: Athlete, type: PassType) {
+export function passProjection(l: LivePlay, a: Athlete, type: PassType, passing = 1) {
   const qb = l.athletes[5]!, distance = Math.hypot(qb.x - a.x, qb.y - a.y);
-  const duration = type === 'bullet' ? clamp(distance / 440, .12, .8) : clamp(distance / 220, .26, 1.5);
+  const duration = type === 'bullet' ? clamp(distance / (440 * passing), .12, .8) : clamp(distance / (220 * passing), .26, 1.5);
   return { duration, x: clamp(a.x + a.vx * duration * .7, 30, 1115),
     y: clamp(a.y + a.vy * duration * .65, 20, 172) };
 }
@@ -11,8 +11,8 @@ export function passProjection(l: LivePlay, a: Athlete, type: PassType) {
 /** Relative safe-completion estimate, not a calibrated probability or a new catch lottery.
  * Sample the existing arc and allow defenders reaction, momentum and closing time.
  * A lob ignores midfield bodies while high, but not defenders who can reach its landing. */
-export function safeCompletionScore(l: LivePlay, a: Athlete, type: PassType, accuracy: number) {
-  const qb = l.athletes[5]!, aim = passProjection(l, a, type);
+export function safeCompletionScore(l: LivePlay, a: Athlete, type: PassType, accuracy: number, passing = 1) {
+  const qb = l.athletes[5]!, aim = passProjection(l, a, type, passing);
   let survival = 1;
   for (const d of l.athletes.filter(d => d.side === 'defense')) {
     let danger = 0;

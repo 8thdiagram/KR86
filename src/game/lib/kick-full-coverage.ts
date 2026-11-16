@@ -5,10 +5,10 @@ import { stepOpenFieldCoverage } from './kick-open-field';
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 /** Full Game adapter only. New returns share observed-motion pursuit for every
  * coverage player; historical returns retain their saved lane/reaction rules. */
-export function stepFullCoverage(a: KickAttempt, d: KickDefender, dt: number, position?: { x: number; y: number }): KickDefender {
+export function stepFullCoverage(a: KickAttempt, d: KickDefender, dt: number, position?: { x: number; y: number }, skill = 1): KickDefender {
   const elite = a.fullCoverage!.elite.includes(d.id);
-  const gain = openFieldGain(d, [a.player], dt, !d.dive);
-  if (a.pursuitVersion) return stepOpenFieldCoverage(a, d, dt, d.speed * gain, d.lateralSpeed * gain, position);
+  const gain = openFieldGain(d, [a.player], dt, !d.dive) * skill;
+  if (a.pursuitVersion) return stepOpenFieldCoverage(a, d, dt, d.speed * gain, d.lateralSpeed * gain, position, skill);
   const m = d.motion ?? { vx: 0, vy: 0, targetX: d.x, targetY: d.y,
     reactionLeft: 0, stride: 0, facing: -1 as const };
   let left = m.reactionLeft - dt, tx = m.targetX, ty = m.targetY;
@@ -21,7 +21,7 @@ export function stepFullCoverage(a: KickAttempt, d: KickDefender, dt: number, po
     ty = clamp(a.player.y + vy * lead, d.minY, d.maxY);
     // Supporting coverage retains its assigned lane until close enough.
     if (!elite && distance > 72) ty = clamp(ty, d.minY, d.maxY);
-    left += elite ? .16 : .24;
+    left += (elite ? .16 : .24) / skill;
   }
   let sx = 0, sy = 0;
   if (distance > 24) for (const b of a.defenders) {
@@ -34,7 +34,7 @@ export function stepFullCoverage(a: KickAttempt, d: KickDefender, dt: number, po
   const desiredX = clamp((steerX - d.x) / arrival + sx, -d.speed * gain, d.speed * gain);
   const desiredY = clamp((steerY - d.y) / arrival + sy, -d.lateralSpeed * gain, d.lateralSpeed * gain);
   const changeX = desiredX - m.vx, changeY = desiredY - m.vy, change = Math.hypot(changeX, changeY);
-  const fraction = Math.min(1, (elite ? 380 : 280) * (gain > 1 ? OPEN_FIELD.acceleration : 1) * dt / Math.max(.001, change));
+  const fraction = Math.min(1, (elite ? 380 : 280) * (gain > 1 ? OPEN_FIELD.acceleration : 1) * skill * dt / Math.max(.001, change));
   const vx = m.vx + changeX * fraction, vy = m.vy + changeY * fraction;
   return { ...d, active: true, x: clamp(d.x + vx * dt, 8, 1180),
     y: clamp(d.y + vy * dt, 24, 168),

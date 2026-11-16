@@ -5,6 +5,7 @@ import { startField, stepField } from './field';
 import { createFootballControls } from './controls';
 import { canForwardPass, highlightedReceiver, progression } from './passing';
 import { passProjection } from './passing-safety';
+import { legendaryPassingFactor } from './legendary';
 import { finishAuditPass } from '../../../scripts/football-receiving-audit';
 import type { FootballGame } from './types';
 
@@ -127,7 +128,7 @@ test('TEST 12 — the receiver moves during the hold and is led from current, no
   hold(g, c, 600);
   assert(Math.hypot(a.x - initial.x, a.y - initial.y) > 10);
   c.release('pointer:1', 600); stepFootball(g, c.sample(600), .001, FULL_GAME_SPEED);
-  const f = l.flight!, projection = passProjection(l, a, 'bullet');
+  const f = l.flight!, projection = passProjection(l, a, 'bullet', legendaryPassingFactor(g));
   assert.equal(f.receiver, 3);
   assert(Math.abs(f.aimX! - projection.x) < 1e-6);
   assert(Math.abs(f.aimY! - projection.y) < 1e-6);

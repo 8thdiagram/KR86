@@ -1,5 +1,5 @@
 import { looseBall } from './rare-events';
-import { franchiseAthleteFactor } from './franchise-upgrades';
+import { effectiveAthleteFactor as franchiseAthleteFactor } from './franchise-upgrades';
 import { playerSpeed } from '../player-pace';
 import { clamp, random, type Athlete, type FootballGame, type FootballInput } from './types';
 

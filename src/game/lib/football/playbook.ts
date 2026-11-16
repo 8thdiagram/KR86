@@ -2,6 +2,7 @@ import { KICK_TEAMS } from '../kick-return-teams';
 import { clamp, random, type Defense, type FootballGame, type Play, type PlayId, type Profile, type Side } from './types';
 import { coachObservations, coachingEvidence, defensiveCoachWeight, offensiveCoachWeight } from './coaching';
 import { rankOffensiveMenu, rankDefensiveMenu } from './coaching-menu';
+import { effectiveKickRange } from './legendary';
 
 export const PLAYBOOK: Record<PlayId, Play> = {
   power: { id: 'power', name: 'Power run', kind: 'run', formation: 'I', description: 'Lead blocker through an inside gap.', depth: 3, develop: .45, risk: .1 },
@@ -44,7 +45,7 @@ export function teamProfile(name: string): Profile {
   return { ...base, ...inspired[name] };
 }
 export const fieldGoalDistance = (g: FootballGame) => Math.ceil(100 - g.spot + 17);
-export const fieldGoalAllowed = (g: FootballGame) => !g.overtime && fieldGoalDistance(g) <= g.profiles[g.possession].kickMax;
+export const fieldGoalAllowed = (g: FootballGame) => !g.overtime && fieldGoalDistance(g) <= effectiveKickRange(g);
 export const distanceToGo = (g: FootballGame) => Math.max(.1, g.target - g.spot);
 export const DEFENSES: { id: Defense; name: string; description: string }[] = [
   { id: 'run', name: 'Run defense', description: 'Crowd inside gaps; fewer deep coverage resources.' },

@@ -38,3 +38,9 @@ Use receiver-only hold ablations before attributing a blocking effect to receive
 **Why:** Removing all DB holds also removes OL-to-DB blocking, which can overstate the WR/TE contribution.
 
 **How to apply:** Keep the original contests and bodies, vary only successful WR/TE-to-DB hold duration, and compare matched seeds separately from the broader all-DB ablation.
+
+Legendary-player roster strength is intentionally unequal across franchises. Do not distribute extra stars, compensate weaker teams, or normalize stronger combinations away.
+
+**Why:** The user explicitly wants teams with several exceptional legends and teams with modest returners to remain different. Bonuses improve probabilities and physical abilities, never guarantee touchdowns or broken tackles.
+
+**How to apply:** Preserve the supplied position-specific allocations and underlying ratings when tuning balance. Judge passing and rushing separately for quarterbacks; a return assignment must not add its ordinary-position bonus again.

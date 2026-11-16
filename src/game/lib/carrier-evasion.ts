@@ -35,8 +35,8 @@ export function carrierJukeProgress(elapsed: number) {
 export type EvasionObstacle = { x: number; y: number; vx?: number; vy?: number };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 function runningVector(a: KickAttempt, direction: -1 | 0 | 1) {
-  const x = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
-  const y = direction * playerSpeed(a.difficulty === 'hard' ? 86 : 78);
+  const x = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1)) * (a.athleticFactor ?? 1);
+  const y = direction * playerSpeed(a.difficulty === 'hard' ? 86 : 78) * (a.athleticFactor ?? 1);
   const speed = Math.hypot(x, y);
   return { x, y, normalX: -y / speed, normalY: x / speed };
 }
@@ -187,8 +187,8 @@ export function constrainEvasionStep(from: EvasionObstacle, to: EvasionObstacle,
 }
 
 export function stepCarrierEvasion(a: KickAttempt, direction: -1 | 0 | 1, dt: number, input: KickMoveInput, bounds: CarrierBounds) {
-  const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1));
-  const lateral = playerSpeed(a.difficulty === 'hard' ? 86 : 78);
+  const forward = playerSpeed((a.difficulty === 'hard' ? 73 : 57) * (a.kickoffBoost ?? 1)) * (a.athleticFactor ?? 1);
+  const lateral = playerSpeed(a.difficulty === 'hard' ? 86 : 78) * (a.athleticFactor ?? 1);
   const moves: KickMoves = a.moves ? { ...a.moves, version: 2, backward: false, hesitating: false }
     : { version: 2, backward: false, sequence: 0, readyAt: 0, vx: forward, furthestX: a.player.x };
   let started = false;

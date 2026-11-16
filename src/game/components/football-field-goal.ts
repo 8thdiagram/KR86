@@ -8,6 +8,8 @@ import { kickMatchupTeams } from '../lib/kick-return-teams';
 import { uniformKit, positionKit, playerSkin, helmetColor, UNIFORM, SKIN_TONES } from './football-art';
 import { tone } from './football-deluxe-art';
 import { slim, R, type Kit, type Pose } from './football-sprites';
+import { jerseyMark } from './legendary-indicators';
+import { legendaryAthlete } from '../lib/football/legendary';
 import { updateFootballAnimation } from './football-animation-clock';
 import { drawFieldGoalPadding } from './football-field-goal-padding';
 
@@ -276,6 +278,8 @@ function drawKickViewPlayers(
   frame: ReturnType<typeof fieldGoalFrame>,
   home: Kit,
   away: Kit,
+  kickerNumber?: number,
+  holderNumber?: number,
 ) {
   const sourceKit = s.kicking === 'home' ? home : away;
   const kickingKit: Kit = positionKit({ ...sourceKit, dir: s.toX >= s.fromX ? 1 : -1 }, 'K');
@@ -296,6 +300,7 @@ function drawKickViewPlayers(
     ctx.scale(2, 2);
     slim(ctx, 0, 0, kickingKit, pose);
     ctx.restore();
+    if (kickerNumber !== undefined) jerseyMark(ctx, p.x, p.y - 31, s.age, kickerNumber);
   };
   let holderPoint: { x: number; y: number } | undefined;
   const drawHolder = () => {
@@ -307,6 +312,7 @@ function drawKickViewPlayers(
     ctx.save(); ctx.translate(x, y - 10); ctx.scale(2, 2);
     slim(ctx, 0, 0, { ...holderKit, dir: -1 }, { action: 'kneel', view: 1 });
     ctx.restore();
+    if (holderNumber !== undefined) jerseyMark(ctx, x, y - 23, s.age, holderNumber);
   };
   const drawKicker = () => {
     if (!kicker) return;
@@ -424,7 +430,9 @@ export function drawFieldGoalFlight(ctx: CanvasRenderingContext2D, g: FootballGa
     drawUprights(ctx, frame);
     drawBall();
   }
-  drawKickViewPlayers(ctx, s, frame, home, away);
+  drawKickViewPlayers(ctx, s, frame, home, away,
+    legendaryAthlete(g, s.athletes[s.kicker]!)?.number,
+    legendaryAthlete(g, s.athletes[s.returner]!)?.number);
   if (s.stage === 'snap' || s.stage === 'hold' || s.stage === 'approach') drawBall();
   ctx.restore();
 

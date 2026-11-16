@@ -12,8 +12,8 @@ export function kickBurstVelocity(a: KickAttempt, side: KickDirection) {
   // Preserve the existing independent forward/lateral axes. Normal diagonal
   // running is already faster than forward-only running; normalizing this
   // burst to forward speed would accidentally slow a steering player down.
-  return { vx: (a.difficulty === 'hard' ? 73 : 57) * BURST.ratio,
-    vy: side * (a.difficulty === 'hard' ? 86 : 78) * BURST.ratio };
+  return { vx: (a.difficulty === 'hard' ? 73 : 57) * BURST.ratio * (a.athleticFactor ?? 1),
+    vy: side * (a.difficulty === 'hard' ? 86 : 78) * BURST.ratio * (a.athleticFactor ?? 1) };
 }
 function velocity(a: KickAttempt, d: KickDefender) {
   if (d.dive) return d.dive.phase === 'airborne' ? { vx: d.dive.vx, vy: d.dive.vy } : { vx: 0, vy: 0 };

@@ -1,5 +1,6 @@
 import type { Athlete, FootballGame, Side } from './types';
 import { kickerControl, mvpMultiplier, type MvpId } from './mvp';
+import { legendaryAthleteFactor, legendaryDefensiveFactor, legendaryKickingFactor } from './legendary';
 
 export type UpgradeSlot = MvpId;
 export const awardCount = (g: FootballGame, slot: UpgradeSlot, side: Side) =>
@@ -8,6 +9,8 @@ export const franchiseFactor = (g: FootballGame, slot: UpgradeSlot, side: Side =
   mvpMultiplier(slot, awardCount(g, slot, side), !!g.clutchActive);
 export const franchiseKickControl = (g: FootballGame, side: Side) =>
   kickerControl(awardCount(g, 'K1', side), !!g.clutchActive);
+export const effectiveKickControl = (g: FootballGame, side: Side) =>
+  franchiseKickControl(g, side) / legendaryKickingFactor(g, side);
 export function athleteAwards(g: FootballGame, a: Athlete, slot: 'DB1' | 'LB1') {
   const players = g.live?.athletes.includes(a) ? g.live.athletes : g.special?.athletes;
   if (!players || a.role !== (slot === 'DB1' ? 'DB' : 'LB') ||
@@ -18,9 +21,9 @@ export function athleteAwards(g: FootballGame, a: Athlete, slot: 'DB1' | 'LB1') 
   return awardCount(g, slot, side);
 }
 export const linebackerSkill = (g: FootballGame, a: Athlete) =>
-  mvpMultiplier('LB1', athleteAwards(g, a, 'LB1'), !!g.clutchActive);
+  mvpMultiplier('LB1', athleteAwards(g, a, 'LB1'), !!g.clutchActive) * legendaryAthleteFactor(g, a, 'skill');
 export const turnoverSkill = (g: FootballGame, a: Athlete) =>
-  g.clutchActive ? mvpMultiplier('LB1', athleteAwards(g, a, 'DB1'), true) : 1;
+  (g.clutchActive ? mvpMultiplier('LB1', athleteAwards(g, a, 'DB1'), true) : 1) * legendaryDefensiveFactor(g, a);
 /** Fixed roster identities: the first WR/DB and the established RB slot.
  * Never promote every athlete sharing a position. Each team owns its own awards. */
 export function franchiseAthleteFactor(g: FootballGame, a: Athlete) {
@@ -38,3 +41,5 @@ export function upgradedPassingBaseline(g: FootballGame, baseline: number) {
   // Keep room for inaccurate throws; catches and coverage are adjudicated later.
   return Math.min(.94, baseline * franchiseFactor(g, 'QB1', g.possession));
 }
+export const effectiveAthleteFactor = (g: FootballGame, a: Athlete) =>
+  franchiseAthleteFactor(g, a) * legendaryAthleteFactor(g, a);

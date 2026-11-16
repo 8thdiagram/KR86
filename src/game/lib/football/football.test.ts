@@ -7,6 +7,7 @@ import { KR, createKickAttempt, stepKickAttempt, kickWitnessDirection } from '..
 import { playerSpeed } from '../player-pace';
 import { isFootballGame, loadFootball, saveFootball } from './storage';
 import { FOOTBALL_SIDELINES } from './sidelines';
+import { puntSequence } from './special-teams';
 
 const teams = { player: 'Big Blue', opponent: 'Redbirds' } as const;
 function atSnap(seed = 42, spot = 35, down = 1, target = spot + 10) {
@@ -132,7 +133,14 @@ test('field goals use distance-aware timing and three points; punts trade field 
   const miss = atSnap(4, 70, 4); miss.live = startField(miss, 'field-goal', 'run'); miss.phase = 'live'; miss.live.kickAccuracy = .01;
   for (let i = 0; i < 240 && miss.phase === 'live'; i++) stepFootball(miss);
   assert.equal(miss.score.home, 0); assert.equal(miss.possession, 'away');
-  const punt = playOut(atSnap(2, 20, 4), 'punt'); assert.equal(punt.possession, 'away'); assert(punt.spot < 65); assert.equal(punt.stats.home.punts, 1);
+  const launch = atSnap(2,20,4); launch.live=startField(launch,'punt','pass');
+  const flight = puntSequence(launch);
+  assert(flight.fromX>flight.toX && flight.travel!>0, 'the actual punt travels downfield');
+  const punt = playOut(atSnap(2, 20, 4), 'punt'); assert.equal(punt.possession, 'away');
+  // A physical return can erase the punt's gain, including a touchdown; the
+  // kick itself must travel downfield, not guarantee a favorable final spot.
+  assert(punt.spot>=0 && punt.spot<=100);
+  assert.equal(punt.stats.home.punts, 1);
   assert.equal(PLAYBOOK['fake-punt'].formation, 'punt'); assert.equal(PLAYBOOK['fake-punt'].kind, 'run');
 });
 test('strategic interactions have sensible direction, not predetermined gain results', () => {

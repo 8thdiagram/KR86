@@ -3,6 +3,7 @@ import { canTackle } from './defensive-action';
 import { PASS_DEFENSE } from './pass-defense';
 import { PLAYBOOK } from './playbook';
 import { clamp, isPassCoverage, random, type FootballGame } from './types';
+import { legendaryAthleteFactor } from './legendary';
 
 /** Existing physical ball/contact reach; never enlarge sprites or teleport a catch. */
 export const CATCH_REACH = PASS_DEFENSE.reach;
@@ -22,7 +23,8 @@ export function resolveReception(g: FootballGame): string | undefined {
   const disrupted = l.athletes.some(d => d.side === 'defense' && d.engaged <= l.time &&
     canTackle(d) && Math.hypot(d.x - f.x, d.y - f.y) <= CATCH_REACH);
   const contest = disrupted ? isPassCoverage(l.defense) ? .29 : .22 : 0;
-  const skill = clamp(.92 + (g.profiles[g.possession].receivers - .6) * .12, .88, .97);
+  const ability = g.profiles[g.possession].receivers * legendaryAthleteFactor(g, receiver, 'skill');
+  const skill = clamp(.92 + (ability - .6) * .12, .88, .97);
   const success = chaosOpportunity(g, clamp(skill - contest, .12, .96),
     PLAYBOOK[l.play].depth >= 17 || disrupted, .96);
   if (random(g) > success) return disrupted ? 'PASS BREAKUP' : 'DROPPED PASS';

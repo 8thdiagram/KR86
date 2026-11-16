@@ -4,6 +4,7 @@ import { MVP_IDS, mvpMultiplier, speedBonus, skillBonus, kickerControl } from '.
 import { clutchEligible, chaosOpportunity, lockClutch } from './clutch';
 import { createFootball, queueOffense, snapFootball, advanceFootballReady, stepFootball } from './engine';
 import { franchiseFactor, franchiseAthleteFactor, linebackerSkill, turnoverSkill, franchiseKickControl } from './franchise-upgrades';
+import { legendaryDefensiveFactor } from './legendary';
 import { startField, stepField } from './field';
 import { emptyAwards, currentTeamRating } from './league-ratings';
 import { createFranchise, awardMvp, nextFranchiseSeason, startFranchiseGame, completeFranchiseGame, type Franchise } from './franchise';
@@ -89,8 +90,8 @@ test('all earned players act independently; neither possession changes nor oppon
     near(franchiseAthleteFactor(g, players[6]!), side === 'home' ? mvpMultiplier('RB1', 3, clutch) : 1);
     near(franchiseAthleteFactor(g, players[11]!), side === 'away' ? mvpMultiplier('DB1', 3, clutch) : 1);
     near(franchiseAthleteFactor(g, players[12]!), 1);
-    near(linebackerSkill(g, players[10]!), side === 'away' ? 1 + skillBonus(3, clutch) : 1);
-    near(turnoverSkill(g, players[11]!), side === 'away' && clutch ? 2.2 : 1);
+    near(linebackerSkill(g, players[10]!), (side === 'away' ? 1 + skillBonus(3, clutch) : 1) * legendaryDefensiveFactor(g,players[10]!));
+    near(turnoverSkill(g, players[11]!), (side === 'away' && clutch ? 2.2 : 1) * legendaryDefensiveFactor(g,players[11]!));
     const before = franchiseAthleteFactor(g, players[11]!);
     g.possession = side === 'home' ? 'away' : 'home'; near(franchiseAthleteFactor(g, players[11]!), before);
     delete g.franchise;

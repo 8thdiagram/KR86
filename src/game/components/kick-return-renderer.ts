@@ -1,5 +1,7 @@
 import { KR, kickBallPosition, isKickContact, type KickAttempt } from '../lib/kick-return-engine';
 import { kickMatchupTeams } from '../lib/kick-return-teams';
+import { classicLegendaryPlayer, legendaryPlayer } from '../lib/football/legendary-roster';
+import { jerseyMark } from './legendary-indicators';
 import { drawTouchdownMarquee } from './football-touchdown-art';
 import { kickDivePose } from '../lib/kick-return-dive';
 import { kickDiveRules } from '../lib/kick-return-burst';
@@ -439,7 +441,14 @@ function world(ctx: CanvasRenderingContext2D, a: KickAttempt, cel: number, refer
     }
     football(ctx, b.x, b.y, b.height < 1, a.time, b.height);
   }
-  // No selection/catch ring, halo, or overhead player marker in any state.
+  if (a.teams) {
+    const legend = legendaryPlayer(a.teams.player, 'KR');
+    if (legend) jerseyMark(ctx, p.x, p.y, a.time, legend.number);
+    if (!a.fullCoverage) for (const d of a.defenders) {
+      const defender = classicLegendaryPlayer(a.teams.opponent, d.id);
+      if (defender) jerseyMark(ctx, d.x, d.y, a.time, defender.number);
+    }
+  }
   if (a.phase === 'touchdown') {
     for (let i = 0; i < 24; i++) {
       const sx = p.x + ((i * 37) % 90) - 45 + Math.sin(cel * 2 + i) * 6;

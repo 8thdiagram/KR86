@@ -1,6 +1,6 @@
 import { startField, routePoint } from './field';
 import { runApproach, skillExecution } from './execution';
-import { franchiseAthleteFactor } from './franchise-upgrades';
+import { effectiveAthleteFactor as franchiseAthleteFactor } from './franchise-upgrades';
 import { progression } from './passing';
 import { eligibleReceivers, manAssignment } from './coverage';
 import { PLAYBOOK } from './playbook';

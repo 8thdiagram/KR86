@@ -2,6 +2,7 @@ import { clamp, other, type Athlete, type FootballGame, type LivePlay } from './
 import { PLAYBOOK } from './playbook';
 import { progression } from './passing';
 import { franchiseAthleteFactor } from './franchise-upgrades';
+import { legendaryAthleteFactor, legendaryDefensiveFactor } from './legendary';
 import { chaosOpportunity } from './clutch';
 
 /** The old sharp-read opportunity was 6%. A 12% relative increase, not +12pp.
@@ -35,6 +36,7 @@ export function carrierMoment(g: FootballGame, a: Athlete) {
 /** Independent rare execution at ACTUAL contact: a sharper cut can help the
  * runner, an exceptional finish can help the tackler. Neither creates contact. */
 export function contactEscapeOpportunity(g: FootballGame, runner: Athlete, defender: Athlete, base: number) {
+  base = clamp(base * legendaryAthleteFactor(g, runner) / legendaryDefensiveFactor(g, defender), .02, .4);
   if (g.clutchActive === undefined) return base;
   const threshold = chaosOpportunity(g, MOMENTS.opportunity);
   const cut = momentRoll(g.live!, runner) < threshold ? 1.2 : 1;

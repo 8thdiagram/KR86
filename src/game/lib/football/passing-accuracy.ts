@@ -1,4 +1,5 @@
-import { franchiseAthleteFactor, upgradedPassingBaseline } from './franchise-upgrades';
+import { effectiveAthleteFactor as franchiseAthleteFactor, upgradedPassingBaseline } from './franchise-upgrades';
+import { legendaryPassingFactor } from './legendary';
 import { passProjection } from './passing-safety';
 import { routePoint } from './route-geometry';
 import { clamp, type Athlete, type FootballGame, type PassType } from './types';
@@ -6,7 +7,7 @@ import { clamp, type Athlete, type FootballGame, type PassType } from './types';
 /** One delivery estimate, shared by human/CPU and target ranking. No success roll,
  * defender-separation penalty, play-history modifier, or generic late-clock decay. */
 export function throwAccuracy(g: FootballGame, a: Athlete, type: PassType) {
-  const l = g.live!, qb = l.athletes[5]!, projection = passProjection(l, a, type);
+  const l = g.live!, qb = l.athletes[5]!, projection = passProjection(l, a, type, legendaryPassingFactor(g));
   const distance = Math.hypot(qb.x - a.x, qb.y - a.y);
   const horizon = projection.duration * .7;
   const speed = Math.hypot(a.vx, a.vy);
@@ -26,8 +27,8 @@ export function throwAccuracy(g: FootballGame, a: Athlete, type: PassType) {
   const deviation = Math.hypot(dx - a.vx * horizon, dy - a.vy * horizon);
   const stability = 1 - clamp(deviation / Math.max(20, speed * horizon + 12), 0, 1);
   const moving = Math.min(.05, Math.abs(qb.vy) / 1200 + (l.scrambled ? Math.abs(qb.vx) / 1800 : 0));
-  const accuracy = clamp(upgradedPassingBaseline(g, .30 + g.profiles[g.possession].qb * .43) +
-    stability * .15 + l.advantage * .18 - l.pressure * .14 -
+  const accuracy = clamp(upgradedPassingBaseline(g, .30 + g.profiles[g.possession].qb * legendaryPassingFactor(g) * .43) +
+    stability * .15 + l.advantage * .18 - l.pressure * .14 / legendaryPassingFactor(g) -
     Math.max(0, distance - 200) / 2500 - moving, .12, .94);
   // Bounded angular placement error grows with distance. This replaces the
   // nearly always catchable fixed scatter; it does not change speed/arc/lead.

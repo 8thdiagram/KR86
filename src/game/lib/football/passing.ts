@@ -4,6 +4,7 @@ import { eligibleReceivers } from './coverage';
 import { observeCoachingThrow } from './coaching-execution';
 import { passProjection, safeCompletionScore } from './passing-safety';
 import { throwAccuracy } from './passing-accuracy';
+import { legendaryPassingFactor } from './legendary';
 
 /** Passing-only timing. Original evasion/hold thresholds remain untouched. */
 export const PASS_HOLD_MS = 220;
@@ -36,7 +37,7 @@ export function highlightedReceiver(l: LivePlay) {
 }
 function opportunity(g: FootballGame, a: Athlete, type: PassType) {
   const delivery = throwAccuracy(g, a, type);
-  return { a, ...delivery, merit: safeCompletionScore(g.live!, a, type, delivery.accuracy) };
+  return { a, ...delivery, merit: safeCompletionScore(g.live!, a, type, delivery.accuracy, legendaryPassingFactor(g)) };
 }
 export function releasePass(g: FootballGame, type: PassType = 'normal', locked?: number) {
   const l = g.live!;
@@ -55,7 +56,7 @@ export function releasePass(g: FootballGame, type: PassType = 'normal', locked?:
   if (!chosen) { l.holdingPass = false; l.lockedReceiver = undefined; return; }
   const { a, accuracy, spreadX, spreadY } = chosen;
   observeCoachingThrow(l,a);
-  const { duration, x: aimX, y: aimY } = passProjection(l, a, type);
+  const { duration, x: aimX, y: aimY } = passProjection(l, a, type, legendaryPassingFactor(g));
   l.flight = { type, contested: [], fromX: qb.x, fromY: qb.y, x: qb.x, y: qb.y, z: 4,
     toX: clamp(a.x + a.vx * duration * .7 + (random(g) - .5) * spreadX, 30, 1115),
     toY: clamp(a.y + a.vy * duration * .65 + (random(g) - .5) * spreadY, 20, 172),
