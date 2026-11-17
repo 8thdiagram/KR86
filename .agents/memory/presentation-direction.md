@@ -135,8 +135,8 @@ Give TOUCHDOWN lettering clear dark space inside its individual-bulb outline on 
 
 **How to apply:** Preserve separate lamps, restrained brightness variation, letter spacing, two-stage timing, and responsive portrait/landscape fitting.
 
-Never shrink the playfield to make room for ACTION. Keep concise, play-specific instructions below the button if they cannot fit without using field space.
+Never resize or reshape the ACTION button or shrink the playfield for instructions in either orientation. Keep every instruction on its own row, abbreviated if necessary.
 
-**Why:** The user explicitly prioritized preserving the playfield over widening ACTION and approved moving the instructions below it.
+**Why:** The user wants the touch target to stay the same so a habitual press still lands on it, and they explicitly prioritized preserving the playfield.
 
-**How to apply:** Preserve the landscape field grid and device safe areas. Use the existing control rail vertically; keep short bullets legible and check both orientations.
+**How to apply:** Move the text above or below the button label as space permits, without letting its size affect the button or field. Compare actual button bounds and shape in both orientations.

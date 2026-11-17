@@ -385,22 +385,22 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
           ...(canDefensivePanic(g) ? ['Hold: Retreat', '↑/↓: Adjust', 'Release: CPU'] : []),
         ];
       }
-      if (!controlsActive) return ['Watch the play'];
+      if (!controlsActive) return ['Watch play'];
       if (g.special?.stage === 'return' || live?.mode === 'return')
         return runnerHints;
       if (live && canForwardPass(live)) return live.mode === 'scramble'
         ? ['Re-tap: Pass', '↑/↓: Steer']
-        : ['Tap: Pass', 'Hold + let go: Bullet', 'Keep held: Scramble'];
-      if (live?.option?.phase === 'read') return ['Press: Pitch', 'No press: Keep ball'];
-      if (live?.option?.phase === 'pitch') return ['Pitch in flight'];
+        : ['Tap: Pass', 'Hold: Bullet', 'Hold on: Run'];
+      if (live?.option?.phase === 'read') return ['Press: Pitch', 'Else: Keep'];
+      if (live?.option?.phase === 'pitch') return ['Pitch in air'];
       if (live?.mode === 'kick') return live.play === 'field-goal'
-        ? ['Press: Stop marker']
+        ? ['Press: Kick']
         : ['Press: Punt'];
       return runnerHints;
     }
     if (g.phase === 'pre-snap') return g.possession === 'home'
       ? ['Tap: Snap']
-      : ['Watch the snap'];
+      : ['Watch snap'];
     if (ctxAction) return [`Tap: ${ctxAction.label.toLowerCase()}`];
     return [];
   };

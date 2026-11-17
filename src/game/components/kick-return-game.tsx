@@ -478,13 +478,13 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
           onClick={e => { if (e.detail === 0 && controlsEnabled) input.current.tapJuke(); }}>
           ACTION
         </button>
-          <small className="action-key-hints" id="kick-return-action-hint" data-testid="kick-return-juke-status">
-            {!progress.current?.moves && progress.current ? <span>Available next down</span>
-              : progress.current?.moves?.hesitating ? <span>↑/↓: Reposition</span>
-              : progress.current?.moves?.active ? <span>{activeActionKind === 'spin' ? 'Spin' : activeActionKind === 'boost' ? 'Speed boost' : activeActionKind === 'dive' ? 'Goal-line dive' : 'Directional juke'}</span>
-              : progress.current?.moves && progress.current.returnTime < progress.current.moves.readyAt ? <span>Recovering</span>
-              : <><span>Tap: Evade</span><span>Hold: Halt</span><span>↑/↓: Steer</span></>}
-          </small>
+        <small className="action-key-hints" id="kick-return-action-hint" data-testid="kick-return-juke-status">
+          {!progress.current?.moves && progress.current ? <span>Next down</span>
+            : progress.current?.moves?.hesitating ? <span>↑/↓: Steer</span>
+            : progress.current?.moves?.active ? <span>{activeActionKind === 'spin' ? 'Spin' : activeActionKind === 'boost' ? 'Boost' : activeActionKind === 'dive' ? 'Dive' : 'Juke'}</span>
+            : progress.current?.moves && progress.current.returnTime < progress.current.moves.readyAt ? <span>Recovering</span>
+            : <><span>Tap: Evade</span><span>Hold: Halt</span><span>↑/↓: Steer</span></>}
+        </small>
       </div>
       <div className="kr-steering">
       {([-1, 1] as const).map(direction => <button key={direction} type="button" className="kr-direction" data-game-pointer-input
