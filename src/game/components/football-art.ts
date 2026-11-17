@@ -7,7 +7,7 @@ export { BALL_ART } from './football-ball-art';
 export type FootballKit = { body: string; trim: string; dir: 1 | -1; edge?: string; skin?: string; position?: SkinPosition };
 /** Rendering-only helmet identity; never swap the team palette used by field art. */
 export const helmetColor = (kit: Pick<FootballKit, 'trim'>): string => kit.trim;
-export const UNIFORM = { pants: '#ffffff', pantsShade: '#f1f3f5', facemask: '#ffffff', ink: '#10213a' } as const;
+export const UNIFORM = { pants: '#ffffff', pantsShade: '#f1f3f5', facemask: '#89939b', ink: '#10213a' } as const;
 /** Cosmetic position palette only: never stored on athletes or used by gameplay. */
 export const SKIN_TONES = ['#f0bd93', '#d99b6c', '#af734c', '#825038', '#563726'] as const;
 const POSITION_TONE = { QB: 1, OL: 3, RB: 4, WR: 0, TE: 2, DL: 0, LB: 2, DB: 3,

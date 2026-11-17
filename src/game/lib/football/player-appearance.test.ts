@@ -46,7 +46,7 @@ test('cosmetic skin palette varies by position without randomness, team, or faci
   }
 });
 
-test('front and quarter helmets expose a small stable skin window with a white raster cage', () => {
+test('front and quarter helmets expose a small stable skin window with a gray raster cage', () => {
   for (const dir of [-1, 1] as const) for (const position of positions)
     for (const view of [undefined, 0, 1, 2, 3, 4, 5, 6, 7, 8] as const) {
       const kit = positionKit(uniformKit(KICK_TEAMS[0]!, dir), position);
@@ -63,7 +63,7 @@ test('front and quarter helmets expose a small stable skin window with a white r
         assert(face.w <= 3 && face.h <= 1, 'the face uses discrete square-pixel clusters');
         assert.equal(pixels.get(`${face.x},${face.y}`), kit.skin, 'face slot is not accidentally painted over');
         assert(paints.some(p => p.color === UNIFORM.facemask && p.y >= face.y - 2 && p.y <= face.y + 2 && p.w >= 1),
-          'visible white cage pixels border the face opening');
+          'visible gray cage pixels border the face opening');
       }
       const wrong = SKIN_TONES.filter(color => color !== kit.skin);
       assert(!paints.some(p => wrong.includes(p.color as typeof SKIN_TONES[number])), 'face and hands share one tone');
@@ -86,7 +86,8 @@ test('Classic, move and prone artwork use the same position tone without changin
   }
 });
 
-test('visible face slots and white facemasks never contain a black face panel', () => {
+test('visible face slots and gray facemasks never contain a black face panel', () => {
+  assert.equal(UNIFORM.facemask, '#89939b', 'shared facemasks use a readable neutral gray');
   const team = { body: '#cb353d', trim: '#f3eee3' };
   for (const dir of [-1, 1] as const) for (const view of [undefined, 0, 1, 2, 3, 5, 6, 7] as const) {
     const kit = positionKit(uniformKit(team, dir), 'WR');
@@ -102,7 +103,7 @@ test('visible face slots and white facemasks never contain a black face panel', 
         for (let y = face.y; y < face.y + face.h; y += .5)
           assert.equal(pixels.get(`${x},${y}`), kit.skin, `no dark panel painted over the visible face: ${view}/${dir}/${classic}`);
       assert(paints.some(p => p.color === UNIFORM.facemask && p.y >= face.y - 2 && p.y <= face.y + 2 && p.w >= 1),
-        'the facemask pixels stay white regardless of helmet color');
+        'the facemask pixels stay gray regardless of helmet color');
     }
   }
 });

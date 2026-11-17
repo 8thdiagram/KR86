@@ -405,7 +405,7 @@ function flatten(
       pixels[pixelY]![x * 2 + dx] = glyph as Glyph;
     }
   }));
-  refineFootballHelmetWidth(pixels, isProne && PRONE_VIEW[view].mirror);
+  refineFootballHelmetWidth(pixels);
   const runs: FrameRun[] = [];
   pixels.forEach((row, y) => {
     let x = 0;
@@ -432,12 +432,13 @@ function flatten(
 
 /**
  * The authored head keeps its original mask, stripe, shading and colors. On
- * rows carrying helmet material, trim one outer black pixel (alternating
- * sides) at native atlas resolution. This is the closest crisp-pixel
- * adjustment to a 5–8% width reduction without scaling or softening the art.
- * The material glyphs also identify the helmet in turned and prone sheets.
+ * rows carrying helmet material, trim one outer black pixel from each
+ * available side at native atlas resolution. This adds one crisp pixel of
+ * width reduction over the alternating-edge trim without scaling or
+ * softening the art. The material glyphs also identify the helmet in turned
+ * and prone sheets.
  */
-export function refineFootballHelmetWidth(pixels: string[][], mirror = false) {
+export function refineFootballHelmetWidth(pixels: string[][]) {
   for (let y = 0; y < pixels.length; y++) {
     const row = pixels[y]!;
     const helmetXs = row.flatMap((glyph, x) => glyph === 'M' || glyph === 'm' || glyph === 'T' ? [x] : []);
@@ -446,14 +447,14 @@ export function refineFootballHelmetWidth(pixels: string[][], mirror = false) {
     let right = helmetXs[helmetXs.length - 1]!;
     while (left > 0 && row[left - 1] === 'K') left--;
     while (right < row.length - 1 && row[right + 1] === 'K') right++;
-    // A one-pixel cut from a 12–18px shell row is 5.5–8.3%. Never cut the
-    // facemask or a colored helmet pixel when the contour is not available.
+    // Two one-pixel cuts from a 12–18px shell row are a restrained,
+    // approximately 11–17% reduction. Never cut the facemask or a colored
+    // helmet pixel when the contour is not available.
     if (right - left + 1 >= 12) {
       // Atlas pixels are expanded in vertical pairs from one authored cell;
-      // keep each pair aligned, alternating only between authored rows.
-      const trimLeft = (Math.floor(y / 2) % 2 === 0) !== mirror;
-      const edge = trimLeft ? left : right;
-      if (row[edge] === 'K') row[edge] = '.';
+      // keep each pair aligned and preserve all mask/stripe material.
+      if (row[left] === 'K') row[left] = '.';
+      if (row[right] === 'K') row[right] = '.';
     }
   }
 }

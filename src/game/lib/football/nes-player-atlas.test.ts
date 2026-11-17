@@ -281,6 +281,25 @@ test('shared athlete scale reduces art by five percent while retaining the groun
   assert.equal(mirroredGrip.x, 8 * PLAYER_FRAME_SCALE, 'directional grip mirrors at the same shared scale');
 });
 
+test('helmet trim adds a modest native-pixel reduction without touching face or stripe details', () => {
+  const shell = 'KKMMMMMMMMKK......';
+  const raster = Array.from({ length: 4 }, () => [...shell]);
+  const before = raster.map(row => row.join(''));
+  refineFootballHelmetWidth(raster);
+  for (let y = 0; y < raster.length; y++) {
+    const originalShell = [...before[y]!].filter(glyph => glyph === 'K' || glyph === 'M').length;
+    const trimmedShell = raster[y]!.filter(glyph => glyph === 'K' || glyph === 'M').length;
+    assert.equal(originalShell - trimmedShell, 2, 'each eligible shell row loses only one native pixel per side');
+    assert.equal(raster[y]!.filter(glyph => glyph === 'M').length, 8, 'colored helmet stripe/material stays intact');
+    assert.equal(raster[y]![0], '.', 'outer shell edge is narrowed');
+  }
+  const details = ['..KKKMMTFFS..'];
+  const protectedDetails = details.map(row => [...row]);
+  refineFootballHelmetWidth(protectedDetails);
+  assert.equal(protectedDetails[0]!.join(''), details[0],
+    'face opening, facemask, and narrow helmet details are not trimmed');
+});
+
 test('all team palettes retain primary jerseys, secondary shells, white equipment and stable role skin', () => {
   for (const team of KICK_TEAMS) for (const role of ['QB', 'OL', 'RB', 'WR', 'DL', 'DB', 'K'] as const) {
     const kit = positionKit(uniformKit(team, 1), role), before = JSON.stringify(kit);

@@ -39,17 +39,17 @@ Moving players must visibly step in every direction, including strafing, pocket 
 
 **How to apply:** Preserve the approved bodies and game systems. Let actual movement animate the lower body independently of holding/throwing arms. Check default guards as well as action reaches and all directions. Keep players modestly smaller and the airborne football shorter and more compact, with readable white lace spiral motion, without changing flight physics or adding another speed increase.
 
-Prioritize clear individual sprites: white pants, primary-team-color jerseys, secondary-team-color helmets, and white facemasks. Discrete highlight/shadow and cuff pixels are allowed by the complete redesign, but team identity must remain obvious. Use dark definition for silhouettes and limb separation, not black face panels. Do not add decorative lines around downed players.
+Prioritize clear individual sprites: white pants, primary-team-color jerseys, secondary-team-color helmets, and gray facemasks. Discrete highlight/shadow and cuff pixels are allowed by the complete redesign, but team identity must remain obvious. Use dark definition for silhouettes and limb separation, not black face panels. Do not add decorative lines around downed players.
 
 **Why:** The user specified “make the jerseys one color which is the primary team color separated from the helmet, which is the secondary team color.” Earlier they found detailed sprites and lines around grounded players messy.
 
 **How to apply:** Use broad uninterrupted jersey color, contrasting helmet identity and clean grounded poses consistently across Classic, Full Game and special teams. Keep gameplay and animation timing unchanged; preserve team palettes used elsewhere.
 
-Limit exposed face pixels and use white facemask bars, regardless of helmet color. Remove black/navy recessed face panels and dark mask bars from athlete faces, including moving, turned and grounded poses. Use varied skin tones assigned consistently by player position, including hands and tackled poses.
+Limit exposed face pixels and use gray facemask bars, regardless of helmet color. Keep helmets slightly smaller without reducing body size. Remove black/navy recessed face panels and dark mask bars from athlete faces, including moving, turned and grounded poses. Use varied skin tones assigned consistently by player position, including hands and tackled poses.
 
-**Why:** The user superseded the helmet-colored-mask direction with “Make the facemasks white.” The earlier reduced face exposure, no black face panels and stable skin-tone instructions still apply.
+**Why:** The user most recently requested “Make the helmets slightly smaller and make the facemasks gray,” superseding white masks. The earlier reduced face exposure, no black face panels and stable skin-tone instructions still apply.
 
-**How to apply:** Derive cosmetic tone from roster role or special-teams duty at render time, not from animation frame or a changing uniform. Keep masks legible through stepped helmet corners, a small skin opening and white rails, rather than reintroducing a dark recess. Keep this separate from gameplay, physics, and saved player state.
+**How to apply:** Derive cosmetic tone from roster role or special-teams duty at render time, not from animation frame or a changing uniform. Keep masks legible through stepped helmet corners, a small skin opening and gray rails, rather than reintroducing a dark recess. Keep this separate from gameplay, physics, and saved player state.
 
 Normal gameplay should resemble the supplied 16-bit football reference: near-overhead, left-to-right, with modest broadcast depth and horizontal sidelines. The user most recently requested a five-degree more overhead view with slightly smaller players. This supersedes the earlier instruction to keep the far sideline exactly unchanged. Keep some perspective; never make it isometric or a dramatic low sideline camera.
 
