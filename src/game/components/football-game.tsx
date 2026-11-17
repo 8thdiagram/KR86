@@ -532,11 +532,11 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
               input.current.release('accessible-action', now + 1);
             }
           }}>
-          <span>ACTION</span>
-          {!!actionHintLines.length && <small className="action-key-hints" id="fb-action-hint">
-            {actionHintLines.map(line => <span key={line}>{line}</span>)}
-          </small>}
+          ACTION
         </button>
+        {!!actionHintLines.length && <small className="action-key-hints" id="fb-action-hint">
+          {actionHintLines.map(line => <span key={line}>{line}</span>)}
+        </small>}
       </div>
       <div className="fb-steer">
         {([-1, 1] as const).map(d => <button key={d} type="button" className="fb-pad" data-control={d < 0 ? 'up' : 'down'} data-game-pointer-input

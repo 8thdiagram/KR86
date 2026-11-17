@@ -476,7 +476,8 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
           onPointerDown={e => press('juke', e)} onPointerUp={e => release(e)}
           onPointerCancel={e => release(e, true)} onLostPointerCapture={e => release(e, true)}
           onClick={e => { if (e.detail === 0 && controlsEnabled) input.current.tapJuke(); }}>
-          <span>ACTION</span>
+          ACTION
+        </button>
           <small className="action-key-hints" id="kick-return-action-hint" data-testid="kick-return-juke-status">
             {!progress.current?.moves && progress.current ? <span>Available next down</span>
               : progress.current?.moves?.hesitating ? <span>↑/↓: Reposition</span>
@@ -484,7 +485,6 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
               : progress.current?.moves && progress.current.returnTime < progress.current.moves.readyAt ? <span>Recovering</span>
               : <><span>Tap: Evade</span><span>Hold: Halt</span><span>↑/↓: Steer</span></>}
           </small>
-        </button>
       </div>
       <div className="kr-steering">
       {([-1, 1] as const).map(direction => <button key={direction} type="button" className="kr-direction" data-game-pointer-input
