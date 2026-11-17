@@ -471,17 +471,20 @@ export function KickReturnGame({ seed, state, persist, onContinue, showContinue 
       <div className="kr-juke-column">
         <button type="button" className="kr-direction kr-juke" data-game-pointer-input
           data-testid="kick-return-juke" disabled={!controlsEnabled || !progress.current?.moves}
-          data-pressed={pressed.juke} aria-label="Action: press to juke, spin or burst from rear pursuit; hold to halt forward movement"
+          aria-describedby="kick-return-action-hint"
+          data-pressed={pressed.juke} aria-label="Action"
           onPointerDown={e => press('juke', e)} onPointerUp={e => release(e)}
           onPointerCancel={e => release(e, true)} onLostPointerCapture={e => release(e, true)}
-          onClick={e => { if (e.detail === 0 && controlsEnabled) input.current.tapJuke(); }}>ACTION</button>
-        <small className="kr-juke-hint" data-testid="kick-return-juke-status">
-          {!progress.current?.moves && progress.current ? 'Available next down'
-            : progress.current?.moves?.hesitating ? 'STEER TO REPOSITION'
-            : progress.current?.moves?.active ? activeActionKind === 'spin' ? 'SPIN LEFT / RIGHT' : activeActionKind === 'boost' ? 'SPEED BOOST' : activeActionKind === 'dive' ? 'GOAL-LINE DIVE' : 'DIRECTIONAL JUKE'
-            : progress.current?.moves && progress.current.returnTime < progress.current.moves.readyAt ? 'Recovering'
-            : 'Press: juke / spin / burst · Hold: halt'}
-        </small>
+          onClick={e => { if (e.detail === 0 && controlsEnabled) input.current.tapJuke(); }}>
+          <span>ACTION</span>
+          <small className="action-key-hints" id="kick-return-action-hint" data-testid="kick-return-juke-status">
+            {!progress.current?.moves && progress.current ? <span>Available next down</span>
+              : progress.current?.moves?.hesitating ? <span>↑/↓: Reposition</span>
+              : progress.current?.moves?.active ? <span>{activeActionKind === 'spin' ? 'Spin' : activeActionKind === 'boost' ? 'Speed boost' : activeActionKind === 'dive' ? 'Goal-line dive' : 'Directional juke'}</span>
+              : progress.current?.moves && progress.current.returnTime < progress.current.moves.readyAt ? <span>Recovering</span>
+              : <><span>Tap: Evade</span><span>Hold: Halt</span><span>↑/↓: Steer</span></>}
+          </small>
+        </button>
       </div>
       <div className="kr-steering">
       {([-1, 1] as const).map(direction => <button key={direction} type="button" className="kr-direction" data-game-pointer-input

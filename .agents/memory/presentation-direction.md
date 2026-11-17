@@ -134,3 +134,9 @@ Give TOUCHDOWN lettering clear dark space inside its individual-bulb outline on 
 **Why:** The user found the illuminated letters too close to the frame, especially at normal iPhone size.
 
 **How to apply:** Preserve separate lamps, restrained brightness variation, letter spacing, two-stage timing, and responsive portrait/landscape fitting.
+
+Keep the right-side ACTION button wide enough for short, single-line bullets that pair each relevant input with its result in both orientations.
+
+**Why:** The user found the wrapped explanations cluttered and overlapping the label in landscape.
+
+**How to apply:** Keep the label and bullets in normal flow inside the touch target. Use concise, play-specific wording and check fit on narrow phones rather than clipping or shrinking the text to fit.

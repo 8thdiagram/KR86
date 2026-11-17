@@ -66,9 +66,6 @@
 .fb-pad{min-height:0;height:100%;padding:4px;font:inherit;font-size:16px;font-weight:800;color:#fff;background:var(--fb-pad);border:0;touch-action:none;-webkit-touch-callout:none;cursor:pointer}
 .fb-pad[data-pressed=true]{background:var(--fb-hi)}
 .fb-pad:disabled{opacity:.55;cursor:default}
-.fb-hint{position:absolute;left:0;right:0;bottom:6px;font-size:9px;line-height:11px;color:#9ccfff;text-align:center;pointer-events:none;padding:0 4px}
-.fb-qb-help{position:absolute;top:calc(100% + 5px);left:0;right:0;margin:0;padding:0 4px;
-  font-size:9px;line-height:11px;color:#9ccfff;text-align:center;pointer-events:none}
 .fb-controls{height:180px;align-self:start;overflow:visible}
 .fb-steer{grid-column:2/4;display:grid;grid-template-rows:1fr 1fr}
 .fb-steer .fb-pad{border-left:2px solid var(--fb-hi)}
@@ -146,8 +143,6 @@
 
 /* Refinement: maximize landscape field. Thinner frame and gutters; rails/control positions unchanged. */
 @container gm (min-aspect-ratio:3/2){
-  .gm-screen .gm-slot .fb-qb-help{position:static;grid-column:3;grid-row:2;align-self:start;
-    font-size:8px;line-height:9px;padding:2px 0;overflow-wrap:normal}
   .gm-screen .gm-slot .fb-game{column-gap:4px;row-gap:2px;padding:0 2px 2px}
   .gm-screen .gm-slot .fb-screen{border-width:1px;border-radius:4px}
   .gm-screen .gm-slot .fb-hud{margin:2px 4px 0;opacity:.9}

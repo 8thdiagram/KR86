@@ -140,7 +140,6 @@
 .gm-screen .gm-slot .kr-direction[data-pressed=true]{background:#2a6fb0;transform:none;box-shadow:none}
 .gm-screen .gm-slot .kr-direction:disabled{opacity:.55}
 .gm-screen .gm-slot .kr-juke{grid-column:1;grid-row:1;margin:0;height:100%;min-height:0;align-self:stretch}
-.gm-screen .gm-slot .kr-juke-hint{position:absolute;left:0;bottom:0;width:33.333%;height:auto;z-index:1;pointer-events:none;font-size:9px;line-height:11px;color:#9ccfff;padding-bottom:5px;text-align:center}
 .gm-screen .gm-slot .kr-steering{grid-column:2/4;grid-row:1;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr));gap:0;min-height:0;border:0}
 .gm-screen .gm-slot .kr-steering .kr-direction{border-left:2px solid var(--kr-pad-hi)}
 .gm-screen .gm-slot .kr-steering .kr-direction+.kr-direction{border-top:2px solid var(--kr-pad-hi)}
@@ -190,7 +189,6 @@
  .gm-screen .gm-slot .kr-status{line-height:12px;font-size:10px;white-space:normal}
  .gm-screen .gm-slot .kr-controls{display:contents}
  .gm-screen .gm-slot .kr-juke{grid-column:1;grid-row:2;height:144px;align-self:end;border:3px solid var(--kr-pad-hi);border-radius:14px;touch-action:none}
- .gm-screen .gm-slot .kr-juke-hint{left:6px;bottom:52px;width:clamp(112px,18cqw,160px);padding-bottom:0}
  .gm-screen .gm-slot .kr-steering{grid-column:3;grid-row:2;height:144px;align-self:end;border:0;border-radius:14px;overflow:hidden;touch-action:none}
  .gm-screen .gm-slot .kr-steering .kr-direction{border-left:3px solid var(--kr-pad-hi);border-right:3px solid var(--kr-pad-hi)}
  .gm-screen .gm-slot .kr-steering .kr-direction:first-child{border-top:3px solid var(--kr-pad-hi);border-radius:14px 14px 0 0}
@@ -289,7 +287,6 @@
  .gm-screen .gm-slot .kr-game>.kr-scoreboard,.gm-screen .gm-slot .kr-game>.kr-matchup,.gm-screen .gm-slot .kr-game>.kr-footer{display:none!important}
  .gm-screen .gm-slot .kr-game>.kr-screen{grid-column:2;grid-row:1/3;border-width:2px;box-shadow:none}
  .gm-screen .gm-slot .kr-juke{grid-column:1;grid-row:1;height:min(46%,170px);min-height:88px;align-self:end}
- .gm-screen .gm-slot .kr-juke-hint{left:4px;bottom:60px;width:var(--kr-rail)}
  .gm-screen .gm-slot .kr-steering{grid-column:3;grid-row:1;height:100%;align-self:stretch;min-height:96px}
  .gm-screen .gm-slot .kr-direction{min-height:44px}
  .gm-screen .gm-slot .kr-juke{font-size:14px;letter-spacing:0}
@@ -320,14 +317,12 @@
 .gm-screen .gm-slot .kr-controls .kr-steering{grid-column:1/3;grid-row:1}
 .gm-screen .gm-slot .kr-controls .kr-juke{grid-column:3;grid-row:1}
 .gm-screen .gm-slot .kr-controls .kr-steering .kr-direction{border-left:0;border-right:2px solid var(--kr-pad-hi)}
-.gm-screen .gm-slot .kr-controls .kr-juke-hint{left:auto;right:0}
 @container gm (min-aspect-ratio:3/2){
  /* left rail: UP/DOWN at the top, with pause in the bottom row */
  .gm-screen .gm-slot .kr-controls .kr-steering{grid-column:1;grid-row:1;align-self:stretch;height:100%;min-height:96px}
  .gm-screen .gm-slot .kr-controls .kr-steering .kr-direction{border-left:3px solid var(--kr-pad-hi);border-right:3px solid var(--kr-pad-hi)}
  /* right rail: ACTION lower-right, START/main action beneath it, status at the top */
  .gm-screen .gm-slot .kr-controls .kr-juke{grid-column:3;grid-row:1;align-self:end}
- .gm-screen .gm-slot .kr-controls .kr-juke-hint{left:auto;right:4px;bottom:60px;width:var(--kr-rail)}
  .gm-screen .gm-slot .kr-game>.kr-main-actions{grid-column:3;grid-row:2}
  .gm-screen .gm-slot .kr-game>.kr-status-space{grid-column:3;grid-row:1;align-self:start;height:auto;max-height:calc(54% - 8px);overflow:hidden;align-items:flex-start;margin-top:4px}
  .gm-screen .gm-slot .kr-game:not([data-outcome=""])>.kr-main-actions{grid-column:2;grid-row:2}

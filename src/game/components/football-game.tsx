@@ -374,24 +374,37 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
 
   const teams = kickMatchupTeams(g.teams);
   const live = g.live;
-  const qbHelp = running && controlsActive && !!live && canForwardPass(live);
   const ctxAction = contextual();
-  const jukeLabel = 'ACTION';
-  const jukeHint = running
-    ? defenseActive ? `Tap: ${defensiveActionKind(g) === 'intercept' ? 'intercept / break up pass' : defensiveActionKind(g) === 'recover' ? 'dive for loose ball' : 'tackle'} · Hold: retreat · UP/DOWN: adjust · Auto tackle in range · Release: CPU`
-    : !controlsActive ? 'Watch the play'
-    : g.special?.stage === 'return' || live?.mode === 'return' ? 'Press: juke / spin / burst · Hold: halt · UP/DOWN: steer'
-    : live && canForwardPass(live) ? live.mode === 'scramble'
-      ? 'Release, then press ACTION to pass · Run only beyond the line'
-      : 'Tap: Standard Pass · Long Press: Bullet Pass · Hold: Scramble'
-    : live?.option?.phase === 'read' ? 'ACTION pitches · otherwise keep'
-    : live?.option?.phase === 'pitch' ? 'Pitch airborne'
-    : live?.mode === 'scramble' ? 'Press: juke / spin / burst · Hold: halt · UP/DOWN: steer'
-    : live?.mode === 'kick' ? live.play === 'field-goal' ? 'Stop the marker between the uprights' : 'Tap to punt'
-    : g.possession === 'away' && g.phase === 'live' ? 'Defense plays itself'
-    : 'Press: juke / spin / burst · Hold: halt · UP/DOWN: steer'
-    : g.phase === 'pre-snap' ? g.possession === 'home' ? 'Press ACTION to snap' : 'Watch the snap'
-    : ctxAction ? 'Tap to continue' : g.phase === 'play-call' ? 'Pick a call on the field' : '';
+  const runnerHints = ['Tap: Evade', 'Hold: Halt', '↑/↓: Steer'];
+  const actionHints = (): string[] => {
+    if (running) {
+      if (defenseActive) {
+        const kind = defensiveActionKind(g);
+        return [
+          ...(kind ? [`Tap: ${kind === 'intercept' ? 'Intercept' : kind === 'recover' ? 'Recover ball' : 'Tackle'}`] : []),
+          ...(canDefensivePanic(g) ? ['Hold: Retreat', '↑/↓: Adjust', 'Release: CPU'] : []),
+        ];
+      }
+      if (!controlsActive) return ['Watch the play'];
+      if (g.special?.stage === 'return' || live?.mode === 'return')
+        return runnerHints;
+      if (live && canForwardPass(live)) return live.mode === 'scramble'
+        ? ['Re-tap: Pass', '↑/↓: Steer']
+        : ['Tap: Pass', 'Hold + let go: Bullet', 'Keep held: Scramble'];
+      if (live?.option?.phase === 'read') return ['Press: Pitch', 'No press: Keep ball'];
+      if (live?.option?.phase === 'pitch') return ['Pitch in flight'];
+      if (live?.mode === 'kick') return live.play === 'field-goal'
+        ? ['Press: Stop marker']
+        : ['Press: Punt'];
+      return runnerHints;
+    }
+    if (g.phase === 'pre-snap') return g.possession === 'home'
+      ? ['Tap: Snap']
+      : ['Watch the snap'];
+    if (ctxAction) return [`Tap: ${ctxAction.label.toLowerCase()}`];
+    return [];
+  };
+  const actionHintLines = actionHints();
   const quarter = g.overtime ? 'OT' : `Q${g.quarter}`;
   const downText = g.phase === 'kickoff' || g.phase === 'kickoff-choice' ? 'KICKOFF'
     : `${ord(g.down)} & ${g.target >= 100 ? 'GOAL' : Math.max(1, Math.round(g.target - g.spot))}`;
@@ -507,6 +520,7 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
     <div ref={controlBar} className="fb-controls" role="group" aria-label="Football controls" onPointerMove={slide} onContextMenu={e => e.preventDefault()}>
       <div className="fb-juke-col">
         <button type="button" className="fb-pad fb-juke" data-control="juke" data-game-pointer-input data-pressed={pressed.juke}
+          aria-label="Action" aria-describedby={actionHintLines.length ? 'fb-action-hint' : undefined}
           data-testid="button-juke" disabled={!controlsActive && !defenseActive && !ctxAction}
           onPointerDown={e => press('juke', e)} onPointerUp={e => release(e)}
           onPointerCancel={e => release(e, true)} onLostPointerCapture={e => release(e, true)}
@@ -518,10 +532,12 @@ export function FootballGame({ franchise }: { franchise?: FootballFranchiseAdapt
               input.current.release('accessible-action', now + 1);
             }
           }}>
-          {jukeLabel}</button>
-        {!qbHelp && <small className="fb-hint">{jukeHint}</small>}
+          <span>ACTION</span>
+          {!!actionHintLines.length && <small className="action-key-hints" id="fb-action-hint">
+            {actionHintLines.map(line => <span key={line}>{line}</span>)}
+          </small>}
+        </button>
       </div>
-      {qbHelp && <small className="fb-qb-help">{jukeHint}</small>}
       <div className="fb-steer">
         {([-1, 1] as const).map(d => <button key={d} type="button" className="fb-pad" data-control={d < 0 ? 'up' : 'down'} data-game-pointer-input
           disabled={!controlsActive && !defenseActive} data-pressed={d < 0 ? pressed.up : pressed.down} data-testid={d < 0 ? 'button-up' : 'button-down'}

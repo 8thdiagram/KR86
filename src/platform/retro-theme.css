@@ -489,12 +489,54 @@
   box-shadow: inset 2px 2px 0 #06152d, inset -1px -1px 0 #739dc8 !important;
 }
 
+/* Keep the legend in the button's normal layout so rotation cannot put it on
+   top of the label or outside the touch target. */
+.ga-scope :is(.fb-juke, .kr-juke) {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 6px;
+}
+.ga-scope :is(.fb-juke, .kr-juke) > * { pointer-events: none; }
+.ga-scope .action-key-hints {
+  display: grid;
+  gap: 3px;
+  text-align: left;
+  color: #c5def7;
+  font: 500 12px/1.2 system-ui, sans-serif;
+  letter-spacing: normal;
+}
+.ga-scope .action-key-hints > span { white-space: nowrap; }
+.ga-scope .action-key-hints > span::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  margin: 0 5px 3px 0;
+  background: currentColor;
+}
+@container gm (aspect-ratio < 3/2) {
+  .gm-screen .gm-slot .ga-scope :is(.fb-controls, .kr-controls) {
+    grid-template-columns: minmax(0, 54fr) minmax(0, 46fr);
+  }
+  .gm-screen .gm-slot .ga-scope :is(.fb-controls > .fb-steer, .kr-controls .kr-steering) {
+    grid-column: 1;
+  }
+  .gm-screen .gm-slot .ga-scope :is(.fb-controls > .fb-juke-col, .kr-controls .kr-juke) {
+    grid-column: 2;
+  }
+}
+
 /* Landscape field expansion: reclaim only interior cabinet gutters. The host's
    safe-area insets remain untouched, and 44px control/action targets stay intact. */
 @container gm (min-aspect-ratio:3/2) {
   .gm-screen .gm-slot .ga-scope .fb-game {
     --fb-rail: clamp(72px, 9cqw, 96px);
-    grid-template-columns: var(--fb-rail) minmax(0, 1fr) var(--fb-rail);
+    grid-template-columns: var(--fb-rail) minmax(0, 1fr) var(--action-rail);
     column-gap: 3px;
     row-gap: 1px;
     padding: 0 1px 1px;
@@ -506,7 +548,7 @@
 
   .gm-screen .gm-slot .ga-scope .kr-game {
     --kr-rail: clamp(58px, 7.25cqw, 70px);
-    grid-template-columns: var(--kr-rail) minmax(0, 1fr) var(--kr-rail);
+    grid-template-columns: var(--kr-rail) minmax(0, 1fr) var(--action-rail);
     grid-template-rows: minmax(0, 1fr) 44px;
     column-gap: 3px;
     row-gap: 2px;
@@ -524,5 +566,9 @@
 
   .gm-screen .gm-slot .ga-scope .kr-game:not([data-outcome=""]) > .kr-screen {
     border-width: 1px;
+  }
+
+  .gm-screen .gm-slot .ga-scope :is(.fb-game, .kr-game) {
+    --action-rail: clamp(142px, 16cqw, 176px);
   }
 }
