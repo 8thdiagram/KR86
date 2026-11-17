@@ -107,6 +107,7 @@ test('all seven human awards survive full seasons, ceremony, reload and next sea
   let f = createFranchise('Big Blue', 1986);
   for (const slot of MVP_IDS) {
     for (let i = 0; i < 20; i++) f = win(f);
+    f.phase = 'mvp'; // Historical pending award fixture, not the new automatic path.
     f = awardMvp(f, slot); assert.equal(awardMvp(f, slot), f);
     assert.equal(f.ceremony!.mvp!.slot, slot); assert(isFranchise(f));
     f = JSON.parse(JSON.stringify(f)); f.ceremony = null;
@@ -116,19 +117,18 @@ test('all seven human awards survive full seasons, ceremony, reload and next sea
   assert.equal(f.awards.length, 7); assert.equal(f.championships.length, 7);
   const fresh = createFranchise('Big Blue', 1986); assert.equal(fresh.league!.awards.length, 0);
 });
-test('CPU random selection reaches all seven stable identities and persists to future seasons', () => {
-  const selected = new Set<string>();
+test('CPU statistical champions never receive invented MVPs and remain valid into future seasons', () => {
   for (let seed = 1; seed <= 120; seed++) {
     let f = createFranchise('Big Blue', seed);
     for (let i = 0; i < 16; i++) {
       f = startFranchiseGame(f); const g = structuredClone(f.active!.game);
       g.phase = 'final'; g.winner = 'away'; g.score = {home: 0, away: 21}; f = completeFranchiseGame(f, g);
     }
-    const a = f.ceremony!.mvp!; selected.add(a.slot); assert.notEqual(a.team, f.team);
+    assert.equal(f.ceremony!.mvp, undefined); assert.notEqual(f.ceremony!.winner, f.team);
+    assert.match(f.ceremony!.mvpUnavailable!, /individual MVP performance is unavailable/);
     f = JSON.parse(JSON.stringify(f)); assert(isFranchise(f)); f.ceremony = null; f = nextFranchiseSeason(f);
-    assert.equal(teamAwardCounts(f, a.team)[a.slot], 1); assert(isFranchise(f));
+    assert.equal(f.league!.awards.length, 0); assert(isFranchise(f));
   }
-  assert.deepEqual([...selected].sort(), [...MVP_IDS].sort());
 });
 test('legacy five-slot save snapshots remain valid; malformed new award counts are rejected', () => {
   const f = createFranchise('Big Blue', 1986);

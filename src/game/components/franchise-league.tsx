@@ -63,7 +63,8 @@ export function LeagueView({ f }: { f: Franchise }) {
     <p className="frl-note" data-testid="text-league-status">
       {isCurrent && inProgress ? `IN PROGRESS · STATS THROUGH WEEK ${season.week} · STRENGTH SHOWS CURRENT POST-AWARD INDEX` : season.complete ? (isCurrent ? 'FINAL · STRENGTH SHOWS CURRENT POST-AWARD INDEX' : 'FINAL')  : `THROUGH WEEK ${season.week}`}
       {season.champion && <> · CHAMPION <b>{season.champion.toUpperCase()}</b></>}
-      {season.mvp && <> · MVP {season.mvp.team.toUpperCase()} {season.mvp.slot}</>}
+      {season.mvp && <> · MVP {season.mvp.team.toUpperCase()} {season.mvp.position ? `${season.mvp.position} #${season.mvp.number}` : season.mvp.slot}</>}
+      {season.mvpUnavailable && <> · {season.mvpUnavailable}</>}
     </p>
     {season.legacy && <p className="frl-legacy" data-testid="text-league-legacy">LEGACY SEASON: saved before the league office existed. Records are authoritative; box-score stats are unavailable or partial.</p>}
     <p className="frl-legend"><span className="frl-src eng">ENG</span> engine box scores from games you played · <span className="frl-src sim">SIM</span> statistical simulation of CPU-only games · STR is a strength index (may exceed 100), not a win chance.</p>
@@ -114,11 +115,12 @@ function TeamDetail({ f, t, season, isCurrent, onClose }: { f: Franchise; t: Lea
     <div className="frl-ratings">{(['overall', 'offense', 'defense', 'special'] as const).map(k => <div key={k}><small>{k.toUpperCase()}</small><b>{r[k]}</b></div>)}</div>
     <p className="frl-note">{isCurrent ? 'Current strength index including all MVP awards to date.' : `Opening-season strength snapshot. MVP counts shown through season ${season}.`}</p>
     {line('REGULAR', t.regular, t.legacyRecord)}{line('PLAYOFFS', t.playoffs)}
-    <p className="frn-kicker">MVP PLAYERS · DIMINISHING SPEED / ADDITIVE SKILLS</p>
+    <p className="frn-kicker">MVP AWARDS BY REWARD TYPE</p>
     <ul className="frl-slots">{SLOTS.map(s => <li key={s} className={counts[s] ? 'on' : ''} data-testid={`text-league-slot-${t.team}-${s}`}>
-      <b>{s}</b><span>{counts[s]}x</span><em>{counts[s] ? mvpSummary(s, counts[s]) : '—'}</em></li>)}</ul>
+      <b>{s}</b><span>{counts[s]}x</span></li>)}</ul>
+    <p className="frl-note">Reward-type counts can include different players. Scouting shows each legend’s actual earned bonuses and effective totals.</p>
     <p className="frn-kicker">AWARD HISTORY</p>
-    {history.length ? <ol className="frl-hist">{history.map(a => <li key={`${a.season}-${a.slot}`}>Season {a.season} · {a.slot} · {mvpSummary(a.slot, history.filter(b => b.slot === a.slot && b.season <= a.season).length)}</li>)}</ol>
+    {history.length ? <ol className="frl-hist">{history.map(a => <li key={`${a.season}-${a.slot}`}>Season {a.season} · {a.position ? `${a.position} #${a.number}` : a.slot} · {a.performance ?? mvpSummary(a.slot, history.filter(b => b.slot === a.slot && b.season <= a.season).length)}</li>)}</ol>
       : <p className="frn-copy dim">No Super Cup MVPs yet.</p>}
     {titles.length > 0 && <p className="frn-copy">Titles: Season {titles.join(', ')}</p>}
   </article>;

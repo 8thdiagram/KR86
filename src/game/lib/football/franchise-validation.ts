@@ -3,6 +3,7 @@ import { MVP_SLOTS } from './franchise';
 import { KICK_TEAMS } from '../kick-return-teams';
 import { isFootballGame } from './storage';
 import { validLeague } from './league-validation';
+import { validPlayerAward } from './legend-awards';
 
 /** Reject damaged saves rather than silently resetting a franchise. No ranking claims. */
 export function isFranchise(value: unknown): value is Franchise {
@@ -29,9 +30,11 @@ export function isFranchise(value: unknown): value is Franchise {
         c.season <= f.season && validTeam(c.opponent) && integer(c.home) && integer(c.away) && c.home > c.away) ||
         new Set(f.championships.map(c => c.season)).size !== f.championships.length) return false;
     if (!Array.isArray(f.awards) || !f.awards.every(a => MVP_SLOTS.some(s => s.id === a.slot) &&
+        validPlayerAward(a, f.team) &&
         f.championships.some(c => c.season === a.season)) ||
         new Set(f.awards.map(a => a.season)).size !== f.awards.length) return false;
     if (f.active && (!isFootballGame(f.active.game) || f.active.game.franchise?.gameId !== f.active.id ||
+        f.active.scoutingDone !== undefined && typeof f.active.scoutingDone !== 'boolean' ||
         f.active.game.teams.player !== f.team || f.active.game.teams.opponent !== f.active.opponent ||
         !integer(f.active.index) || ![-1, 0, 1, 2, 3].includes(f.active.round) ||
         typeof f.active.introDone !== 'boolean' || typeof f.active.halftimeDone !== 'boolean' ||
@@ -47,6 +50,9 @@ export function isFranchise(value: unknown): value is Franchise {
               (!m.winner || m.winner === m.a || m.winner === m.b)))) return false;
     }
     if (f.ceremony && (!validTeam(f.ceremony.winner) || !validTeam(f.ceremony.opponent) ||
+        f.ceremony.mvp && (f.ceremony.mvp.team !== f.ceremony.winner ||
+          !validPlayerAward(f.ceremony.mvp, f.ceremony.winner)) ||
+        f.ceremony.mvpUnavailable !== undefined && (typeof f.ceremony.mvpUnavailable !== 'string' || f.ceremony.mvpUnavailable.length > 600) ||
         f.ceremony.won !== (f.ceremony.winner === f.team) || !integer(f.ceremony.home) || !integer(f.ceremony.away))) return false;
     return validLeague(f);
   } catch { return false; }

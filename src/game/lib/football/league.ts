@@ -2,7 +2,7 @@ import { KICK_TEAMS } from '../kick-return-teams';
 import type { FootballGame, FootballStats } from './types';
 import type { Franchise, BracketMatch } from './franchise';
 import type { LeagueStats, LeagueSeason, LeagueTeamSeason } from './league-types';
-import { currentTeamRating, LEAGUE_SLOTS, leagueWinProbability, teamAwardCounts } from './league-ratings';
+import { currentTeamRating, leagueWinProbability, teamAwardCounts } from './league-ratings';
 import { teamProfile } from './playbook';
 import { mvpMultiplier, skillBonus } from './mvp';
 import { chaosOpportunity } from './clutch';
@@ -169,11 +169,13 @@ export function finishLeagueChampionship(f: Franchise) {
   s.champion = final.winner; s.complete = true;
   const loser = final.winner === final.a ? final.b : final.a;
   if (final.winner !== f.team) {
-    const award = { season: f.season, team: final.winner, slot: LEAGUE_SLOTS[Math.floor(leagueRandom(f) * LEAGUE_SLOTS.length)]! };
-    if (!f.league!.awards.some(a => a.season === f.season)) f.league!.awards.push(award);
+    // Consume the old selection draw so future fixtures/results keep their
+    // seeded sequence, but do NOT turn that draw into a fabricated MVP.
+    leagueRandom(f);
     s.mvp = f.league!.awards.find(a => a.season === f.season);
+    s.mvpUnavailable ??= s.mvp ? undefined : 'CPU simulation records team totals only; individual MVP performance is unavailable.';
     f.ceremony ??= { season: f.season, winner: final.winner, opponent: loser, home: final.score[0], away: final.score[1], won: false };
-    f.ceremony.loser = loser; f.ceremony.mvp = s.mvp;
+    f.ceremony.loser = loser; f.ceremony.mvp = s.mvp; f.ceremony.mvpUnavailable = s.mvpUnavailable;
   }
 }
 export function recordHumanLeagueAward(f: Franchise, slot: import('./franchise').MvpSlot) {

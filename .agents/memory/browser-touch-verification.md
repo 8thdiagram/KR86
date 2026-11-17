@@ -26,3 +26,9 @@ Generate natural gameplay replay fixtures through the public game step at the sa
 **Why:** The public engine reflects and stabilizes world coordinates and applies the live time scale. A local-solver snapshot near a handoff or move threshold can produce a different next action when replayed through the full browser engine, despite identical-looking geometry.
 
 **How to apply:** Use the public engine for end-to-end replay provenance, preserve its field-frame metadata, and select an already-running encounter that remains live long enough to inspect. Keep local solver tests for isolated deterministic physics comparisons.
+
+After changing the emulated viewport, let the responsive layout settle before scrolling a target or asserting its visibility.
+
+**Why:** A successful device-metrics command can precede the host's resize-driven layout update. Scrolling immediately can run while the old viewport still has no scroll range, falsely making valid landscape content appear unreachable.
+
+**How to apply:** Wait through two animation frames after a viewport change, then scroll the target and compare its bounds with sticky controls. Diagnose actual scroll dimensions before changing application layout.

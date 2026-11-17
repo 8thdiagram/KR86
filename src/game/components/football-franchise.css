@@ -161,4 +161,11 @@
 .frn-danger{border:3px solid #d9363e;background:#2a0e14;padding:12px;display:grid;gap:8px}
 .frn-btn.danger{background:#d9363e;color:#faf8ef}
 .frx-mvp{margin:0;font-size:clamp(9px,2vw,12px);color:#f4d23c;background:rgba(5,13,26,.8);padding:6px 10px;border:2px solid #f4d23c}
+.frx-ceremony{overflow-y:auto;min-height:0}
+.frx-ceremony .frx-canvas{flex:0 0 auto;aspect-ratio:16/9;max-height:45dvh}
+.frx-ceremony .frx-over{position:relative;inset:auto;flex:none;min-height:0;align-content:start;padding-block:18px}
+.frx-ceremony .frx-bar{position:sticky;bottom:0;flex-shrink:0;margin-top:auto}
+.frx-ceremony .frx-mvp{font:14px/1.65 'Space Mono',ui-monospace,monospace;max-width:660px;overflow-wrap:anywhere}
+.frx-ceremony .frx-mvp p{margin:5px 0}
+.frx-award-player{float:left;width:48px;height:54px;image-rendering:pixelated;margin-right:10px}
 @media (max-width:640px){.frl-slots{grid-template-columns:repeat(3,1fr)}.frl-ratings{grid-template-columns:repeat(2,1fr)}}

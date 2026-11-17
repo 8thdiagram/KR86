@@ -46,24 +46,24 @@ test('new leagues begin without future results; completed weeks pair every team 
   assert.equal(s.teams.find(t => t.team === f.team)!.regular.rushYards, 11.25, 'Retain actual engine fractions.');
   assert.deepEqual(finish(createFranchise('Big Blue', 617), true, 11.25), f, 'No render/reload rerolls.');
 });
-test('missed playoffs still produce a CPU Super Cup champion, statistical postseason and one saved random MVP', () => {
+test('missed playoffs retain a CPU Super Cup champion and report unavailable individual MVP data', () => {
   const f = regular(), s = f.league!.seasons[0]!;
   assert.equal(f.phase, 'offseason'); assert(!f.bracket!.teams.some(t => t.team === f.team));
   assert(s.teams.every(t => t.regular.games === 16));
   assert.equal(s.teams.reduce((sum, t) => sum + t.playoffs.games, 0), 30);
-  assert.equal(f.league!.awards.length, 1); assert.equal(f.awards.length, 0);
-  assert.equal(s.champion, f.ceremony!.winner); assert.equal(s.mvp!.team, s.champion);
-  assert.equal(f.ceremony!.mvp!.slot, s.mvp!.slot); assert.notEqual(f.ceremony!.loser, f.team);
-  assert.equal(teamAwardCounts(f, s.champion!)[s.mvp!.slot], 1);
+  assert.equal(f.league!.awards.length, 0); assert.equal(f.awards.length, 0);
+  assert.equal(s.champion, f.ceremony!.winner); assert.equal(s.mvp, undefined);
+  assert.match(s.mvpUnavailable!, /individual MVP performance is unavailable/);
+  assert.equal(f.ceremony!.mvp, undefined); assert.notEqual(f.ceremony!.loser, f.team);
   assert(s.teams.find(t => t.team === s.champion)!.playoffs.wins === 4);
 });
-test('early elimination and a human Super Cup loss both persist the CPU award without granting a human reward', () => {
+test('unmeasured championships never fabricate CPU awards or grant a losing human a reward', () => {
   for (const wonRounds of [0, 3]) {
     let f = regular(12);
     for (let i = 0; i < wonRounds; i++) f = finish(f, true);
     f = finish(f, false);
-    assert.equal(f.league!.awards.length, 1); assert.equal(f.championships.length, 0); assert.equal(f.awards.length, 0);
-    assert(f.ceremony!.mvp); assert.notEqual(f.ceremony!.winner, f.team);
+    assert.equal(f.league!.awards.length, 0); assert.equal(f.championships.length, 0); assert.equal(f.awards.length, 0);
+    assert(f.ceremony!.mvpUnavailable); assert.notEqual(f.ceremony!.winner, f.team);
     const serialized = JSON.stringify(f);
     f = JSON.parse(serialized); assert(isFranchise(f));
     assert.equal(JSON.stringify(f), serialized);
@@ -71,7 +71,12 @@ test('early elimination and a human Super Cup loss both persist the CPU award wi
 });
 test('rival awards improve next-season ratings and actual opponent roster, and archived stats never change', () => {
   let f = regular();
-  const champion = f.ceremony!.winner, slot = f.ceremony!.mvp!.slot;
+  const champion = f.ceremony!.winner, slot = 'RB1' as const;
+  // Existing rival awards remain authoritative, including historical awards
+  // granted before individual performance records existed.
+  const historical = { season: f.season, team: champion, slot };
+  f.league!.awards.push(historical); f.league!.seasons[0]!.mvp = historical;
+  f.ceremony!.mvp = historical;
   const old = JSON.stringify(f.league!.seasons[0]);
   const oldRating = f.league!.seasons[0]!.teams.find(t => t.team === champion)!.rating.overall;
   assert(currentTeamRating(f, champion).overall > oldRating);
@@ -142,6 +147,7 @@ test('human MVP path remains separate, old histories migrate honestly, and a new
   let f = regular(12);
   for (let i = 0; i < 4; i++) f = finish(f, true);
   assert.equal(f.league!.awards.length, 0);
+  f.phase = 'mvp'; // An imported legacy pending-selection state.
   f = awardMvp(f, 'RB1'); assert.equal(f.league!.awards[0]!.team, f.team);
   f.ceremony = null; f = nextFranchiseSeason(f);
   const old = structuredClone(f); delete old.league;

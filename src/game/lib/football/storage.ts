@@ -9,6 +9,7 @@ import { SPECIAL_EXECUTION_SPEED } from './clutch';
 import { validCoaching } from './coaching-validation';
 import { validExpandedPlaybook } from './playbook-validation';
 import { readSlot, writeSlot } from '../../../platform/local-save';
+import { validMvpState } from './mvp-validation';
 
 /** New full games never overwrite Classic returns, assessment evidence or public rankings. */
 export function saveFootball(_scope: string, game: FootballGame): boolean {
@@ -18,7 +19,7 @@ export function clearFootball(_scope: string) { if (!writeSlot('fullGame', null)
 export function isFootballGame(value: unknown): value is FootballGame {
   if (!value || typeof value !== 'object') return false;
   const g = value as FootballGame;
-  if (!validCoaching(g)||!validExpandedPlaybook(g)) return false;
+  if (!validCoaching(g)||!validExpandedPlaybook(g)||!validMvpState(g)) return false;
   if (g.clutchActive !== undefined && typeof g.clutchActive !== 'boolean') return false;
   const validAwards = (a: MvpCounts) => MVP_IDS.every(slot =>
     (slot === 'LB1' || slot === 'K1') && a[slot] === undefined ||

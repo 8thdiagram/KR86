@@ -1,0 +1,323 @@
+.scout-report {
+  --scout-ink: #0b1d36;
+  --scout-deep: #081629;
+  --scout-panel: #0f2747;
+  --scout-line: #2a6fb0;
+  --scout-cream: #f1e6d0;
+  --scout-gold: #f4d23c;
+  --scout-blue: #9fc6ec;
+  --scout-green: #8ff0a8;
+  --scout-hot: #ee7848;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+  max-height: 100dvh;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(12px, 2vw, 22px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--scout-ink);
+  color: var(--scout-cream);
+  font-family: 'Press Start 2P', 'Space Mono', ui-monospace, monospace;
+  box-sizing: border-box;
+}
+
+.scout-report *,
+.scout-report *::before,
+.scout-report *::after {
+  box-sizing: border-box;
+}
+.scout-report-inline {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.scout-report-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 3px solid var(--scout-gold);
+  border-bottom-width: 5px;
+  background: var(--scout-deep);
+  box-shadow: 4px 4px 0 #050d1a;
+}
+
+.scout-report-header::before {
+  content: '';
+  width: 12px;
+  align-self: stretch;
+  flex: none;
+  background: var(--scout-hot);
+  border: 2px solid var(--scout-cream);
+}
+
+.scout-report-title {
+  margin: 0;
+  color: var(--scout-gold);
+  font-size: clamp(16px, 4vw, 25px);
+  line-height: 1.45;
+  letter-spacing: .045em;
+  overflow-wrap: anywhere;
+}
+
+.scout-team-list {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.scout-team {
+  --scout-team-body: #2867cc;
+  --scout-team-trim: #f4d23c;
+  min-width: 0;
+  border: 3px solid var(--scout-line);
+  border-top: 6px solid var(--scout-team-body);
+  background: var(--scout-panel);
+  box-shadow: 4px 4px 0 #050d1a;
+}
+
+.scout-team-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 11px 12px;
+  border-bottom: 3px solid var(--scout-line);
+  background: var(--scout-deep);
+  font-size: clamp(12px, 2.3vw, 14px);
+  line-height: 1.65;
+  letter-spacing: .035em;
+}
+
+.scout-team-label {
+  flex: none;
+  color: var(--scout-blue);
+}
+
+.scout-team-name {
+  min-width: 0;
+  color: var(--scout-cream);
+  overflow-wrap: anywhere;
+}
+
+.scout-franchise-label {
+  margin: 0;
+  padding: 10px 12px 8px;
+  color: var(--scout-team-trim);
+  font-size: 12px;
+  line-height: 1.6;
+  letter-spacing: .055em;
+}
+
+.scout-legends {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 9px;
+  margin: 0;
+  padding: 0 10px 11px;
+  list-style: none;
+}
+
+.scout-legend {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 7px 10px;
+  min-width: 0;
+  padding: 10px;
+  border: 2px solid #24476d;
+  border-left: 5px solid var(--scout-team-body);
+  background: var(--scout-deep);
+}
+
+.scout-player {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  grid-column: 1 / -1;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #24476d;
+}
+
+.scout-portrait-canvas {
+  display: block;
+  width: 36px;
+  height: 54px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #246438;
+}
+
+.scout-player-label {
+  min-width: 0;
+  margin: 0;
+  color: var(--scout-cream);
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.scout-player-label b {
+  color: var(--scout-gold);
+  font-size: 16px;
+}
+
+.scout-detail {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.scout-detail-heading {
+  margin: 0;
+  color: var(--scout-blue);
+  font-size: 11px;
+  line-height: 1.7;
+  letter-spacing: .035em;
+  overflow-wrap: anywhere;
+}
+
+.scout-detail-heading.mvp {
+  color: var(--scout-hot);
+}
+
+.scout-detail-heading.total {
+  color: var(--scout-gold);
+}
+
+.scout-detail-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0 0 0 13px;
+  color: var(--scout-cream);
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.scout-detail-list li {
+  padding-left: 2px;
+}
+
+.scout-detail-list li::marker {
+  color: var(--scout-team-trim);
+}
+
+.scout-empty-detail {
+  margin: 0;
+  color: #bed0e1;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.scout-continue-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 4px;
+  border-top: 2px solid var(--scout-line);
+  background: var(--scout-ink);
+}
+
+.scout-continue {
+  width: min(100%, 360px);
+  min-height: 48px;
+  padding: 12px 18px;
+  border: 3px solid var(--scout-cream);
+  background: var(--scout-gold);
+  color: var(--scout-ink);
+  box-shadow: 4px 4px 0 #050d1a;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: .08em;
+  cursor: pointer;
+}
+
+.scout-continue:hover {
+  background: #ffe776;
+}
+
+.scout-continue:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #050d1a;
+}
+
+.scout-continue:focus-visible {
+  outline: 3px solid var(--scout-blue);
+  outline-offset: 4px;
+}
+
+@media (max-width: 420px) {
+  .scout-report {
+    gap: 11px;
+    padding: 10px;
+  }
+
+  .scout-team-list {
+    gap: 11px;
+  }
+
+  .scout-legends {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 7px;
+  }
+
+  .scout-legend {
+    padding: 9px;
+  }
+
+  .scout-detail-list,
+  .scout-empty-detail {
+    font-size: 14px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .scout-report {
+    padding: 8px 12px;
+    gap: 9px;
+  }
+
+  .scout-report-header {
+    padding: 7px 10px;
+  }
+
+  .scout-team-list {
+    gap: 9px;
+  }
+
+  .scout-team-heading {
+    padding: 7px 10px;
+  }
+
+  .scout-legend {
+    padding: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scout-report *,
+  .scout-report *::before,
+  .scout-report *::after {
+    scroll-behavior: auto !important;
+  }
+}

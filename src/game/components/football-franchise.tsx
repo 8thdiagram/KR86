@@ -4,7 +4,7 @@ import { teamProfile } from '../lib/football/playbook';
 import { advanceFootball } from '../lib/football/engine';
 import { mvpSummary } from '../lib/football/mvp';
 import {
-  MVP_SLOTS, ROUND_NAMES, awardMvp, completeFranchiseGame, createFranchise, franchiseRecord, mvpCounts, nextFranchiseSeason,
+  ROUND_NAMES, resolveLegacyMvp, completeFranchiseGame, createFranchise, franchiseRecord, nextFranchiseSeason,
   startFranchiseGame, updateFranchiseGame, type Franchise, type MvpSlot,
 } from '../lib/football/franchise';
 import type { FootballGame as Game } from '../lib/football/types';
@@ -14,6 +14,9 @@ import { visibleFranchiseSaveError } from '../lib/football/franchise-save-status
 import { FootballGame } from './football-game';
 import { HalftimeShow, SuperCupIntro, TrophyCeremony } from './franchise-shows';
 import { LeagueView } from './franchise-league';
+import { ScoutingReport } from './scouting-report';
+import { scoutingLegend, scoutingOpponent, scoutingTeams } from '../lib/football/scouting';
+import { legendaryPlayer } from '../lib/football/legendary-roster';
 import './football-franchise.css';
 
 export type FranchiseStore = ReturnType<typeof useFranchiseSave>;
@@ -76,6 +79,9 @@ function FranchiseView({ onBack, entry = 'franchise', store }: Props & { store: 
       recovering.current = a.id; recordGame(a.game);
     }
   });
+  useEffect(() => {
+    if (f?.phase === 'mvp' && !blockingError && !syncing) run(resolveLegacyMvp, true);
+  }, [f?.phase, blockingError, syncing]);
 
   const recordGame = (g: Game) => {
     const cur = fRef.current; if (!cur?.active) return false;
@@ -120,6 +126,10 @@ function FranchiseView({ onBack, entry = 'franchise', store }: Props & { store: 
     </Shell>);
   }
   // Super Cup presentations take over the screen.
+  if (a?.scoutingDone === false && (playing || a.round === 3)) return show(
+    <ScoutingReport teams={scoutingTeams(f, a.opponent)} onContinue={() => {
+      if (run(x => bump(x, n => { n.active!.scoutingDone = true; }), true)) setPlaying(true);
+    }} />);
   if (a && a.round === 3 && !a.introDone) return show(<SuperCupIntro home={f.team} away={a.opponent}
     onDone={() => { if (run(x => bump(x, n => { n.active!.introDone = true; }), true)) setPlaying(true); }} />);
   if (a && a.round === 3 && !a.halftimeDone && a.game.phase === 'halftime') return show(<HalftimeShow home={f.team} away={a.opponent}
@@ -129,15 +139,16 @@ function FranchiseView({ onBack, entry = 'franchise', store }: Props & { store: 
     onDone={() => { if (run(x => { const g = structuredClone(x.active!.game); advanceFootball(g); const n = updateFranchiseGame(x, g);
       n.active!.halftimeDone = true; n.active!.halftimeRemaining = 0; return n; }, true)) setPlaying(true); }} />);
   if (f.ceremony) {
-    if (f.ceremony.won && f.phase === 'mvp') return show(<Shell onBack={onBack}>
-      <PhaseCard f={f} finished={null} canAct={!busy && !error} onPlay={() => {}} onNext={() => {}}
-        onBracket={() => setTab('bracket')} onAward={slot => run(x => awardMvp(x, slot), true)} />
-    </Shell>);
     const c = f.ceremony, winScore = Math.max(c.home, c.away), loseScore = Math.min(c.home, c.away);
     const loser = c.loser ?? (c.won ? c.opponent : f.team);
     const mvp = c.mvp ?? null;
     const acc = mvp ? (f.league?.awards ?? []).filter(x => x.team === mvp.team && x.slot === mvp.slot && x.season <= mvp.season).length || 1 : 0;
-    return show(<TrophyCeremony winner={c.winner} loser={loser} mvp={mvp ? { team: mvp.team, slot: mvp.slot, long: POS[mvp.slot].long, bonus: POS[mvp.slot].bonus, total: 0, summary: mvpSummary(mvp.slot, acc) } : undefined} winScore={winScore} loseScore={loseScore} humanWon={c.won}
+    const legend = mvp?.position ? legendaryPlayer(mvp.team, mvp.position) : undefined;
+    const earned = legend ? scoutingLegend(f, mvp!.team, legend) : undefined;
+    return show(<TrophyCeremony winner={c.winner} loser={loser} mvpUnavailable={c.mvpUnavailable}
+      mvp={mvp ? { team: mvp.team, slot: mvp.slot, long: mvp.position ?? POS[mvp.slot].long,
+        bonus: POS[mvp.slot].bonus, total: 0, number: mvp.number, performance: mvp.performance,
+        summary: earned?.mvpBonuses.join(' · ') || mvpSummary(mvp.slot, acc) } : undefined} winScore={winScore} loseScore={loseScore} humanWon={c.won}
       onDone={() => { setFinished(null); run(x => bump(x, n => { n.ceremony = null; }), true); }} />);
   }
   if (resetStage === 'pick') return <Shell onBack={() => setResetStage('idle')}>
@@ -159,7 +170,7 @@ function FranchiseView({ onBack, entry = 'franchise', store }: Props & { store: 
     </div>;
   }
 
-  const rec = franchiseRecord(f), counts = mvpCounts(f);
+  const rec = franchiseRecord(f);
   const play = () => {
     if (fRef.current?.active) {
       if (!blockingError) { setPlaying(true); setFinished(null); }
@@ -183,21 +194,20 @@ function FranchiseView({ onBack, entry = 'franchise', store }: Props & { store: 
     </nav>
     <div className="frn-scroll">
       {tab === 'hq' && <>
-        <PhaseCard f={f} finished={finished} canAct={!busy || !!f.active && !blockingError} onPlay={play} onAward={slot => run(x => awardMvp(x, slot))}
+        <PhaseCard f={f} finished={finished} canAct={!busy || !!f.active && !blockingError} onPlay={play}
           onNext={() => { if (run(nextFranchiseSeason)) setFinished(null); }} onBracket={() => setTab('bracket')} />
         <div className="frn-stats">
           <Stat label="WINS" value={rec.wins} id="wins" /><Stat label="LOSSES" value={rec.losses} id="losses" />
           <Stat label="REMAINING" value={rec.remaining} id="remaining" />
           <Stat label="PLAYOFFS" value={status(f)} id="playoff-status" small />
         </div>
+        <ScoutingReport teams={scoutingTeams(f, scoutingOpponent(f))} />
         <section className="frn-panel" data-testid="panel-legends">
-          <p className="frn-kicker">FRANCHISE LEGENDS</p>
-          {f.awards.length === 0 ? <p className="frn-copy dim">No MVPs yet. Win a Super Cup and choose one of seven players. Speed awards diminish; skills stack. Earned bonuses double in Clutch Chaos; kicker control is clutch-only.</p>
-            : <ul className="frn-legends">{MVP_SLOTS.filter(s => counts[s.id] > 0).map(s => <li key={s.id} data-testid={`legend-${s.id}`}>
-              <b>{POS[s.id].pos}</b><span>{s.id} — {counts[s.id]}× MVP</span><em>{mvpSummary(s.id, counts[s.id])}</em></li>)}</ul>}
+          <p className="frn-kicker">FRANCHISE RECORD</p>
+          <p className="frn-copy dim">Super Cup MVPs are awarded automatically to the winning legend with the strongest recorded performance. Speed awards diminish; skill awards stack. CPU-only simulations lack individual statistics.</p>
           {f.championships.length > 0 && <p className="frn-copy">Titles: {f.championships.map(c => `Season ${c.season} (${c.home}–${c.away} vs ${c.opponent})`).join(' · ')}</p>}
           {f.awards.length > 0 && <details className="frn-copy" data-testid="franchise-mvp-history"><summary>MVP HISTORY</summary>
-            <ol>{f.awards.map(a => <li key={a.season}>Season {a.season} — {a.slot} · {POS[a.slot].long} · {mvpSummary(a.slot, f.awards.filter(b => b.slot === a.slot && b.season <= a.season).length)}</li>)}</ol>
+            <ol>{f.awards.map(a => <li key={a.season}>Season {a.season} — {a.position ? `${a.position} #${a.number}` : `${a.slot} · ${POS[a.slot].long}`} · {a.performance || 'Historical award; individual statistics unavailable.'}</li>)}</ol>
           </details>}
         </section>
         <Highlights f={f} />
@@ -258,20 +268,16 @@ function TeamPicker({ onPick, error, busy, replacing, onCancel }: { onPick: (t: 
   </div>;
 }
 
-function PhaseCard({ f, finished, canAct, onPlay, onAward, onNext, onBracket }: { f: Franchise; finished: { won: boolean; home: number; away: number; opponent: string } | null;
-  canAct: boolean; onPlay: () => void; onAward: (s: MvpSlot) => void; onNext: () => void; onBracket: () => void }) {
+function PhaseCard({ f, finished, canAct, onPlay, onNext, onBracket }: { f: Franchise; finished: { won: boolean; home: number; away: number; opponent: string } | null;
+  canAct: boolean; onPlay: () => void; onNext: () => void; onBracket: () => void }) {
   const rec = franchiseRecord(f);
   const last = finished && <p className={`frn-last ${finished.won ? 'w' : 'l'}`} data-testid="text-last-result">
     {finished.won ? 'WIN' : 'LOSS'} {finished.home}–{finished.away} vs {finished.opponent.toUpperCase()} · RESULT SAVED</p>;
   const nextBtn = <button type="button" className="frn-btn" disabled={!canAct} onClick={onNext} data-testid="button-next-season">START NEXT SEASON</button>;
 
   if (f.phase === 'mvp') return <section className="frn-panel frn-hero" data-testid="panel-mvp">
-    <h2 className="frn-h gold">CHOOSE YOUR SUPER CUP MVP</h2>
-    <p className="frn-copy">YOUR MVP RECEIVES A PERMANENT PERFORMANCE BOOST!</p>
-    <div className="frn-mvps">{MVP_SLOTS.map(s => { const n = mvpCounts(f)[s.id]; return <button key={s.id} type="button" className="frn-mvp" disabled={!canAct}
-      onClick={() => onAward(s.id)} data-testid={`button-mvp-${s.id}`}>
-      <Uniform team={f.team} size="sm" /><strong>{POS[s.id].long}</strong><small>{s.id} · {s.name}</small>
-      <em>{s.reward}</em><span>{mvpSummary(s.id, n)} → {mvpSummary(s.id, n + 1)}</span></button>; })}</div>
+    <h2 className="frn-h gold">SUPER CUP CHAMPIONS</h2>
+    <p className="frn-copy">Preserving this historical championship and its saved awards.</p>
   </section>;
 
   if (f.phase === 'regular') {

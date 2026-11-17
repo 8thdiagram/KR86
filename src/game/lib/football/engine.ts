@@ -17,6 +17,7 @@ import { lockClutch } from './clutch';
 import { effectiveKickControl as franchiseKickControl } from './franchise-upgrades';
 import { recordCoaching } from './coaching';
 import { creditRusher } from './rushing-credit';
+import { capturePerformance, observePerformance } from './mvp-performance';
 export * from './types';
 export * from './playbook';
 
@@ -475,5 +476,10 @@ export function snapFootball(g: FootballGame) { return inFootballFrame(g, () => 
 export function advanceFootballReady(g: FootballGame, elapsed: number) { return inFootballFrame(g, () => advanceFootballReadyLocal(g, elapsed)); }
 export function advanceFootballPresentation(g: FootballGame, elapsed: number) { return inFootballFrame(g, () => advanceFootballPresentationLocal(g, elapsed)); }
 export function stepFootball(g: FootballGame, input: FootballInput = {}, dt = KR.dt, worldSpeed = 1) {
-  return inFootballFrame(g, () => stepFootballLocal(g, input, dt, worldSpeed));
+  return inFootballFrame(g, () => {
+    const before = capturePerformance(g);
+    const result = stepFootballLocal(g, input, dt, worldSpeed);
+    observePerformance(g, before);
+    return result;
+  });
 }

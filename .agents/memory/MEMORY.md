@@ -8,3 +8,4 @@
 - [Football balance philosophy](football-balance-philosophy.md) — probabilistic play calls; isolate initial holds and validate attacking-frame diagnostics.
 - [Large diagnostic evidence](diagnostic-evidence-delivery.md) — asset delivery has a 100 MiB per-file limit; split raw trial ZIPs and retain a shared manifest.
 - [CPU strategy parity](cpu-defensive-strategy.md) — imperfect tactical choices, hold-admission latency, bounded opportunities and isolated seeded randomness preserve arcade fairness.
+- [Scouting and MVP policy](scouting-and-mvp.md) — use position/jersey labels, reward real winning-legend contributions, and never fabricate CPU or historical player statistics.

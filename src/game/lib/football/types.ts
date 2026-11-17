@@ -89,6 +89,8 @@ export type FootballGame = {
   clutchActive?: boolean;
   /** Only matches admitted by Franchise Mode carry individual awards. */
   franchise?: { gameId: string; awards: MvpCounts; opponentAwards?: MvpCounts;
+    playerAwards?: Partial<Record<Side, import('./legend-awards').OwnedAwards>>;
+    performance?: import('./mvp-performance').ChampionshipPerformance;
     playoff?: { season: number; year: number; round: number } };
   homeOddDirection?: 1 | -1;
   fieldFrame?: 1 | -1;

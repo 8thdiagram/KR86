@@ -195,8 +195,16 @@ export function HalftimeShow({ home, away, remaining, onTick, onDone, blocked = 
 }
 
 /* ───────── TROPHY CEREMONY ───────── */
-export type CeremonyMvp = { team: string; slot: string; long: string; bonus: string; total: number; summary?: string };
-export function TrophyCeremony({ winner, loser, winScore, loseScore, humanWon, onDone, mvp }: { winner: string; loser: string; winScore: number; loseScore: number; humanWon: boolean; onDone: () => void; mvp?: CeremonyMvp }) {
+export type CeremonyMvp = { team: string; slot: string; long: string; bonus: string; total: number; summary?: string; number?: number; performance?: string };
+function MvpFigure({ team }: { team: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => { const ctx = ref.current?.getContext('2d'); if (ctx) {
+    const k = kit(team); ctx.clearRect(0, 0, 16, 18);
+    person(ctx, 4, 2, { body: k.body, trim: k.trim });
+  } }, [team]);
+  return <canvas ref={ref} width={16} height={18} className="frx-award-player" aria-label={`${team} MVP uniform`} role="img" />;
+}
+export function TrophyCeremony({ winner, loser, winScore, loseScore, humanWon, onDone, mvp, mvpUnavailable }: { winner: string; loser: string; winScore: number; loseScore: number; humanWon: boolean; onDone: () => void; mvp?: CeremonyMvp; mvpUnavailable?: string }) {
   const audio = useAudio();
   const sparks = useRef<Spark[]>([]);
   const confetti = useRef(Array.from({ length: 70 }, (_, i) => ({ x: (i * 37) % W, y: -((i * 23) % H), c: SPARK_COLORS[i % SPARK_COLORS.length]! })));
@@ -226,9 +234,9 @@ export function TrophyCeremony({ winner, loser, winScore, loseScore, humanWon, o
   const start = () => {
     const a = audio(); a.unlock(); a.resume(); a.crowd(true); a.fanfare(); setSoundOn(true);
     setTimeout(() => a.fanfare(), 1700);
-    if (mvp) setTimeout(() => a.say(`Super Cup M V P: ${mvp.team} ${mvp.long.toLowerCase()}. Plus twenty percent ${mvp.bonus.toLowerCase()}.`, 1), 2600);
+    if (mvp) setTimeout(() => a.say(`Super Cup M V P: ${mvp.team} ${mvp.long.toLowerCase()}${mvp.number === undefined ? '' : ` number ${mvp.number}`}. ${mvp.summary ?? mvp.bonus}.`, 1), 2600);
   };
-  return <section className="frx-show" data-testid="franchise-ceremony" data-human-won={humanWon}>
+  return <section className="frx-show frx-ceremony" data-testid="franchise-ceremony" data-human-won={humanWon}>
     <canvas ref={ref} width={W} height={H} className="frx-canvas" role="img" aria-label={`${winner} captain receives the championship trophy`} />
     <div className="frx-over">
       {humanWon ? <>
@@ -238,13 +246,18 @@ export function TrophyCeremony({ winner, loser, winScore, loseScore, humanWon, o
         {t >= 1 && <h2 className="frx-big frx-pop">SUPER CUP FINAL</h2>}
       </>}
       {t >= 2 && <p className="frx-score frx-pop" data-testid="text-ceremony-score">{winner.toUpperCase()} {winScore} · {loser.toUpperCase()} {loseScore}</p>}
-      {t >= 5.5 && <p className="frx-sub frx-pop">{humanWon ? `${winner.toUpperCase()} ARE CHAMPIONS. NOW CHOOSE THE MVP.`
+      {t >= 5.5 && <p className="frx-sub frx-pop">{humanWon ? `${winner.toUpperCase()} ARE CHAMPIONS!`
         : `${winner.toUpperCase()} WIN THE SUPER CUP. CONGRATULATIONS TO THEM — COME BACK NEXT SEASON AND TAKE IT!`}</p>}
-      {mvp && t >= 6 && <p className="frx-mvp frx-pop" data-testid="text-ceremony-mvp">SUPER CUP MVP: {mvp.team.toUpperCase()} {mvp.slot} · {mvp.long} · {mvp.summary ?? `+${mvp.total}% ${mvp.bonus}`}</p>}
+      {mvp && t >= 6 && <div className="frx-mvp frx-pop" data-testid="text-ceremony-mvp">
+        <MvpFigure team={mvp.team} /><strong>SUPER CUP MVP: {mvp.team} {mvp.long}{mvp.number === undefined ? '' : ` #${mvp.number}`}</strong>
+        {mvp.performance && <p>{mvp.performance}</p>}
+        <p>PERMANENT MVP BONUS: {mvp.summary ?? `+${mvp.total}% ${mvp.bonus}`}</p>
+      </div>}
+      {!mvp && mvpUnavailable && t >= 6 && <p className="frx-sub" data-testid="text-mvp-unavailable">{mvpUnavailable}</p>}
     </div>
     <div className="frx-bar">
       <button type="button" className="frx-btn ghost" onClick={start} disabled={soundOn} data-testid="button-ceremony-sound">{soundOn ? 'MUSIC ON' : 'PLAY CHAMPIONSHIP MUSIC'}</button>
-      <button type="button" className="frx-btn" disabled={t < 6} onClick={() => { audio().stopAll(); onDone(); }} data-testid="button-ceremony-continue">{humanWon ? 'CHOOSE MVP' : 'CONTINUE'}</button>
+      <button type="button" className="frx-btn" disabled={t < 6} onClick={() => { audio().stopAll(); onDone(); }} data-testid="button-ceremony-continue">CONTINUE</button>
     </div>
   </section>;
 }

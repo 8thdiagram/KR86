@@ -15,7 +15,8 @@ import { pressureTicket, stepPenetration } from './penetration';
 import { looseBall, stepLoose, tryFumble } from './rare-events';
 import { openFieldGain } from './athleticism';
 import { effectiveAthleteFactor as franchiseAthleteFactor, franchiseAthleteFactor as awardAthleteFactor, linebackerSkill } from './franchise-upgrades';
-import { legendaryAthleteFactor } from './legendary';
+import { legendaryAthlete, legendaryAthleteFactor } from './legendary';
+import { recordLegendStat } from './mvp-performance';
 import { eligibleReceivers } from './coverage';
 import { cpuReadOpen, observeCoachingRun, prepareCoaching } from './coaching-execution';
 import { OPTION, stepSpeedOption } from './speed-option';
@@ -103,10 +104,14 @@ export const fumbleEligible = (l: LivePlay) => ['run', 'scramble', 'dropback', '
 export function contactFumble(g: FootballGame, runner: Athlete, defender: Athlete) {
   const l = g.live!, owner = l.mode === 'return' ? other(l.offense ?? other(g.possession)) : l.offense ?? g.possession;
   if (!fumbleEligible(l) || !tryFumble(g, owner, runner, defender)) return false;
+  recordLegendStat(g, other(owner), legendaryAthlete(g, defender), 'forcedFumbles');
   const variant = random(g);
   if (owner === (l.offense ?? g.possession)) l.turnoverSpot ??= fieldSpot(runner.x);
   if ((l.mode === 'dropback' || l.mode === 'scramble') && runner.role === 'QB' &&
-      runner.x < 100 + l.snapSpot * 10) g.stats[owner].sacks++;
+      runner.x < 100 + l.snapSpot * 10) {
+    g.stats[owner].sacks++;
+    recordLegendStat(g, other(owner), legendaryAthlete(g, defender), 'sacks');
+  }
   l.loose = looseBall(l.athletes, 'fumble', runner.x + (variant < .5 ? -6 : 6),
     clamp(runner.y + (variant - .5) * 10, 25, 167), owner, runner.id, variant);
   l.mode = 'loose'; l.flight = undefined; l.interception = undefined; l.holdingPass = false; l.lockedReceiver = undefined;

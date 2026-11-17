@@ -9,7 +9,7 @@ import { canDefensiveAction, startNearestDive } from './defensive-action';
 import { defensivePanicTarget } from './defensive-panic';
 import { cpuDefensivePanicTarget } from './cpu-defensive-panic';
 import { ELITE, eliteSlots } from './secondary';
-import { franchiseFactor, effectiveKickControl as franchiseKickControl } from './franchise-upgrades';
+import { franchiseFactor, effectiveKickControl as franchiseKickControl, specialAwardAdjustment } from './franchise-upgrades';
 import { legendaryAthleteFactor, legendaryKickingFactor } from './legendary';
 import { chaosOpportunity, SPECIAL_EXECUTION_SPEED } from './clutch';
 import { advanceKickLoose, advanceKickRush, contactKickBlock, receptionMuff } from './kick-events';
@@ -328,9 +328,12 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
       : cpuCarrierAction(a, direction, FOOTBALL_SIDELINES,
         s.athletes.filter(b => b.side === (s.returnGroup ?? 'defense') && b.id !== s.returner)
           .map(b => ({ x: physicalX(b.x), y: b.y, vx: s.mirrored ? -b.vx : b.vx, vy: b.vy }))), FOOTBALL_SIDELINES, panic,
-      { carrier: legendaryAthleteFactor(g, ret), defender: id => {
+      { carrier: legendaryAthleteFactor(g, ret) * specialAwardAdjustment(g, ret, returnSide,
+          a.fullCoverage?.returnSpeed === undefined ? undefined : 'KR1', a.fullCoverage?.returnSpeed ?? 1), defender: id => {
         const actor = s.athletes[id];
-        return actor ? legendaryAthleteFactor(g, actor) : 1;
+        const applied = a.fullCoverage?.defenderSpeed?.id === id ? a.fullCoverage.defenderSpeed : undefined;
+        return actor ? legendaryAthleteFactor(g, actor) * specialAwardAdjustment(g, actor, other(returnSide),
+          applied ? 'DB1' : undefined, applied?.factor ?? 1) : 1;
       } });
     g.returnAttempt = next;
     for (const d of next.defenders) { const actor = s.athletes[d.id]!, x = physicalX(d.x);

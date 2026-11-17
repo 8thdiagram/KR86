@@ -27,6 +27,9 @@ function season(wins: number, seed = 1986) {
 }
 function champion(f = season(12)) {
   for (let i = 0; i < 4; i++) f = result(f, true);
+  // Historical pending-selection fixture: retain all legacy reward tests.
+  // New measured championship finalization is covered by scouting-mvp.test.
+  f.phase = 'mvp';
   return f;
 }
 function upgraded(slot: MvpSlot, count: number) {
@@ -80,7 +83,8 @@ test('four actual completed playoff games are required; bracket advancement uses
     f = result(started, true);
     assert.equal(f.championships.length, round === 3 ? 1 : 0);
   }
-  assert.equal(f.phase, 'mvp'); assert.equal(f.ceremony!.winner, f.team);
+  assert.equal(f.phase, 'offseason'); assert.equal(f.ceremony!.winner, f.team);
+  assert(f.ceremony!.mvpUnavailable, 'A score-only fixture must not invent individual performance.');
   assert.equal(f.bracket!.round, 4); assert.equal(f.bracket!.rounds[3]![0]!.winner, f.team);
   assert.throws(() => nextFranchiseSeason(f));
 });
@@ -89,7 +93,7 @@ test('early playoff elimination resolves the remaining tournament and preserves 
   assert.equal(f.phase, 'eliminated'); assert.equal(f.championships.length, 0);
   assert.equal(f.bracket!.round, 4);
   assert(f.bracket!.rounds.flat().every(m => m.winner));
-  assert(f.ceremony?.mvp, 'CPU champion announces its permanent MVP.');
+  assert(f.ceremony?.mvpUnavailable, 'CPU champion reports missing individual statistics.');
   f.ceremony = null; // Acknowledge the CPU trophy before opening the next season.
   const n = nextFranchiseSeason(f);
   assert.equal(n.season, 2); assert.equal(n.history[0]!.bracket!.round, 4);

@@ -5,7 +5,9 @@ import type { FootballGame } from './types';
 import { playoffEligibility, queueFranchiseAnnouncement, withPlayoffPresentation, type FranchiseAnnouncement } from './franchise-announcements';
 import type { FranchiseLeague, LeagueAward } from './league-types';
 import { beginLeagueSeason, ensureLeague, finishLeagueChampionship, recordHumanLeagueAward,
-  recordLeaguePlayoff, recordLeagueRegular, simulateLeaguePlayoff, teamAwardCounts } from './league';
+  recordLeaguePlayoff, recordLeagueRegular, simulateLeaguePlayoff } from './league';
+import { legacyTeamCounts, ownedTeamAwards, type PlayerAward } from './legend-awards';
+import { selectChampionshipMvp } from './mvp-performance';
 
 export type MvpSlot = import('./mvp').MvpId;
 export const MVP_SLOTS: { id: MvpSlot; name: string; reward: string }[] = [
@@ -29,13 +31,13 @@ export type Franchise = {
   schedule: Fixture[]; standings: Standing[];
   bracket: { teams: Standing[]; rounds: BracketMatch[][]; round: number } | null;
   championships: { season: number; opponent: string; home: number; away: number }[];
-  awards: { season: number; slot: MvpSlot }[];
+  awards: ({ season: number; slot: MvpSlot } & PlayerAward)[];
   league?: FranchiseLeague;
   history: { season: number; schedule: Fixture[]; standings: Standing[]; bracket: Franchise['bracket'] }[];
   active: { id: string; opponent: string; kind: 'regular' | 'playoff'; index: number; round: number;
-    game: FootballGame; introDone: boolean; halftimeDone: boolean; halftimeRemaining: number } | null;
+    game: FootballGame; introDone: boolean; halftimeDone: boolean; halftimeRemaining: number; scoutingDone?: boolean } | null;
   ceremony: { season: number; winner: string; opponent: string; home: number; away: number; won: boolean;
-    loser?: string; mvp?: LeagueAward } | null;
+    loser?: string; mvp?: LeagueAward; mvpUnavailable?: string } | null;
 };
 const teams = KICK_TEAMS.map(t => t.name as string);
 const draw = (f: { rng: number }) => { f.rng = (Math.imul(f.rng, 1664525) + 1013904223) >>> 0; return f.rng / 4294967296; };
@@ -113,9 +115,11 @@ export function startFranchiseGame(f: Franchise): Franchise {
   const playerTeam = KICK_TEAMS.find(t => t.name === n.team), opponentTeam = KICK_TEAMS.find(t => t.name === opponent);
   if (!playerTeam || !opponentTeam) throw new Error('The saved matchup contains an unavailable team.');
   const game = createFootball(kickSeed(id), { player: playerTeam.name, opponent: opponentTeam.name });
-  game.franchise = { gameId: id, awards: mvpCounts(n), opponentAwards: teamAwardCounts(n, opponent) };
+  game.franchise = { gameId: id, awards: legacyTeamCounts(n, n.team), opponentAwards: legacyTeamCounts(n, opponent),
+    playerAwards: { home: ownedTeamAwards(n, n.team), away: ownedTeamAwards(n, opponent) },
+    ...(round === 3 ? { performance: { version: 1 as const, gameId: id, coverage: 'full-game' as const, players: {} } } : {}) };
   n.active = { id, opponent, kind: round < 0 ? 'regular' : 'playoff', index, round, game,
-    introDone: round !== 3, halftimeDone: round !== 3, halftimeRemaining: 15 };
+    introDone: round !== 3, halftimeDone: round !== 3, halftimeRemaining: 15, scoutingDone: false };
   n.active.game = withPlayoffPresentation(n, game);
   if (round === 0) queueFranchiseAnnouncement(n, 'playoffs');
   return n;
@@ -150,14 +154,26 @@ export function completeFranchiseGame(f: Franchise, game: FootballGame): Franchi
       n.ceremony = { season: n.season, winner: m.winner, opponent: a.opponent, home: game.score.home, away: game.score.away, won };
       if (won) {
         n.championships.push({ season: n.season, opponent: a.opponent, home: game.score.home, away: game.score.away });
-        n.phase = 'mvp';
+        n.phase = 'offseason';
       } else n.phase = 'offseason';
+      const selection = selectChampionshipMvp(game);
+      const season = n.league!.seasons.find(s => s.season === n.season)!;
+      if (selection.award && !n.league!.awards.some(a => a.season === n.season)) {
+        const award = { season: n.season, ...selection.award };
+        n.league!.awards.push(award);
+        if (won) n.awards.push({ ...award });
+        season.mvp = award; n.ceremony.mvp = award;
+      } else if (!selection.award) {
+        season.mvpUnavailable = selection.reason; n.ceremony.mvpUnavailable = selection.reason;
+      }
     } else if (!won) n.phase = 'eliminated';
     advanceBracket(n);
     if (won) queueFranchiseAnnouncement(n, 'advanced', a.round);
   }
   n.active = null; return n;
 }
+/** Legacy pending-award API only. New games finalize a measured MVP
+ * automatically and never enter the old selection phase. */
 export function awardMvp(f: Franchise, slot: MvpSlot): Franchise {
   if (!MVP_SLOTS.some(s => s.id === slot)) throw new Error('Choose an eligible player.');
   if (f.awards.some(a => a.season === f.season)) return f;
@@ -168,6 +184,14 @@ export function awardMvp(f: Franchise, slot: MvpSlot): Franchise {
     home: championship.home, away: championship.away, won: true };
   n.ceremony.mvp = { season: n.season, team: n.team, slot };
   n.phase = 'offseason'; return n;
+}
+/** An old pending selection has no complete individual ledger. Preserve its
+ * title and prior rewards; never manufacture historical performances. */
+export function resolveLegacyMvp(f: Franchise): Franchise {
+  if (f.phase !== 'mvp') return f;
+  const n = mutate(f); n.phase = 'offseason';
+  if (n.ceremony) n.ceremony.mvpUnavailable = 'Historical individual Super Cup statistics unavailable; prior awards unchanged.';
+  return n;
 }
 export function nextFranchiseSeason(f: Franchise): Franchise {
   if (!['offseason', 'eliminated'].includes(f.phase) || f.active || f.ceremony) throw new Error('Finish this season and its awards first.');
