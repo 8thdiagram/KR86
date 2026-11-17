@@ -13,7 +13,7 @@ test('only the original offensive receiver has a player selection target', () =>
   assert.doesNotMatch(read('../game/components/football-preplay.tsx'), /fbp-controlled|PLAYER_TARGET_PIXELS/);
 });
 
-test('panic positioning does not restore manual arrows, persistent selection or the old kicker override', () => {
+test('panic trajectory arrows do not restore persistent manual defense or the old kicker override', () => {
   const files = ['../game/lib/football/pursuit.ts', '../game/lib/football/field.ts',
     '../game/lib/football/controls.ts', '../game/lib/football/special-teams.ts',
     '../game/lib/kick-return-engine.ts', '../game/lib/kick-full-coverage.ts',
@@ -23,13 +23,14 @@ test('panic positioning does not restore manual arrows, persistent selection or 
     assert.doesNotMatch(read(file), /defenseDirection|userDefense|user-defense|prepareUserDefense|consumeDefenseRelease|coverageInput|KickCoverageInput|strafe/i, file);
   assert.equal(fs.existsSync(new URL('../game/lib/football/user-defense.ts', import.meta.url)), false);
   const game = read('../game/components/football-game.tsx');
-  assert.match(game, /disabled=\{!controlsActive\}/);
+  assert.match(game, /disabled=\{!controlsActive && !defenseActive\}/);
   const controls = read('../game/lib/football/controls.ts');
-  assert.match(controls, /control === 'juke' && canDefensiveAction\(g\)/);
+  assert.match(controls, /control === 'juke' && \(canDefensiveAction\(g\) \|\| canDefensivePanic\(g\)\)/);
   assert.match(controls, /kick = true; consumed\.add\(id\); return/);
   assert.doesNotMatch(controls, /defenseOwner|defenseTap|DEFENSE_HOLD_MS/);
   assert.match(controls, /defenseHold: validDefense\(\)/);
   const panic = read('../game/lib/football/defensive-panic.ts');
   assert.match(panic, /new WeakMap/);
+  assert.match(panic, /PANIC_LATERAL_OFFSET/);
   assert.doesNotMatch(read('../game/lib/football/storage.ts'), /defenseHold|panic|selectedDefender/);
 });

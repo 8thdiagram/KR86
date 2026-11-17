@@ -138,14 +138,12 @@ test('F: mistimed releases and holding too late still allow breakaway touchdowns
   }
 });
 
-test('G: dropbacks, airborne passes, handoffs and pre-line QB scrambles retain identical coverage', () => {
-  for (const mode of ['dropback', 'flight', 'handoff', 'scramble'] as const) {
+test('G: a hold during the handoff still leaves ordinary execution unchanged', () => {
+  for (const mode of ['handoff'] as const) {
     const g = fixture(), l = g.live!;
     l.mode = mode; l.carrier = 5; l.crossedLos = false; l.carrierCrossedLos = false;
     l.athletes[5]!.x = l.movement.player.x = 470; l.target = 100;
     if (mode === 'handoff') l.time = 0;
-    if (mode === 'flight') l.flight = { x: 470, y: 96, z: 1, fromX: 470, fromY: 96,
-      toX: 900, toY: 96, duration: 5, age: 0, receiver: 3, accuracy: 1, type: 'normal' };
     const normal = structuredClone(g);
     for (let i = 0; i < (mode === 'handoff' ? 1 : 10); i++) {
       assert.deepEqual(stepField(g, { defenseHold: true }, dt), stepField(normal, {}, dt));

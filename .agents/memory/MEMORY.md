@@ -1,9 +1,10 @@
 - [Temporary preview servers](temporary-preview-servers.md) — asset-check servers can replace the app's forwarded preview port; use file-based rendering where possible.
 - [Retro presentation direction](presentation-direction.md) — authored NES athletes, substantial legs and complete action poses; preserve team identity, intro, camera, audio, gameplay and saves.
-- [Defensive control boundaries](defensive-control-boundaries.md) — CPU defense with human ACTION hold/release panic positioning; no arrow steering, automatic tackles or pressure-timing changes.
+- [Defensive control boundaries](defensive-control-boundaries.md) — CPU defense by default; human held coverage positioning, bounded UP/DOWN and ordinary automatic tackles, with unchanged pressure timing.
 - [Browser touch verification](browser-touch-verification.md) — isolate saves, release the correct CDP contacts, and resume the host after visibility tests.
 - [Interactive field goals](interactive-field-goals.md) — Kick View owns aiming through verdict; projected posts, meter and real crossing must agree.
 - [Presentation lifecycle](presentation-lifecycle.md) — use stable animation owners across cloned snapshots; a stalled headless audio clock is not proof of a silent effect.
 - [Running ACTION boundaries](running-action-boundaries.md) — immediate threat-aware runner moves; preserve owned QB gestures, post-line legality, ordinary contact and CPU-only defense.
 - [Football balance philosophy](football-balance-philosophy.md) — probabilistic play calls; isolate initial holds and validate attacking-frame diagnostics.
 - [Large diagnostic evidence](diagnostic-evidence-delivery.md) — asset delivery has a 100 MiB per-file limit; split raw trial ZIPs and retain a shared manifest.
+- [CPU strategy parity](cpu-defensive-strategy.md) — imperfect tactical choices, hold-admission latency, bounded opportunities and isolated seeded randomness preserve arcade fairness.

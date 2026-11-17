@@ -540,3 +540,17 @@ mtime_ms = 1794867878861
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/87d85958-02ab-438b-b56d-a3d76f37f1ee/7a4106bd-24be-4d6f-bec7-98c0a5b9c81b"
 storage_version_token = "1794867948363898"
 content_type = "video/mp4"
+
+[[outputs]]
+id = "Agep_ziDiyk_Xs3UepfCm"
+uri = "file://generated-artifacts/CPU-Defensive-Strategy-Results.txt"
+type = "text"
+title = "CPU defensive strategy — results and limitations"
+description = "Full before/after gameplay numbers, defensive-call comparisons, verification, tuning decisions and remaining limitations."
+logical_id = "a2346b9b-0f6e-43df-af4f-35955e7aa5d5"
+content_hash = "sha256:bd1a71404ef36b130b209345823dfdd2875d0e3c1f451e95fe0f7607e8fb5643"
+size = 11502
+mtime_ms = 1794875623810
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:c067fc30-8238-4c49-bf2d-9fcd7e05f229/a2346b9b-0f6e-43df-af4f-35955e7aa5d5/230e7889-4d0a-4b65-8ac9-8425c921dd56"
+storage_version_token = "1794875668572837"
+content_type = "text/plain"

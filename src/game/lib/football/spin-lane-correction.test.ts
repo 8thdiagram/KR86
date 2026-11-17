@@ -100,6 +100,9 @@ test('Classic return collision and bounds still use the constrained spin positio
 
 function field(threatSide: -1 | 1) {
   const g = createFootball(1986, {player:'Crows',opponent:'Bulls'});
+  // Pin the new, separately forked tactical decision to normal defense.
+  // Keep the original contest RNG: these fixtures isolate spin/pursuit physics.
+  g.seed = 2;
   g.possession = 'home'; g.phase = 'live'; g.spot = 40;
   const l = g.live = startField(g, 'power', 'pass');
   l.mode = 'run'; l.time = 3; l.carrier = 6; l.carrierCrossedLos = true;

@@ -15,6 +15,8 @@ import { carrierMoment } from './execution-moments';
 import { playerSpeed } from '../player-pace';
 import { constrainEvasionStep, cpuCarrierAction } from '../carrier-evasion';
 import { defensivePanicTarget } from './defensive-panic';
+import { cpuDefensivePanicTarget } from './cpu-defensive-panic';
+import { PASS_DEFENSE } from './pass-defense';
 
 /** Old saved returns without returnKind were interceptions; recovery returns
  * explicitly identify themselves. Never show a return banner over a loose ball. */
@@ -41,8 +43,11 @@ const move = (a: Athlete, x: number, y: number, speed: number, dt: number) => {
 export function stepInterception(g: FootballGame, input: FootballInput, dt: number): { spot: number; touchdown: boolean; outOfBounds?: boolean } | undefined {
   const l = g.live!, c = l.interception!, runner = l.athletes[c.catcher]!;
   const pursuing = l.athletes.filter(a => a.side === 'offense');
-  const panic = defensivePanicTarget(l, !!input.defenseHold && l.offense === 'home' &&
-    !l.flight && c.age >= .38, pursuing, runner, 100, l.time);
+  const panic = l.offense==='away' ? cpuDefensivePanicTarget(g,l,{
+    kind:'turnover',defending:'away',mode:!l.flight&&c.age>=.38?'runner':'none',
+    defenders:pursuing,carrier:runner,goalX:100,los:c.catchX,now:l.time,
+  }) : defensivePanicTarget(l, !!input.defenseHold && l.offense === 'home' &&
+    !l.flight && c.age >= .38, pursuing, runner, 100, l.time, undefined, {direction:input.direction});
   c.age += dt;
   if (l.flight) {
     const f = l.flight; f.age += dt; const t = clamp(f.age / f.duration, 0, 1);
@@ -53,6 +58,10 @@ export function stepInterception(g: FootballGame, input: FootballInput, dt: numb
   if (c.age < .38) return;
   const blockers = l.athletes.filter(a => a.side === 'defense' && a.id !== runner.id);
   if (input.action && canDefensiveAction(g)) startNearestDive(pursuing, runner);
+  if(panic && l.time-(l.defensiveActionAt??-Infinity)>=PASS_DEFENSE.actionCooldown){
+    const d=startNearestDive(pursuing,runner,l.time,panic.id);
+    if(d){d.defensiveAttempt={kind:'tackle',at:l.time};l.defensiveActionAt=l.time;}
+  }
   for (const b of blockers) {
     const d = [...pursuing].sort((a, c) => Math.hypot(a.x - b.x, a.y - b.y) - Math.hypot(c.x - b.x, c.y - b.y))[0]!;
     move(b, d.x + 5, d.y, 56, dt);

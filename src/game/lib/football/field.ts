@@ -7,6 +7,7 @@ import { stepDefense } from './pursuit';
 import { stepInterception } from './interception';
 import { canDefensiveAction, canTackle, startNearestDive, stepAthleteDive } from './defensive-action';
 import { defensivePanicTarget } from './defensive-panic';
+import { cpuDefensivePanicTarget } from './cpu-defensive-panic';
 import { attemptPassDefense, cpuPassDefense, resolvePassDefense, PASS_DEFENSE } from './pass-defense';
 import { EXECUTION, primaryPlayer, skillExecution, runApproach } from './execution';
 import { eliteSlots } from './secondary';
@@ -132,10 +133,17 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
   if (l.snapAge !== undefined && l.snapAge < .18) { l.snapAge = Math.min(.18, l.snapAge + dt); return; }
   const los = 100 + l.snapSpot * 10, offense = l.athletes.filter(a => a.side === 'offense'), defenders = l.athletes.filter(a => a.side === 'defense');
   const carrier = l.athletes[l.carrier]!;
-  const panic = defensivePanicTarget(l, !!input.defenseHold && g.possession === 'away' &&
-    !l.flight && !l.loose && l.option?.phase !== 'pitch' && (l.mode === 'run' || l.mode === 'scramble') &&
-    (carrier.role !== 'QB' || carrier.x >= los || !!l.crossedLos || !!l.carrierCrossedLos),
-    defenders, carrier, 1100, l.time);
+  const coveragePanic=l.mode==='dropback'||l.mode==='flight'||l.mode==='scramble'&&carrier.role==='QB'&&
+    carrier.x<los&&!l.crossedLos&&!l.carrierCrossedLos;
+  const panic = g.possession==='home' ? cpuDefensivePanicTarget(g,l,{
+    kind:'field',defending:'away',defense:l.defense,goalX:1100,los,now:l.time,defenders,carrier,
+    receivers:offense.filter(a=>a.role==='WR'||a.role==='TE'),
+    mode:l.loose||l.option?.phase==='pitch'?'none':coveragePanic?l.mode==='flight'?'airborne':'coverage':
+      l.mode==='run'||l.mode==='scramble'?'runner':'none',
+  }) : defensivePanicTarget(l, !!input.defenseHold && g.possession === 'away' &&
+    l.mode!=='kick',
+    defenders, carrier, 1100, l.time, undefined, {coverage:coveragePanic,direction:input.direction,
+      suspended:!!l.loose || l.option?.phase==='pitch' || !(coveragePanic||l.mode==='run'||l.mode==='scramble')});
   if (l.mode === 'loose' && l.loose) {
     const ball = l.loose;
     // Lock proximity at the instant of the fumble; running speeds must never reroll recovery.
@@ -290,22 +298,32 @@ export function stepField(g: FootballGame, input: FootballInput, dt: number): Fi
   }
   if (l.mode === 'flight') {
     if (input.action && canDefensiveAction(g)) attemptPassDefense(g);
+    else if(panic && l.flight && l.flight.z<=13){
+      const d=defenders.find(d=>d.id===panic.id)!;
+      // A nearby, observable ball can be contested under the ordinary pass
+      // rules. This is not a tackle or a retreat target at its future landing.
+      if(Math.hypot(d.x-l.flight.x,d.y-l.flight.y)<=PASS_DEFENSE.maxAttemptDistance)
+        attemptPassDefense(g,panic.id);
+    }
     cpuPassDefense(g);
   } else if (l.time - (l.defensiveActionAt ?? -Infinity) >= PASS_DEFENSE.actionCooldown) {
     const runner = l.athletes[l.carrier]!;
+    const heldTackle=!!panic && (l.mode==='run'||l.mode==='scramble') &&
+      (runner.role!=='QB'||runner.x>=los||!!l.crossedLos||!!l.carrierCrossedLos);
     const cpuDive = g.possession === 'home' && (l.mode === 'run' || l.mode === 'scramble') &&
       l.time >= (l.cpuActionAt ?? 0);
     if (cpuDive) l.cpuActionAt = l.time + .18;
+    const ordinaryCpuDive=cpuDive&&random(g)<.12;
     // AI uses observed carrier motion and the same close-range admission, never next input.
-    if (input.action && canDefensiveAction(g) || cpuDive && random(g) < .12) {
+    if (input.action && canDefensiveAction(g) || heldTackle || ordinaryCpuDive) {
       const secondary = defenders.filter(d => d.role === 'DB');
       const elite = eliteSlots(g, other(g.possession));
       // A fast back already gaining from behind should finish the running
       // tackle, not surrender that advantage by planting for a hopeful dive.
       // Human ACTION still uses the unchanged nearest-eligible dive rules.
-      const candidates = cpuDive ? defenders.filter(d => !(elite.includes(secondary.indexOf(d)) &&
+      const candidates = cpuDive && !heldTackle ? defenders.filter(d => !(elite.includes(secondary.indexOf(d)) &&
         d.x < runner.x && d.vx > runner.vx && runner.vx > 0 && Math.abs(d.y - runner.y) < 18)) : defenders;
-      const d = startNearestDive(candidates, runner, l.time);
+      const d = startNearestDive(candidates, runner, l.time, heldTackle ? panic!.id : undefined);
       if (d) { d.defensiveAttempt = { kind: 'tackle', at: l.time }; l.defensiveActionAt = l.time; }
     }
   }

@@ -2,7 +2,7 @@ import { createKickControls, type KickControl } from '../kick-return-controls';
 import { canForwardPass, highlightedReceiver, PASS_HOLD_MS, QB_SCRAMBLE_MS } from './passing';
 import type { FootballGame, FootballInput } from './types';
 import { canDefensiveAction } from './defensive-action';
-import { DEFENSIVE_HOLD_MS } from './defensive-panic';
+import { DEFENSIVE_HOLD_MS, canDefensivePanic } from './defensive-panic';
 
 export function canRunningAction(g: FootballGame): boolean {
   if (g.tackleScene) return false;
@@ -23,7 +23,8 @@ export function createFootballControls() {
   let defense: { id: string; since: number; game: FootballGame; live: FootballGame['live'];
     special: FootballGame['special']; plays: number } | undefined;
   const validDefense = () => !!defense && defense.game.live === defense.live &&
-    defense.game.special === defense.special && defense.game.plays === defense.plays && canDefensiveAction(defense.game);
+    defense.game.special === defense.special && defense.game.plays === defense.plays &&
+      (canDefensiveAction(defense.game) || canDefensivePanic(defense.game));
   let owner: { id: string; since: number; scrambled?: boolean } | undefined;
   let scramble = false;
   let press = false, target: number | undefined, cancel = false, release: FootballInput['passRelease'], kick = false;
@@ -36,7 +37,7 @@ export function createFootballControls() {
       if (control === 'juke') return;
       owner = undefined; press = false; cancel = true; consumed.delete(id);
     } else if (consumed.has(id)) return;
-    if (control === 'juke' && canDefensiveAction(g)) {
+    if (control === 'juke' && (canDefensiveAction(g) || canDefensivePanic(g))) {
       movement.release(id, now, true);
       defensivePresses.add(id);
       defense ??= { id, since: now, game: g, live: g.live, special: g.special, plays: g.plays };
@@ -75,7 +76,7 @@ export function createFootballControls() {
     release(id: string, now: number, canceled = false) {
       defensivePresses.delete(id);
       if (defense?.id === id) {
-        if (!canceled && validDefense() && now - defense.since < DEFENSIVE_HOLD_MS) kick = true;
+        if (!canceled && validDefense() && canDefensiveAction(defense.game) && now - defense.since < DEFENSIVE_HOLD_MS) kick = true;
         defense = undefined;
       }
       if (owner?.id === id) {
@@ -97,6 +98,7 @@ export function createFootballControls() {
       movement.tapDirection(direction, now);
     },
     sample(now: number, consume = true) {
+      if(defense && !validDefense()) { defensivePresses.delete(defense.id); defense=undefined; }
       const s = movement.sample(now, consume);
       const startScramble = scramble || !!owner && !owner.scrambled && now - owner.since >= QB_SCRAMBLE_MS;
       if (consume && startScramble && owner) owner.scrambled = true;

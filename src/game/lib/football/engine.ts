@@ -10,6 +10,7 @@ import { beginPlayResult, fieldResultText, specialResultText } from './play-resu
 import { FIELD_GOAL_FLIGHT_SCALE } from './celebration-timing';
 import { inFootballFrame } from './direction';
 import { defensivePanicTarget } from './defensive-panic';
+import { cpuDefensivePanicTarget } from './cpu-defensive-panic';
 import { startNearestDive } from './defensive-action';
 import { FOOTBALL_SIDELINES } from './sidelines';
 import { lockClutch } from './clutch';
@@ -422,8 +423,12 @@ function stepFootballLocal(g: FootballGame, input: FootballInput = {}, dt = KR.d
     if (a.phase === 'returning') { consumeClock(g, dt); g.clockRunning = true; delete g.clockStoppage; }
     if (input.action && g.kickReceiver === 'away' && a.phase === 'returning')
       startNearestDive(a.defenders, { ...a.player, vx: KR.forwardSpeed });
-    const panic = defensivePanicTarget(g, !!input.defenseHold && g.kickReceiver === 'away' &&
-      a.phase === 'returning', a.defenders, a.player, 1100, a.time);
+    const panic = g.kickReceiver==='home' ? cpuDefensivePanicTarget(g,g,{
+      kind:'kickoff',defending:'away',mode:a.phase==='returning'?'runner':'none',
+      goalX:1100,los:a.landing.x,now:a.time,defenders:a.defenders,carrier:a.player,
+    }) : defensivePanicTarget(g, !!input.defenseHold && g.kickReceiver === 'away' &&
+      a.phase === 'returning', a.defenders, a.player, 1100, a.time, undefined, {direction:input.direction});
+    if(panic) startNearestDive(a.defenders,{...a.player,vx:a.moves?.vx??KR.forwardSpeed},a.time,panic.id);
     const direction = g.kickReceiver === 'home' ? input.direction ?? 0 : kickWitnessDirection(a);
     g.returnAttempt = stepKickAttempt(a, direction, dt * worldSpeed, g.kickReceiver === 'home'
       ? { juke: !!input.juke || !!input.action, hesitate: input.hesitate } : {}, FOOTBALL_SIDELINES, panic);

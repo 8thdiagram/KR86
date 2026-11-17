@@ -37,9 +37,9 @@ function diveVelocity(d: Diver, runner: { x: number; y: number; vx?: number; vy?
   return undefined;
 }
 /** Commit toward observed motion once. A miss has a real landing/recovery cost. */
-export function startNearestDive<T extends Diver>(players: T[], runner: { x: number; y: number; vx?: number; vy?: number }, now = Infinity) {
+export function startNearestDive<T extends Diver>(players: T[], runner: { x: number; y: number; vx?: number; vy?: number }, now = Infinity, onlyId?: number) {
   if (players.some(d => d.dive?.phase === 'windup' || d.dive?.phase === 'airborne')) return;
-  const nearest = players.filter(a => !a.dive && (a.engaged ?? 0) <= now &&
+  const nearest = players.filter(a => (onlyId===undefined || a.id===onlyId) && !a.dive && (a.engaged ?? 0) <= now &&
     Math.hypot(a.x - runner.x, a.y - runner.y) <= 60)
     .map(d => ({ d, velocity: diveVelocity(d, runner) })).filter(a => a.velocity)
     .sort((a, b) => Math.hypot(a.d.x - runner.x, a.d.y - runner.y) -

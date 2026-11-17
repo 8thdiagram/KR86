@@ -223,7 +223,8 @@ function advanceKickAttempt(a: KickAttempt, direction: KickDirection, dt: number
         jukeRead: jukePursuitRead(a, original, movement.moves!.active!.side) } : original;
        if (a.diveVersion === 1 && d.dive) return stepCommittedDive(d, dt, a.mechanicsVersion === 2);
       // Full-game human defense only supplies this temporary destination.
-      // Keep all ordinary movement/collision rules; never start an automatic dive on hold.
+      // Keep ordinary movement/collision rules. Held tackle admission, when
+      // applicable, already ran through the same rules as a quick defensive tap.
       const skill = performance?.defender(d.id) ?? (!a.fullCoverage && a.teams
         ? 1 + (classicLegendaryPlayer(a.teams.opponent, d.id)?.boost ?? 0) / 100 : 1);
       if (position?.id === d.id) return a.fullCoverage ? stepFullCoverage(a, d, dt, position, skill)

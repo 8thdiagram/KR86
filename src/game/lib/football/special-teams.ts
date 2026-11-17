@@ -7,6 +7,7 @@ import { fieldGoalAim, fieldGoalHeight, fieldGoalMeterAccuracy, fieldGoalMeterSp
 import { FIELD_GOAL_FLIGHT_SCALE } from './celebration-timing';
 import { canDefensiveAction, startNearestDive } from './defensive-action';
 import { defensivePanicTarget } from './defensive-panic';
+import { cpuDefensivePanicTarget } from './cpu-defensive-panic';
 import { ELITE, eliteSlots } from './secondary';
 import { franchiseFactor, effectiveKickControl as franchiseKickControl } from './franchise-upgrades';
 import { legendaryAthleteFactor, legendaryKickingFactor } from './legendary';
@@ -301,7 +302,7 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
     }
     // Receiving teammates block nearby coverage, preserving actual visible contact.
     const blocked = new Set<number>();
-    const engagedCoverage = input.defenseHold ? new Set<number>() : undefined;
+    const engagedCoverage = input.defenseHold || (s.returnSide??s.receiver)==='home' ? new Set<number>() : undefined;
     const physicalX = (x: number) => s.mirrored ? 1200 - x : x;
     for (const b of s.athletes.filter(a => a.side === (s.returnGroup ?? 'defense') && a.id !== s.returner)) {
       const d = a.defenders.filter(d => d.x > a.player.x - 30 && !blocked.has(d.id)).sort((d, e) =>
@@ -316,8 +317,12 @@ export function stepSpecialTeams(g: FootballGame, input: FootballInput, dt: numb
       }
     }
     const returnSide = s.returnSide ?? s.receiver;
-    const panic = defensivePanicTarget(s, !!input.defenseHold && returnSide === 'away',
-      a.defenders, a.player, 1100, a.time, engagedCoverage);
+    const panic = returnSide==='home' ? cpuDefensivePanicTarget(g,s,{
+      kind:'kickoff',defending:'away',mode:'runner',goalX:1100,los:a.landing.x,now:a.time,
+      defenders:a.defenders,carrier:a.player,blocked:engagedCoverage,
+    }) : defensivePanicTarget(s, !!input.defenseHold && returnSide === 'away',
+      a.defenders, a.player, 1100, a.time, engagedCoverage, {direction:input.direction});
+    if(panic) startNearestDive(a.defenders,{...a.player,vx:a.moves?.vx??KR.forwardSpeed},a.time,panic.id);
     const direction = returnSide === 'home' ? input.direction ?? 0 : kickWitnessDirection(a);
     const next = stepKickAttempt(a, direction, dt, returnSide === 'home' ? { juke: !!input.action || !!input.juke, evasion: true, hesitate: !input.action && !input.juke && input.hesitate }
       : cpuCarrierAction(a, direction, FOOTBALL_SIDELINES,
