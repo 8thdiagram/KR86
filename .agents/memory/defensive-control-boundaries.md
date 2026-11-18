@@ -13,7 +13,13 @@ Quick defensive ACTION taps retain ordinary nearest-eligible-defender tackle/int
 
 **Why:** The user explicitly wants to keep holding through the tackle opportunity without releasing and tapping again, while preserving genuine misses and offensive escapes. Positioning and an admitted attempt must not guarantee a tackle or interception.
 
-**How to apply:** Use the existing ordinary action functions, restricting only held automatic attempts to the selected defender. Quick taps must not acquire that restriction. If admission fails, do not force a dive, enlarge its range, add a speed boost or improve tackle probabilities.
+**How to apply:** Use the existing ordinary action functions, restricting only held automatic attempts to the selected defender. Quick taps must not acquire that restriction. Preserve held retreat timing, contact rules and recovery.
+
+Rear-pursuit ACTION taps should launch a reachable chasing defender immediately rather than stop him in a stationary plant. A well-timed dive should usually catch a straight-running carrier, but a cut or juke can still evade it.
+
+**Why:** The user reported close chasing defenders freezing on ACTION and explicitly requested an effective immediate rear dive.
+
+**How to apply:** Commit to observed motion once, without homing, forced tackles or enlarged contact boxes. Keep held retreat, pass contests, sprite size and control geometry unchanged.
 
 The user requested more effective defensive dives, no apparent sprite shrinking during dives, and smarter, more cautious defensive backs/safeties. The panic-switch request does not authorize additional automatic pursuit or broad balance changes.
 
