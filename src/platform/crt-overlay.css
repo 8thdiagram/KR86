@@ -7,14 +7,29 @@
     linear-gradient(rgba(255, 211, 158, 0.008), rgba(255, 211, 158, 0.008)),
     radial-gradient(
       ellipse at center,
-      transparent 56%,
-      rgba(3, 8, 15, 0.025) 100%
+      transparent 54%,
+      rgba(3, 8, 15, 0.045) 100%
     ),
     repeating-linear-gradient(
       to bottom,
       transparent 0 3px,
-      rgba(5, 10, 18, 0.035) 3px 4px
+      rgba(5, 10, 18, 0.042) 3px 4px
     );
+}
+
+.kr-crt-overlay::before {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle,
+    rgba(14, 22, 29, 0.035) 0.4px,
+    transparent 0.7px
+  );
+  background-size: 4px 4px;
+  background-position: 1px 1px;
+  opacity: 0.55;
+  pointer-events: none;
+  content: "";
 }
 
 @media (forced-colors: active), (prefers-contrast: more), (prefers-reduced-transparency: reduce) {
